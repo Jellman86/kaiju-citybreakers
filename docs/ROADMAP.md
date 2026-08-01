@@ -100,11 +100,20 @@ Solo and two-player teams can win through readable play rather than damage racin
 
 - Import scale and naming validation.
 - Materials, effects, lighting, LOD strategy, and collision proxies.
+- Server-synchronized day/night cycle with authored dawn, day, dusk, and night presets; gradual transitions; and no gameplay logic that depends on a client's local clock.
+- Night readability pass for Brontide, destructible states, roads, objectives, attacks, and touch controls, using a fixed light/shadow budget instead of multiplying dynamic lights across the city.
 - Animation event integration.
+
+### Day/night validation
+
+- Measure client frame time, memory, shadow cost, and visible-light count at every preset on the representative mobile baseline before enabling continuous cycling.
+- Verify that a late-joining client receives the current phase and that all clients remain visually synchronized without per-frame remote traffic.
+- Run uncoached visibility tests for navigation, building-state recognition, Beam/Charge telegraphs, objective markers, and accessibility settings at the darkest approved night value.
+- Keep the cycle cosmetic during the vertical slice; weather, defender behaviour, spawn rates, and night-specific rewards require separate research and playtest gates.
 
 ### Exit gate
 
-The production kaiju communicates scale and power without reducing mobile performance below budget.
+The production kaiju and complete day/night lighting range communicate scale and power without reducing mobile performance below budget or obscuring gameplay information.
 
 ## Phase 6 — UX, audio, and accessibility (weeks 12–13)
 
