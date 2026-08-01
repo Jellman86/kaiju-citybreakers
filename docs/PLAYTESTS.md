@@ -287,3 +287,15 @@ Studio reported production version 6 successfully published from the live Rojo-s
 ### Decision
 
 Production releases now use the clean, exact-commit artifact workflow in `docs/RELEASE.md`, not direct publishing from a live-synced session. The corrective upload is complete, but the physical-iPad production smoke test remains pending until the reporter leaves the old server and joins a fresh one.
+
+### Spawn-lifecycle follow-up
+
+- Implementation commit: `61eaea0`
+- Environment: isolated Rojo-built `.rbxlx`, Studio iPad A16 landscape simulation, one local client and server; **zero human testers**.
+- Trigger: the next physical-iPad production report showed the player falling through the sky. The built artifact intentionally contains no authored Workspace spawn before the server generates the city, leaving automatic character loading vulnerable to join/bootstrap timing.
+- `Players.CharacterAutoLoads` was disabled in both the built DataModel and the first server bootstrap statements. `KaijuService` now loads a character only after `PrototypeWorldService` creates `KaijuSpawn`, computes clearance from the scaled Brontide bounds, places the root over that spawn, and clears linear and angular velocity.
+- The initial character settled at approximately `(0, 12.22, 69)` with near-zero velocity and `FloorMaterial = Asphalt`. An iPad-simulator capture showed Brontide, the city, HUD, and touch controls together.
+- Two server-side deaths produced distinct replacement character instances after the configured respawn delay. The final replacement settled at approximately `(0, 12.22, 69)` with zero velocity and `FloorMaterial = Asphalt`.
+- The world, server, and client bootstrap markers appeared without a gameplay error.
+
+The artifact-level initial-spawn and respawn regressions pass. A fresh physical-iPad production server remains the required final smoke test after publishing this commit.

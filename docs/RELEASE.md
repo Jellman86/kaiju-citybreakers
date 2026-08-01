@@ -23,6 +23,7 @@ Do not use **Publish to Roblox** from a live Rojo-synced editing session as the 
 
 - The city exists; the player does not spawn on the template baseplate alone.
 - The player becomes Brontide rather than retaining the default avatar.
+- Brontide is grounded at `KaijuSpawn` with no continuing downward velocity.
 - The round HUD and current input prompts appear.
 - Camera, movement, charge, and smash work on the test device.
 - At least one registered building progresses through its authored destruction states.
