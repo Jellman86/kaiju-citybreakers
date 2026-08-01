@@ -80,6 +80,7 @@ A change is done only when all applicable items are true:
 - The requested behaviour works in the relevant Studio modes and device classes.
 - Server/client trust boundaries and cleanup paths are verified.
 - Formatting, lint, standards checks, and Rojo build pass through `./scripts/check.sh`.
+- Versioned native Studio multiplayer regressions run before replicated gameplay content is multiplied, with results recorded against the exact implementation commit.
 - Research, decision, reuse, playtest, dependency, asset, and changelog records are updated where applicable.
 - No paid requirement, protected IP, secret, unreviewed external script, generated place, or unrelated change is introduced.
 - Git contains a focused Conventional Commit and public CI passes.

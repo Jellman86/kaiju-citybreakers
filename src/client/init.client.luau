@@ -8,6 +8,7 @@ local CombatController = require(script.Controllers.CombatController)
 local DestructionController = require(script.Controllers.DestructionController)
 local PrototypeHudController = require(script.Controllers.PrototypeHudController)
 local RoundController = require(script.Controllers.RoundController)
+local MultiplayerDestructionRegression = require(script.Tests.MultiplayerDestructionRegression)
 
 local remotes = ReplicatedStorage:WaitForChild("Remotes")
 local roundStateRemote = remotes:WaitForChild("RoundState") :: RemoteEvent
@@ -28,5 +29,6 @@ cameraController:Start()
 combatController:Start()
 destructionController:Start()
 prototypeHudController:Start()
+MultiplayerDestructionRegression.TryStart(abilityRequestRemote, remotes)
 
 print("[Kaiju Citybreakers] Kaiju Feel Lab client started")

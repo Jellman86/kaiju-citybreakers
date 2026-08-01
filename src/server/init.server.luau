@@ -8,6 +8,7 @@ local KaijuService = require(script.Services.KaijuService)
 local PlaytestService = require(script.Services.PlaytestService)
 local PrototypeWorldService = require(script.Services.PrototypeWorldService)
 local RoundService = require(script.Services.RoundService)
+local MultiplayerDestructionRegression = require(script.Tests.MultiplayerDestructionRegression)
 
 local remotes = ReplicatedStorage:WaitForChild("Remotes")
 
@@ -50,6 +51,7 @@ destructionService:Start()
 roundService:Start()
 kaijuService:Start()
 combatService:Start()
+MultiplayerDestructionRegression.TryStart(roundService, remotes)
 
 game:BindToClose(function()
 	combatService:Stop()

@@ -84,6 +84,7 @@ Then open Roblox Studio, open the Rojo plugin, and connect it to the local serve
 - [Technical design](docs/TECHNICAL_DESIGN.md)
 - [Destruction system specification](docs/DESTRUCTION_SYSTEM.md)
 - [District blockout and archetypes](docs/DISTRICT_BLOCKOUT.md)
+- [Multiplayer Studio regression](docs/MULTIPLAYER_TESTING.md)
 - [Art direction](docs/ART_DIRECTION.md)
 - [Free toolchain](docs/FREE_TOOLCHAIN.md)
 - [Decisions](docs/DECISIONS.md)
