@@ -41,6 +41,7 @@ The first gate is simple: moving and breaking buildings must feel good before pr
 The HUD follows Roblox's preferred input and changes its prompt when a player switches between keyboard/mouse, gamepad, and touch.
 On keyboard and mouse, moving the mouse orbits the third-person camera and Brontide turns with its forward direction, keeping the creature's back toward the camera. The scroll wheel zooms, camera collision prevents wall clipping, and `WASD` remains camera-relative. Gamepad and touchscreen players retain Roblox's native camera and character facing.
 Touch actions use a resolution-aware lower-right cluster: `SMASH` and `CHARGE` sit side-by-side when space permits and stack automatically on narrow or portrait screens.
+An accepted charge surges Brontide roughly 48 studs over 0.6 seconds and layers a brief camera kick, cyan energy burst, and body highlight so the movement reads clearly at kaiju scale.
 
 ## Free toolchain
 

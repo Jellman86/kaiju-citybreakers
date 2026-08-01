@@ -25,6 +25,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 - Repository visibility changed from private to public so standard GitHub-hosted CI remains free.
 - Charge movement now uses a short native `LinearVelocity` constraint after Studio testing showed that a one-frame velocity was neutralized by the Humanoid controller.
 - Prototype onboarding now names Brontide and gives a single city-gate objective instead of presenting an abstract feel lab.
+- Charge now travels roughly 48 studs with a stronger speed differential, accepted-action FOV kick, cyan energy burst, and brief body highlight so it reads clearly at kaiju scale.
 
 ### Fixed
 

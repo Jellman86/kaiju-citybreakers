@@ -1,6 +1,7 @@
 --!strict
 
 local ContextActionService = game:GetService("ContextActionService")
+local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
@@ -26,6 +27,7 @@ function CombatController.new(abilityRequestRemote: RemoteEvent, abilityResultRe
 
 	self._abilityRequestRemote = abilityRequestRemote
 	self._abilityResultRemote = abilityResultRemote
+	self._chargeCooldownVisualToken = 0
 	self._sequence = 0
 	self._lastRequestedAt = -math.huge
 	self._lastChargeRequestedAt = -math.huge
@@ -62,24 +64,122 @@ function CombatController:_requestCharge()
 		abilityId = "charge",
 		sequence = self._sequence,
 	})
+	self:_startChargeCooldownVisual()
 end
 
-function CombatController:_pulseCamera()
+function CombatController:_resetChargeCooldownVisual()
+	self._chargeCooldownVisualToken += 1
+	ContextActionService:SetTitle(ACTION_CHARGE, "CHARGE")
+	local button = ContextActionService:GetButton(ACTION_CHARGE)
+	if button and button:IsA("ImageButton") then
+		button.ImageTransparency = 0
+	end
+end
+
+function CombatController:_startChargeCooldownVisual()
+	self._chargeCooldownVisualToken += 1
+	local visualToken = self._chargeCooldownVisualToken
+
+	task.spawn(function()
+		while visualToken == self._chargeCooldownVisualToken do
+			local remaining = Config.Combat.ChargeCooldownSeconds
+				- (os.clock() - self._lastChargeRequestedAt)
+			if remaining <= 0 then
+				break
+			end
+
+			ContextActionService:SetTitle(ACTION_CHARGE, string.format("%.1f", remaining))
+			local button = ContextActionService:GetButton(ACTION_CHARGE)
+			if button and button:IsA("ImageButton") then
+				button.ImageTransparency = 0.42
+			end
+			task.wait(0.1)
+		end
+
+		if visualToken == self._chargeCooldownVisualToken then
+			self:_resetChargeCooldownVisual()
+		end
+	end)
+end
+
+function CombatController:_pulseCamera(
+	fieldOfViewKick: number,
+	kickSeconds: number,
+	settleSeconds: number
+)
 	local camera = workspace.CurrentCamera
 	if not camera then
 		return
 	end
 
-	local outward = TweenService:Create(camera, TweenInfo.new(0.08), {
-		FieldOfView = Config.StarterKaiju.CameraFieldOfView + 3,
+	local outward = TweenService:Create(camera, TweenInfo.new(kickSeconds, Enum.EasingStyle.Quad), {
+		FieldOfView = Config.StarterKaiju.CameraFieldOfView + fieldOfViewKick,
 	})
-	local inward = TweenService:Create(camera, TweenInfo.new(0.18), {
-		FieldOfView = Config.StarterKaiju.CameraFieldOfView,
-	})
+	local inward = TweenService:Create(
+		camera,
+		TweenInfo.new(settleSeconds, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{
+			FieldOfView = Config.StarterKaiju.CameraFieldOfView,
+		}
+	)
 	outward:Play()
 	outward.Completed:Once(function()
 		inward:Play()
 	end)
+end
+
+function CombatController:_emitChargeFeedback()
+	local character = player.Character
+	local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+	if not character or not rootPart or not rootPart:IsA("BasePart") then
+		return
+	end
+
+	local emitter = Instance.new("ParticleEmitter")
+	emitter.Name = "ChargeEnergyBurst"
+	emitter.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(224, 255, 251)),
+		ColorSequenceKeypoint.new(0.35, Color3.fromRGB(53, 225, 211)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(31, 126, 155)),
+	})
+	emitter.LightEmission = 0.9
+	emitter.Lifetime = NumberRange.new(0.28, 0.48)
+	emitter.Speed = NumberRange.new(16, 28)
+	emitter.Drag = 4
+	emitter.SpreadAngle = Vector2.new(28, 28)
+	emitter.EmissionDirection = Enum.NormalId.Back
+	emitter.Rate = 0
+	emitter.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 2.8),
+		NumberSequenceKeypoint.new(0.45, 1.5),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	emitter.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.08),
+		NumberSequenceKeypoint.new(0.7, 0.25),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	emitter.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	emitter.Parent = rootPart
+	emitter:Emit(28)
+	Debris:AddItem(emitter, 1)
+
+	local highlight = Instance.new("Highlight")
+	highlight.Name = "ChargeEnergyHighlight"
+	highlight.Adornee = character
+	highlight.DepthMode = Enum.HighlightDepthMode.Occluded
+	highlight.FillColor = Color3.fromRGB(53, 225, 211)
+	highlight.FillTransparency = 0.72
+	highlight.OutlineColor = Color3.fromRGB(224, 255, 251)
+	highlight.OutlineTransparency = 0.08
+	highlight.Parent = character
+
+	TweenService:Create(
+		highlight,
+		TweenInfo.new(0.38, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ FillTransparency = 1, OutlineTransparency = 1 }
+	):Play()
+	Debris:AddItem(highlight, 0.45)
 end
 
 local function styleTouchButton(button: ImageButton, color: Color3, buttonSize: number)
@@ -138,6 +238,8 @@ function CombatController:_layoutTouchButtons()
 	then
 		return
 	end
+	smashButton.Name = "SmashTouchButton"
+	chargeButton.Name = "ChargeTouchButton"
 
 	local buttonFrame = smashButton.Parent
 	if not buttonFrame or not buttonFrame:IsA("GuiObject") then
@@ -242,14 +344,24 @@ function CombatController:Start()
 
 	self._resultConnection = self._abilityResultRemote.OnClientEvent:Connect(
 		function(result: AbilityResult)
-			if result.accepted and (result.hitCount > 0 or result.abilityId == "charge") then
-				self:_pulseCamera()
+			if not result.accepted then
+				if result.abilityId == "charge" then
+					self:_resetChargeCooldownVisual()
+				end
+				return
+			end
+			if result.abilityId == "charge" then
+				self:_pulseCamera(8, 0.06, 0.28)
+				self:_emitChargeFeedback()
+			elseif result.hitCount > 0 then
+				self:_pulseCamera(3, 0.08, 0.18)
 			end
 		end
 	)
 end
 
 function CombatController:Destroy()
+	self:_resetChargeCooldownVisual()
 	ContextActionService:UnbindAction(ACTION_BASIC_ATTACK)
 	ContextActionService:UnbindAction(ACTION_CHARGE)
 	if self._resultConnection then

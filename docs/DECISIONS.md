@@ -73,3 +73,9 @@ Basis: stakeholder feedback clarified that the intended reference is a classic b
 Compute `SMASH` and `CHARGE` size and position from Roblox's live `ContextButtonFrame`, rather than fixed screen percentages. Keep targets between 72 and 96 pixels, maintain a proportional gap, and stack them in a column immediately left of Roblox's native Jump control whenever the preferred row is obstructed. Clamp the fallback column against the full viewport, not only its narrower parent frame.
 
 Basis: an iPad A16 reproduction showed the former percentage positions resolving inside Roblox's lower-right action frame, not the full screen, leaving a three-pixel action overlap. The first separated row also intersected Roblox's later-created Jump button. Frame-relative anchors, late native-control detection, and a screen-bounded obstacle fallback keep all three actions separated across resolution and orientation changes.
+
+## 2026-08-01 — Make charge legible at kaiju scale
+
+Increase the validated charge from 44 studs/second for 0.45 seconds to 80 studs/second for 0.6 seconds, producing an unobstructed travel budget of approximately 48 studs. On server acceptance, add a client-only 8-degree FOV kick, a short cyan particle burst, and a fading Brontide highlight; none of these cosmetics affect simulation or authority.
+
+Basis: an actual iPad report said charge appeared to do nothing. Reproduction proved that the touch request was accepted but moved only about 20.7 studs, which read too similarly to the 24 studs/second walk speed on a four-times-scale character and distant camera. A roughly 3.3× walk-speed burst plus three brief feedback channels creates a distinct locomotion verb without adding input blocking, hit-stop, or camera shake.

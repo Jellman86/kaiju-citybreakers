@@ -17,7 +17,7 @@ local Config = {
 		BasicAttackForwardOffset = 13,
 		MaximumStructuresPerAttack = 3,
 		ChargeCooldownSeconds = 2.5,
-		ChargeDurationSeconds = 0.45,
+		ChargeDurationSeconds = 0.6,
 		ChargeVerticalVelocity = 2,
 	},
 
@@ -31,7 +31,7 @@ local Config = {
 		DisplayName = "Brontide",
 		MaxHealth = 1000,
 		WalkSpeed = 24,
-		ChargeSpeed = 44,
+		ChargeSpeed = 80,
 		PrototypeScale = 4,
 		CameraMinZoom = 24,
 		CameraMaxZoom = 42,
