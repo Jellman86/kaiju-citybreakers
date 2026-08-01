@@ -198,3 +198,24 @@ This one-client regression does not prove late-join or stream-out/stream-in reco
 ### Decision
 
 Retain the pool because it reduces the representative collapse hot path in this Studio test and, more importantly, makes allocation, active count, overflow, and cleanup explicitly bounded. Do not generalize the microbenchmark to physical mobile performance. Dust particles remain deferred until the Phase 2C archetype scene can be profiled for draw calls and frame time on a representative lower-end device.
+
+## 2026-08-01 — Destructible city archetype integration
+
+- Build commit: `ff95af4`
+- Environment: Roblox Studio iPad A16 landscape simulation, one local client and server.
+- Operator: Studio MCP inspection, direct client ability requests, and synthetic navigation; **zero human testers**.
+- Systems: reusable structure builder, warehouse, signal tower, substation, authored state variants, simple collision proxies, material profiles, and existing server-authoritative combat.
+
+### Results
+
+- Exactly four destructibles registered with unique IDs and atomic streaming: the existing gate plus `north_warehouse`, `north_tower`, and `harbour_substation`.
+- The full world changed from the pre-Phase-2C baseline of `203` descendants, `160` `BasePart` instances, and `26` models to `274`, `213`, and `41` respectively. The corresponding SceneAnalysis capture changed from `845` to `916` total instances and from `241` to `309` 3D objects. The triangle/render-pass query returned no valid pass data in this view, so no render-cost claim is made.
+- The warehouse, tower, and substation used `28`, `31`, and `27` authored `BasePart` instances respectively, below the provisional ceiling of `35`. All decorative parts were anchored and excluded from collision, touch, and queries.
+- Each structure began `Intact` at its configured health. Client ability requests passed the real remote, cooldown, spatial hitbox, and authoritative damage path; one request immediately after a synthetic relocation missed spatially and a normal retry landed. The structures ended at health `0`, state `Collapsed`, and sequence `2` after `3`, `4`, and `3` landed hits.
+- Client and server state agreed. Only the collapsed variant was visible; the intact proxy was disabled, the low collapsed proxy was enabled, and the dedicated damage hitbox remained queryable in `DestructibleQuery`.
+- Synthetic navigation crossed the collapsed substation from west to east and ended near `(83.2, 12.0, -68.7)` with health `1000` and concrete floor contact.
+- No gameplay warnings or runtime errors appeared in client or server output.
+
+### Decision
+
+Retain the builder and all three footprints for the next test slice. They meet the automated contract, budget, authority, and traversal gates without increasing the world bounds or adding an external asset or dependency. Before multiplying them into the mixed district, run a two-client state/late-stream regression. Human target choice, silhouette readability, route comprehension, and representative-device frame and memory cost remain unproven.
