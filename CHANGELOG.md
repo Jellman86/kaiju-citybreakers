@@ -18,6 +18,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 - Repository standards, contribution and security policies, dependency and asset registers, CODEOWNERS, pull-request checklist, and automated standards checks.
 - Pinned, audited game-development Codex guidance for Roblox Luau, game feel, UI/UX, level design, performance profiling, and audio design.
 - Deliberate keyboard/mouse, gamepad, and touchscreen controls with device-aware prompts, labelled touch actions, and safe-area HUD layout.
+- Classic third-person mouse aiming on desktop: Brontide smoothly faces the world point under the cursor while movement remains camera-relative; gamepad and touch retain native auto-facing.
 
 ### Changed
 

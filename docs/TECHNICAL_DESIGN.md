@@ -58,6 +58,7 @@ Calculates round results on the server. Persistence is not implemented until the
 ## Planned client controllers
 
 - InputController: device-independent actions.
+- AimController: cursor-to-world yaw facing for keyboard/mouse, with native auto-facing retained for gamepad and touch.
 - CameraController: scale, obstruction, shake, and accessibility settings.
 - KaijuController: predicted animation and ability feedback.
 - RoundController: local round snapshot and timer.
@@ -102,7 +103,7 @@ Initial remote:
 
 Later remotes:
 
-- `AbilityRequest`: client-to-server intent with ability ID, input sequence, aim point, and client timestamp.
+- `AbilityRequest`: client-to-server intent with ability ID and input sequence; the server evaluates the replicated character facing and authoritative hitbox.
 - `AbilityResult`: server-to-client confirmation/rejection and authoritative targets.
 - `DestructionState`: server-to-client structure state transitions.
 - `ObjectiveState`: server-to-client objective progress.
@@ -163,4 +164,3 @@ Initial targets, adjusted after device testing:
 - Confirm round and knockout state before abilities.
 - Calculate hits on the server using server-observed state.
 - Keep mutation and unlock definitions in server-readable shared configuration, with ownership validated server-side.
-

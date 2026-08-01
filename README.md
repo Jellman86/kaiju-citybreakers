@@ -34,11 +34,12 @@ The first gate is simple: moving and breaking buildings must feel good before pr
 
 | Action | Keyboard and mouse | Gamepad | Touchscreen |
 | --- | --- | --- | --- |
-| Move / camera | `WASD` / mouse | Left stick / right stick | Roblox thumbstick / drag |
+| Move / aim / camera | `WASD` / mouse cursor / mouse drag | Left stick / right stick | Roblox thumbstick / drag |
 | Charge | `Q` or Shift | Left trigger or `B` | `CHARGE` button |
 | Smash | `E` or click | Right trigger | `SMASH` button |
 
 The HUD follows Roblox's preferred input and changes its prompt when a player switches between keyboard/mouse, gamepad, and touch.
+On keyboard and mouse, Brontide faces the world point under the cursor so players can strafe and attack independently of their movement direction. Gamepad and touchscreen players retain Roblox's natural stick-based character facing.
 
 ## Free toolchain
 

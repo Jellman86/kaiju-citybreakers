@@ -36,6 +36,9 @@ local Config = {
 		CameraMinZoom = 24,
 		CameraMaxZoom = 42,
 		CameraFieldOfView = 67,
+		AimRayDistance = 1000,
+		AimTurnResponsiveness = 18,
+		AimMinimumDistance = 1,
 	},
 
 	Prototype = {

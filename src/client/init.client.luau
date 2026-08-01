@@ -2,6 +2,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local AimController = require(script.Controllers.AimController)
 local CameraController = require(script.Controllers.CameraController)
 local CombatController = require(script.Controllers.CombatController)
 local DestructionController = require(script.Controllers.DestructionController)
@@ -15,12 +16,14 @@ local abilityResultRemote = remotes:WaitForChild("AbilityResult") :: RemoteEvent
 local destructionStateRemote = remotes:WaitForChild("DestructionState") :: RemoteEvent
 
 local roundController = RoundController.new(roundStateRemote)
+local aimController = AimController.new()
 local cameraController = CameraController.new()
 local combatController = CombatController.new(abilityRequestRemote, abilityResultRemote)
 local destructionController = DestructionController.new(destructionStateRemote)
 local prototypeHudController = PrototypeHudController.new(roundController)
 
 roundController:Start()
+aimController:Start()
 cameraController:Start()
 combatController:Start()
 destructionController:Start()
