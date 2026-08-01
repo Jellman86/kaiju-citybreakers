@@ -484,3 +484,21 @@ Retain the localized rupture system and its two-mark-per-structure budget. This 
 - SHA-256: `958a1f64777fb79b82c5956864c562b8f389b3c3681866680d574c220ace2620`.
 - The synchronized sole Studio editor published the exact project source to existing place `137103245194702` in universe `10609698937` at 19:45 BST. Studio logged `Published new changes in "Kaiju Citybreakers" to Roblox.` and identified the release as `v13`.
 - A fresh physical-phone visual test remains pending; this release is intended for that owner-device check and the subjective rupture quality is not represented as passed.
+
+## 2026-08-01 — Smash animation, rupture scale, and functional power-plant pass
+
+- Implementation commit: `ae7a061d532a2d71ffef0b143595b0850836efdd`.
+- Environment: the sole existing Roblox Studio editor with native `StudioTestService`, one server, one initial client and one late client; **zero human testers**.
+- Systems: procedural Smash pose, current and legacy avatar-joint compatibility, larger layered surface rupture, Arc Power Plant functional dressing, asymmetric combat/lifecycle coverage, and late-join destruction reconstruction.
+
+### Exact-commit results
+
+- A normal client Smash reached the authoritative server path, damaged `arc_cooling_tower_west`, and rendered one eight-part non-emissive rupture. Its measured client bounding span was `36.11` studs, above the provisional `22`-stud phone-readability gate.
+- The client played the Smash windup/strike/recovery sequence and returned `ClientSmashAnimationPhase` to `Idle`. The initial Motor6D-only attempt exposed current `AnimationConstraint` avatar joints; the retained implementation supports both joint types and filters out Brontide shell parts that share shoulder names.
+- Arc Power Plant contained `33` dressing parts and the required cooling-water header, steam-service header, transformer/switchgear yard, high-voltage busbar, and transmission gantry. No decorative `EnergyChannel` floor strips remained.
+- Human fire, kaiju and human death/respawn, controlled contact damage, role-specific controls, an actual `11.16:1` character height ratio, warehouse collapse, late-join reconstruction, and disconnect promotion all passed in the same structured run.
+- The final structured result returned `passed = true`, `localizedExistingHoles = 1`, `localizedLateHoles = 1`, `localizedDamagedNeon = 0`, and `smashAnimationPhase = "Idle"`.
+
+### Decision
+
+Retain the joint-compatible Smash pose, eight-part rupture, and functional plant silhouette for the next physical-phone judgement. The engineering gate proves bounded construction, recovery, replication, and regression compatibility; it does not prove the animation timing feels powerful or that an unprompted player identifies the district as a power station. Those remain human/device gates.
