@@ -502,3 +502,11 @@ Retain the localized rupture system and its two-mark-per-structure budget. This 
 ### Decision
 
 Retain the joint-compatible Smash pose, eight-part rupture, and functional plant silhouette for the next physical-phone judgement. The engineering gate proves bounded construction, recovery, replication, and regression compatibility; it does not prove the animation timing feels powerful or that an unprompted player identifies the district as a power station. Those remain human/device gates.
+
+### Production publication
+
+- Published source commit: `64e77e4241c5ccf81e4576f821ea08403dae6c9b` (gameplay implementation `ae7a061d532a2d71ffef0b143595b0850836efdd`).
+- Generated artifact: `build/KaijuCitybreakers.rbxlx`.
+- SHA-256: `70c945d00038e46e379cf25830131dc6ed442e74391088b48038930076306333`.
+- The sole Studio editor discarded its synchronized in-memory place, reopened the committed build from disk, and overwrote the existing `Kaiju Citybreakers` place at 20:39 BST. Studio displayed `Successfully published!` and logged `Published "Kaiju Citybreakers" to Roblox.`
+- A fresh physical-phone check of Smash feel, rupture readability, and unprompted power-station recognition remains pending.
