@@ -24,6 +24,8 @@ local Config = {
 	Destruction = {
 		MaximumCosmeticDebris = 100,
 		CosmeticDebrisLifetimeSeconds = 5,
+		FragmentsPerCollapse = 10,
+		MaximumEffectDistance = 300,
 	},
 
 	StarterKaiju = {

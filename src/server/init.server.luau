@@ -53,6 +53,7 @@ combatService:Start()
 
 game:BindToClose(function()
 	combatService:Stop()
+	destructionService:Stop()
 	kaijuService:Stop()
 	roundService:Stop()
 	playtestService:Stop()

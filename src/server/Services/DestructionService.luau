@@ -1,27 +1,65 @@
 --!strict
 
 local CollectionService = game:GetService("CollectionService")
+local PhysicsService = game:GetService("PhysicsService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local DestructibleContract = require(ReplicatedStorage.Shared.DestructibleContract)
 local Types = require(ReplicatedStorage.Shared.Types)
 
+type Components = DestructibleContract.Components
+type DestructionEvent = Types.DestructionEvent
 type DestructionState = Types.DestructionState
 type StateCallback = (player: Player, structure: Model, state: DestructionState) -> ()
+
+type StructureRecord = {
+	structure: Model,
+	structureId: string,
+	maxHealth: number,
+	materialProfile: string,
+	components: Components,
+	state: DestructionState,
+	sequence: number,
+}
 
 local DestructionService = {}
 DestructionService.__index = DestructionService
 
-local function setVariantVisible(variant: Model, visible: boolean)
-	for _, descendant in variant:GetDescendants() do
-		if descendant:IsA("BasePart") then
-			descendant.Transparency = if visible then 0 else 1
-			descendant.CanCollide = visible
-			descendant.CanTouch = visible
-			descendant.CanQuery = visible
-		elseif descendant:IsA("BillboardGui") then
-			descendant.Enabled = visible
+local function isFinitePositiveNumber(value: any): boolean
+	return typeof(value) == "number" and value == value and value > 0 and value < math.huge
+end
+
+local function configureCollisionGroup(name: string)
+	if not PhysicsService:IsCollisionGroupRegistered(name) then
+		PhysicsService:RegisterCollisionGroup(name)
+	end
+end
+
+local function configureVisuals(components: Components)
+	for _, variant in
+		{
+			components.intactVisual,
+			components.damagedVisual,
+			components.collapsedVisual,
+		}
+	do
+		for _, descendant in variant:GetDescendants() do
+			if descendant:IsA("BasePart") then
+				descendant.CanCollide = false
+				descendant.CanTouch = false
+				descendant.CanQuery = false
+			end
 		end
 	end
+end
+
+local function setCollisionProxyActive(proxy: BasePart, active: boolean)
+	proxy.Transparency = 1
+	proxy.Anchored = true
+	proxy.CanCollide = active
+	proxy.CanTouch = false
+	proxy.CanQuery = false
+	proxy.CastShadow = false
 end
 
 function DestructionService.new(destructionStateRemote: RemoteEvent, onStateChanged: StateCallback)
@@ -29,56 +67,213 @@ function DestructionService.new(destructionStateRemote: RemoteEvent, onStateChan
 
 	self._destructionStateRemote = destructionStateRemote
 	self._onStateChanged = onStateChanged
+	self._records = {} :: { [Model]: StructureRecord }
+	self._recordsById = {} :: { [string]: StructureRecord }
+	self._connections = {} :: { RBXScriptConnection }
 
 	return self
 end
 
-function DestructionService:_applyState(structure: Model, state: DestructionState)
-	for _, variantName in { "Intact", "Damaged", "Collapsed" } do
-		local variant = structure:FindFirstChild(variantName)
-		assert(
-			variant and variant:IsA("Model"),
-			`{structure:GetFullName()} is missing Model {variantName}`
-		)
-		setVariantVisible(variant, variantName == state)
+function DestructionService:_configureCollisionGroups()
+	configureCollisionGroup(DestructibleContract.DamageHitboxCollisionGroup)
+	configureCollisionGroup(DestructibleContract.AttackQueryCollisionGroup)
+
+	PhysicsService:CollisionGroupSetCollidable(
+		DestructibleContract.AttackQueryCollisionGroup,
+		"Default",
+		false
+	)
+	PhysicsService:CollisionGroupSetCollidable(
+		DestructibleContract.AttackQueryCollisionGroup,
+		DestructibleContract.DamageHitboxCollisionGroup,
+		true
+	)
+	PhysicsService:CollisionGroupSetCollidable(
+		DestructibleContract.DamageHitboxCollisionGroup,
+		"Default",
+		false
+	)
+	PhysicsService:CollisionGroupSetCollidable(
+		DestructibleContract.DamageHitboxCollisionGroup,
+		DestructibleContract.DamageHitboxCollisionGroup,
+		false
+	)
+end
+
+function DestructionService:_applyCollisionState(record: StructureRecord, state: DestructionState)
+	setCollisionProxyActive(record.components.intactCollision, state ~= "Collapsed")
+	setCollisionProxyActive(record.components.collapsedCollision, state == "Collapsed")
+end
+
+function DestructionService:_setState(
+	record: StructureRecord,
+	state: DestructionState,
+	player: Player?,
+	broadcast: boolean
+)
+	local changed = record.state ~= state
+	if changed then
+		record.sequence += 1
+	end
+	record.state = state
+
+	self:_applyCollisionState(record, state)
+	record.structure:SetAttribute(DestructibleContract.Attribute.State, state)
+	record.structure:SetAttribute(DestructibleContract.Attribute.StateSequence, record.sequence)
+
+	if not changed or not broadcast then
+		return
 	end
 
-	structure:SetAttribute("DestructionState", state)
+	local payload: DestructionEvent = {
+		structureId = record.structureId,
+		state = state,
+		sequence = record.sequence,
+		position = record.components.fxOrigin.WorldPosition,
+		materialProfile = record.materialProfile,
+	}
+	self._destructionStateRemote:FireAllClients(payload)
+
+	if player then
+		self._onStateChanged(player, record.structure, state)
+	end
+end
+
+function DestructionService:_register(tagged: Instance)
+	if not tagged:IsA("Model") or self._records[tagged] then
+		return
+	end
+
+	local components, validationError = DestructibleContract.Validate(tagged)
+	if not components then
+		warn(`[DestructionService] Ignoring invalid destructible: {validationError}`)
+		return
+	end
+
+	local structureId = tagged:GetAttribute(DestructibleContract.Attribute.StructureId) :: string
+	if self._recordsById[structureId] then
+		warn(`[DestructionService] Duplicate StructureId ignored: {structureId}`)
+		return
+	end
+
+	local maxHealth = tagged:GetAttribute(DestructibleContract.Attribute.MaxHealth) :: number
+	local materialProfile =
+		tagged:GetAttribute(DestructibleContract.Attribute.MaterialProfile) :: string
+	local record: StructureRecord = {
+		structure = tagged,
+		structureId = structureId,
+		maxHealth = maxHealth,
+		materialProfile = materialProfile,
+		components = components,
+		state = "Intact",
+		sequence = 0,
+	}
+
+	configureVisuals(components)
+	components.damageHitbox.Transparency = 1
+	components.damageHitbox.Anchored = true
+	components.damageHitbox.CanCollide = false
+	components.damageHitbox.CanTouch = false
+	components.damageHitbox.CanQuery = true
+	components.damageHitbox.CastShadow = false
+	components.damageHitbox.CollisionGroup = DestructibleContract.DamageHitboxCollisionGroup
+
+	self._records[tagged] = record
+	self._recordsById[structureId] = record
+	tagged:SetAttribute(DestructibleContract.Attribute.CurrentHealth, maxHealth)
+	self:_setState(record, "Intact", nil, false)
+end
+
+function DestructionService:_unregister(tagged: Instance)
+	if not tagged:IsA("Model") then
+		return
+	end
+
+	local record = self._records[tagged]
+	if not record then
+		return
+	end
+
+	self._records[tagged] = nil
+	if self._recordsById[record.structureId] == record then
+		self._recordsById[record.structureId] = nil
+	end
 end
 
 function DestructionService:Start()
-	for _, tagged in CollectionService:GetTagged("Destructible") do
-		if tagged:IsA("Model") then
-			self:_applyState(tagged, "Intact")
-		end
+	self:_configureCollisionGroups()
+
+	table.insert(
+		self._connections,
+		CollectionService:GetInstanceAddedSignal(DestructibleContract.Tag)
+			:Connect(function(instance)
+				self:_register(instance)
+			end)
+	)
+	table.insert(
+		self._connections,
+		CollectionService:GetInstanceRemovedSignal(DestructibleContract.Tag)
+			:Connect(function(instance)
+				self:_unregister(instance)
+			end)
+	)
+
+	for _, tagged in CollectionService:GetTagged(DestructibleContract.Tag) do
+		self:_register(tagged)
 	end
 end
 
 function DestructionService:Damage(player: Player, structure: Model, amount: number): boolean
-	if not CollectionService:HasTag(structure, "Destructible") then
+	local record = self._records[structure]
+	if not record or not isFinitePositiveNumber(amount) then
 		return false
 	end
 
-	local currentState = structure:GetAttribute("DestructionState")
+	local currentState = record.state
 	if currentState == "Collapsed" then
 		return false
 	end
 
-	local maxHealth = structure:GetAttribute("MaxHealth")
-	local currentHealth = structure:GetAttribute("CurrentHealth")
-	if typeof(maxHealth) ~= "number" or typeof(currentHealth) ~= "number" then
-		warn(`Invalid destructible health attributes on {structure:GetFullName()}`)
+	local currentHealth = structure:GetAttribute(DestructibleContract.Attribute.CurrentHealth)
+	if not isFinitePositiveNumber(currentHealth) then
+		warn(`Invalid CurrentHealth on registered destructible {structure:GetFullName()}`)
 		return false
 	end
 
-	local nextHealth = math.max(0, currentHealth - math.max(0, amount))
+	local nextHealth = math.max(0, math.min(record.maxHealth, currentHealth - amount))
 	local nextState: DestructionState = if nextHealth <= 0 then "Collapsed" else "Damaged"
-	structure:SetAttribute("CurrentHealth", nextHealth)
-	self:_applyState(structure, nextState)
-	self._destructionStateRemote:FireAllClients(structure, nextState)
-	self._onStateChanged(player, structure, nextState)
+	structure:SetAttribute(DestructibleContract.Attribute.CurrentHealth, nextHealth)
+	self:_setState(record, nextState, player, true)
 
 	return true
+end
+
+function DestructionService:Reset(structure: Model): boolean
+	local record = self._records[structure]
+	if not record then
+		return false
+	end
+
+	structure:SetAttribute(DestructibleContract.Attribute.CurrentHealth, record.maxHealth)
+	self:_setState(record, "Intact", nil, true)
+	return true
+end
+
+function DestructionService:GetRegisteredCount(): number
+	local count = 0
+	for _ in self._records do
+		count += 1
+	end
+	return count
+end
+
+function DestructionService:Stop()
+	for _, connection in self._connections do
+		connection:Disconnect()
+	end
+	table.clear(self._connections)
+	table.clear(self._records)
+	table.clear(self._recordsById)
 end
 
 return DestructionService

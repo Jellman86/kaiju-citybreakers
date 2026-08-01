@@ -5,6 +5,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local DestructibleContract = require(ReplicatedStorage.Shared.DestructibleContract)
 local Types = require(ReplicatedStorage.Shared.Types)
 
 type AbilityResult = Types.AbilityResult
@@ -22,7 +23,10 @@ CombatService.__index = CombatService
 local function findDestructible(part: BasePart): Model?
 	local candidate: Instance? = part
 	while candidate and candidate ~= workspace do
-		if candidate:IsA("Model") and CollectionService:HasTag(candidate, "Destructible") then
+		if
+			candidate:IsA("Model")
+			and CollectionService:HasTag(candidate, DestructibleContract.Tag)
+		then
 			return candidate
 		end
 		candidate = candidate.Parent
@@ -130,8 +134,9 @@ function CombatService:_performBasicAttack(player: Player, sequence: number)
 	state.lastBasicAttack = now
 
 	local overlapParams = OverlapParams.new()
-	overlapParams.FilterType = Enum.RaycastFilterType.Exclude
-	overlapParams.FilterDescendantsInstances = { character }
+	overlapParams.CollisionGroup = DestructibleContract.AttackQueryCollisionGroup
+	overlapParams.ExcludeInstances = { character }
+	overlapParams.MaxParts = Config.Combat.MaximumStructuresPerAttack
 
 	local hitboxCFrame = rootPart.CFrame * CFrame.new(0, 0, -Config.Combat.BasicAttackForwardOffset)
 	local parts = workspace:GetPartBoundsInBox(

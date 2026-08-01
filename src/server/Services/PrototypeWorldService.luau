@@ -5,6 +5,7 @@ local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local DestructibleContract = require(ReplicatedStorage.Shared.DestructibleContract)
 
 local PrototypeWorldService = {}
 PrototypeWorldService.__index = PrototypeWorldService
@@ -49,6 +50,21 @@ local function createTrimPart(
 	part.CanTouch = false
 	part.CanQuery = false
 	part.CastShadow = false
+	return part
+end
+
+local function createVisualPart(
+	name: string,
+	size: Vector3,
+	cframe: CFrame,
+	color: Color3,
+	material: Enum.Material,
+	parent: Instance
+): Part
+	local part = createPart(name, size, cframe, color, material, parent)
+	part.CanCollide = false
+	part.CanTouch = false
+	part.CanQuery = false
 	return part
 end
 
@@ -235,18 +251,22 @@ end
 local function createWall(parent: Instance): Model
 	local wall = Instance.new("Model")
 	wall.Name = "BreakableCityGate"
-	wall:SetAttribute("StructureId", Config.Prototype.WallStructureId)
-	wall:SetAttribute("MaxHealth", Config.Prototype.WallMaxHealth)
-	wall:SetAttribute("CurrentHealth", Config.Prototype.WallMaxHealth)
-	wall:SetAttribute("DestructionState", "Intact")
-	wall.Parent = parent
+	wall.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
+	wall:SetAttribute(DestructibleContract.Attribute.StructureId, Config.Prototype.WallStructureId)
+	wall:SetAttribute(DestructibleContract.Attribute.MaxHealth, Config.Prototype.WallMaxHealth)
+	wall:SetAttribute(DestructibleContract.Attribute.EnergyValue, 10)
+	wall:SetAttribute(DestructibleContract.Attribute.MaterialProfile, "Concrete")
 
 	local wallCFrame = CFrame.new(0, 11, -28)
 
+	local visuals = Instance.new("Model")
+	visuals.Name = "Visuals"
+	visuals.Parent = wall
+
 	local intact = Instance.new("Model")
 	intact.Name = "Intact"
-	intact.Parent = wall
-	local intactPart = createPart(
+	intact.Parent = visuals
+	local intactPart = createVisualPart(
 		"Gate",
 		Vector3.new(30, 22, 7),
 		wallCFrame,
@@ -266,8 +286,8 @@ local function createWall(parent: Instance): Model
 
 	local damaged = Instance.new("Model")
 	damaged.Name = "Damaged"
-	damaged.Parent = wall
-	local damagedPart = createPart(
+	damaged.Parent = visuals
+	local damagedPart = createVisualPart(
 		"Gate",
 		Vector3.new(30, 22, 7),
 		wallCFrame * CFrame.Angles(0, 0, math.rad(-2)),
@@ -293,11 +313,11 @@ local function createWall(parent: Instance): Model
 
 	local collapsed = Instance.new("Model")
 	collapsed.Name = "Collapsed"
-	collapsed.Parent = wall
+	collapsed.Parent = visuals
 	for index = 1, 7 do
 		local column = ((index - 1) % 4) - 1.5
 		local row = math.floor((index - 1) / 4)
-		createPart(
+		createVisualPart(
 			`Rubble{index}`,
 			Vector3.new(6.5, 3 + (index % 2), 6),
 			CFrame.new(column * 6.5, 1.5 + row, -28 + row * 4)
@@ -308,7 +328,58 @@ local function createWall(parent: Instance): Model
 		)
 	end
 
-	CollectionService:AddTag(wall, "Destructible")
+	local collision = Instance.new("Model")
+	collision.Name = "Collision"
+	collision.Parent = wall
+
+	local intactProxy = createPart(
+		"IntactProxy",
+		Vector3.new(30, 22, 7),
+		wallCFrame,
+		Color3.new(0, 0, 0),
+		Enum.Material.SmoothPlastic,
+		collision
+	)
+	intactProxy.Transparency = 1
+	intactProxy.CanTouch = false
+	intactProxy.CanQuery = false
+	intactProxy.CastShadow = false
+
+	local collapsedProxy = createPart(
+		"CollapsedProxy",
+		Vector3.new(30, 1.5, 8),
+		CFrame.new(0, 0.75, -28),
+		Color3.new(0, 0, 0),
+		Enum.Material.SmoothPlastic,
+		collision
+	)
+	collapsedProxy.Transparency = 1
+	collapsedProxy.CanCollide = false
+	collapsedProxy.CanTouch = false
+	collapsedProxy.CanQuery = false
+	collapsedProxy.CastShadow = false
+
+	local damageHitbox = createPart(
+		"DamageHitbox",
+		Vector3.new(30, 22, 10),
+		wallCFrame,
+		Color3.new(0, 0, 0),
+		Enum.Material.SmoothPlastic,
+		wall
+	)
+	damageHitbox.Transparency = 1
+	damageHitbox.CanCollide = false
+	damageHitbox.CanTouch = false
+	damageHitbox.CanQuery = true
+	damageHitbox.CastShadow = false
+
+	local fxOrigin = Instance.new("Attachment")
+	fxOrigin.Name = "FxOrigin"
+	fxOrigin.Position = Vector3.new(0, 0, 0)
+	fxOrigin.Parent = damageHitbox
+
+	CollectionService:AddTag(wall, DestructibleContract.Tag)
+	wall.Parent = parent
 	return wall
 end
 

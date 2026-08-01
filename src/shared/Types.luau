@@ -23,4 +23,12 @@ export type AbilityResult = {
 	reason: string?,
 }
 
+export type DestructionEvent = {
+	structureId: string,
+	state: DestructionState,
+	sequence: number,
+	position: Vector3,
+	materialProfile: string,
+}
+
 return {}

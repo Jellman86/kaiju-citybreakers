@@ -56,6 +56,19 @@ The thresholds below are **provisional project targets**, not published Roblox b
 | H6 | Authored destruction can create spectacle within a mobile budget. | Client and server frame time, memory trend, active physics assemblies, network traffic, and cleanup. | Representative lower-end profile remains at or above 30 FPS during the stress scene, with no unbounded memory or debris growth. | Lower debris lifetime/count, simplify collision, pool effects, and reduce simultaneous collapses. |
 | H7 | The starter kaiju's weight comes from presentation as well as size. | Preference test across animation timing, camera, audio, hit-stop, and environmental reaction variants. | A clear majority describes the improved variant as heavier or more powerful without being told the intent. | Iterate presentation layers before increasing model size or damage. |
 
+## Phase 2 destruction evidence specification
+
+The implementation contract and source links are consolidated in [DESTRUCTION_SYSTEM.md](DESTRUCTION_SYSTEM.md). Its current feature claims are classified as follows:
+
+| Claim | Classification | Evidence or measurement |
+| --- | --- | --- |
+| Authoritative state with client-local cosmetic effects reduces unnecessary replication and keeps outcomes secure. | Platform evidence and technical requirement. | Roblox performance and client-server security guidance. |
+| One query hitbox and simple collision proxies are preferable to querying or colliding with decorative geometry. | Platform evidence plus engineering inference. | Roblox collision-fidelity, collision-group, and spatial-query documentation; verify query counts and route traversal. |
+| Atomic streaming is appropriate for the complete authored state package. | Platform evidence plus engineering inference. | Roblox streaming documentation; verify late stream-in and memory before expanding package complexity. |
+| Three authored states provide enough spectacle for the kaiju fantasy. | Hypothesis H6. | Human readability and replay evidence plus the twenty-collapse device stress scene. |
+| Charge should damage structures along its travel path. | Unregistered hypothesis; deferred. | Define expected role, use rate, collision behaviour, and a test before implementation. |
+| Direct energy absorption improves the break loop. | Unregistered hypothesis; deferred. | Define comprehension and momentum measures before implementing the reward presentation. |
+
 Small samples are for finding problems, not proving broad market demand. We will record sample size beside every result and avoid percentages when fewer than five people have tested a version.
 
 ## Instrumentation plan

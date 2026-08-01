@@ -19,6 +19,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 - Pinned, audited game-development Codex guidance for Roblox Luau, game feel, UI/UX, level design, performance profiling, and audio design.
 - Deliberate keyboard/mouse, gamepad, and touchscreen controls with device-aware prompts, labelled touch actions, and safe-area HUD layout.
 - Classic third-person mouse camera on desktop: mouse movement orbits behind Brontide, the creature follows the view direction, scroll controls zoom, and camera collision protects visibility; gamepad and touch retain native camera controls.
+- Research-backed destruction specification with explicit evidence labels, reusable structure hierarchy, feature tiers, reuse decisions, and provisional Phase 2 test gates.
+- Strict shared destructible contract with validated unique IDs, server-owned health and sequenced state, atomic streaming, dedicated damage hitboxes, and separate intact/collapsed collision proxies.
 
 ### Changed
 
@@ -26,6 +28,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 - Charge movement now uses a short native `LinearVelocity` constraint after Studio testing showed that a one-frame velocity was neutralized by the Humanoid controller.
 - Prototype onboarding now names Brontide and gives a single city-gate objective instead of presenting an abstract feel lab.
 - Charge now travels roughly 48 studs with a stronger speed differential, accepted-action FOV kick, cyan energy burst, and brief body highlight so it reads clearly at kaiju scale.
+- Destruction events now carry compact stable IDs, state sequences, positions, and material profiles; replicated attributes reconstruct visual state for late joiners and streamed-in structures.
+- Destructible visual variants are client-selected and excluded from gameplay collision, touch, and attack queries.
 
 ### Fixed
 
@@ -36,5 +40,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 ### Security
 
 - Client ability requests are type-, state-, cooldown-, character-, rate-, and server-hitbox validated.
+- Invalid or duplicate destructible packages are rejected by the authoritative registry without crashing the round.
 
 Release links will be added when the first version is tagged.

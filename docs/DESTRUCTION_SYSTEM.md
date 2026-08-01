@@ -1,0 +1,119 @@
+# Destruction system specification
+
+This is the implementation contract for the Phase 2 destruction sandbox. It translates the evidence in [RESEARCH.md](RESEARCH.md) into a small system that can be disproved through profiling and human playtests before the city expands.
+
+## Decision boundary
+
+Use authored `Intact`, `Damaged`, and `Collapsed` states for gameplay structures. The server owns health, state, collision, rewards, and objective consequences. Clients select the visible authored state and create bounded cosmetic effects.
+
+Do not use unrestricted fracture, joint-breaking explosions, voxel destruction, or authoritative physical rubble for the vertical slice. Roblox documents that additional simulated assemblies and precise collision increase physics cost, while state changes and effects that do not affect outcomes can be handled with compact replication and client-local visuals. See [Improve performance](https://create.roblox.com/docs/performance-optimization/improve) and [Securing the client-server boundary](https://create.roblox.com/docs/scripting/security/client-server-boundary).
+
+This establishes technical feasibility, not fun. H1 and H6 in [RESEARCH.md](RESEARCH.md) remain open until uncoached human and representative-device evidence exists.
+
+## Reusable model contract
+
+Every model tagged `Destructible` must be an atomic streaming unit and conform to this hierarchy:
+
+```text
+DestructibleBuilding
+├── Visuals
+│   ├── Intact
+│   ├── Damaged
+│   └── Collapsed
+├── Collision
+│   ├── IntactProxy
+│   └── CollapsedProxy
+└── DamageHitbox
+    └── FxOrigin
+```
+
+Required authoring attributes:
+
+| Attribute | Type | Rule |
+| --- | --- | --- |
+| `StructureId` | string | Non-empty and unique within the server. |
+| `MaxHealth` | number | Finite and greater than zero. |
+| `EnergyValue` | number | Finite and non-negative; the reward system will consume it later. |
+| `MaterialProfile` | string | Non-empty feedback profile such as `Concrete`, `Metal`, or `Lightweight`. |
+
+Runtime attributes owned by the server:
+
+- `CurrentHealth`
+- `DestructionState`
+- `DestructionStateSequence`
+
+The shared `DestructibleContract` module is the source of truth for names and validation. Invalid or duplicate structures are ignored with a diagnostic rather than crashing the round.
+
+Roblox tags and attributes are native, saved with the place, and replicated. `CollectionService` also supplies added and removed signals, allowing the same service to register authored and dynamically added packages without hierarchy-specific paths. See [Properties, tags, and attributes](https://create.roblox.com/docs/studio/properties) and [CollectionService](https://create.roblox.com/docs/reference/engine/classes/CollectionService).
+
+## State and replication rules
+
+The allowed forward path is:
+
+```text
+Intact → Damaged → Collapsed
+```
+
+- Positive finite server damage reduces `CurrentHealth` within `[0, MaxHealth]`.
+- Any positive loss that leaves health above zero produces `Damaged`.
+- Zero health produces `Collapsed`.
+- A collapsed structure rejects further damage.
+- Reset restores maximum health and `Intact`; round reset batching is deferred until the round service consumes it.
+- A sequence number increases only when the state changes.
+
+The replicated event contains only `StructureId`, state, sequence, effect position, and material profile. It triggers live feedback; it is not the source of truth. Replicated attributes reconstruct the durable state for late joiners or structures that stream in after their transition. Clients tolerate either arrival order.
+
+## Rendering, collision, and hit detection
+
+- Authored visual parts are anchored and have gameplay collision, touch, and query disabled.
+- Clients use `LocalTransparencyModifier` to select one visible variant without changing authoritative state.
+- `IntactProxy` is the only blocking collision in `Intact` and `Damaged`.
+- `CollapsedProxy` is the only blocking collision in `Collapsed`; it must preserve an intentionally usable route.
+- `DamageHitbox` is invisible, non-colliding, and the only queryable part in the package.
+- The server places damage hitboxes in `DestructibleQuery`. Attack overlaps use `KaijuAttackQuery`, which ignores ordinary world geometry and returns a bounded number of candidates.
+
+This follows Roblox's native collision filtering and `OverlapParams` facilities. See [Collisions and collision groups](https://create.roblox.com/docs/workspace/collisions) and [OverlapParams](https://create.roblox.com/docs/reference/engine/datatypes/OverlapParams).
+
+Set a destructible root to `ModelStreamingMode.Atomic` because the client needs its complete variant package when it becomes eligible to stream. Do not use `Persistent` to bypass streaming. Roblox explicitly recommends atomic models for logical groups and minimizing persistent models. See [Instance streaming](https://create.roblox.com/docs/workspace/streaming).
+
+## Feature tiers
+
+| Tier | Examples | Contract |
+| --- | --- | --- |
+| Full destructible | Warehouse, tower, substation | Three authored states and gameplay collision proxies. |
+| Objective destructible | Gate, generator, defence tower | Full contract plus an objective listener. |
+| Lightweight reactive | Cars, lamps, trees, kiosks | One cheap reaction; separate contract after the full structure gate. |
+| Static | Roads, terrain, distant shells | No destruction registration. |
+
+The city should communicate what can break through consistent visual treatment. Whether this is understood without coaching is a hypothesis measured by time to first hit and collapse, not an assumption.
+
+## Reuse and asset policy
+
+Use Roblox-native tags, attributes, packages, spatial queries, collision groups, streaming, remotes, MicroProfiler, and SceneAnalysisService. No runtime dependency is adopted.
+
+Roblox's free Modern City kit is a modular-workflow reference, not a wholesale Phase 2 import. Its current listing reports 3,025 mesh parts, 796,055 triangles, and eight scripts. Selective pieces may be inspected later in a disposable place, with scripts disabled and performance measured. The system and first three archetypes remain source-controlled primitives until their scale, routes, and state transitions pass. See the [official kit](https://create.roblox.com/store/asset/13168370735) and [modular environment workflow](https://create.roblox.com/docs/tutorials/use-case-tutorials/modeling/assemble-modular-environments).
+
+A general destruction framework or third-party part-cache package would currently add more maintenance and security surface than it removes. The existing native `Debris` cleanup remains temporary. A small fixed-cap client pool is Phase 2B work and must demonstrate a measured improvement or remove an observed allocation spike.
+
+## Provisional Phase 2 gates
+
+These are project thresholds, not Roblox benchmarks:
+
+- Twenty structures can collapse in sequence without incorrect states or unbounded debris growth.
+- A late-joining client and a structure that streams in late display the authoritative state without replaying old collapse effects.
+- The player can traverse the intended collapsed route without snagging on decorative geometry.
+- The client never displays more than 100 cosmetic debris parts and cleans every effect within its configured lifetime.
+- A representative lower-end mobile profile maintains at least 30 FPS in the stress scene, with client and server frame-time spikes inspected separately.
+- One local server and two clients agree on state, health, sequence, and collision.
+
+The pre-Phase-2 Studio baseline, captured from one current camera view on 2026-08-01, was 805 runtime instances, 236 3D objects, 18,738 triangles, and 12 draw calls. It is a comparison point only; view-dependent Studio data is not representative-device proof. Roblox recommends maintaining a real baseline device because Studio emulation is not accurate for device memory. See [Design for performance](https://create.roblox.com/docs/performance-optimization/design) and [MicroProfiler](https://create.roblox.com/docs/performance-optimization/microprofiler).
+
+## Next implementation slices
+
+1. **Phase 2A — contract:** strict validation, registration, state machine, collision/query proxies, compact events, late-stream state selection.
+2. **Phase 2B — bounded spectacle:** fixed-cap debris pool, dust and impact presets, cleanup and distance limits.
+3. **Phase 2C — archetypes:** warehouse, small tower, and substation built on the contract.
+4. **Phase 2D — mixed district:** measured Brontide metrics, warehouse lane, park/plaza, objective shortcut, and dense avenue greybox.
+5. **Phase 2E — evidence:** twenty-collapse stress test, two-client and late-join tests, SceneAnalysis/MicroProfiler capture, real-iPad run, and uncoached human playtest.
+
+Charge damaging structures and immediate energy absorption are deliberately deferred. Each must be added to [RESEARCH.md](RESEARCH.md) as a testable feature hypothesis before implementation.

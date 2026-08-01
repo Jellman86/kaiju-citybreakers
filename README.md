@@ -8,7 +8,7 @@ One to four players become original kaiju, break through a modular city, absorb 
 
 ## Current status
 
-Phase 1 Kaiju Feel Lab and technical foundation. The repository currently contains:
+Phase 2A destruction-contract foundation, following the playable Phase 1 Kaiju Feel Lab. The repository currently contains:
 
 - A scoped game design and sixteen-week roadmap.
 - A free/open-source Roblox toolchain managed by Rokit.
@@ -80,6 +80,7 @@ Then open Roblox Studio, open the Rojo plugin, and connect it to the local serve
 - [Playtest log](docs/PLAYTESTS.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Technical design](docs/TECHNICAL_DESIGN.md)
+- [Destruction system specification](docs/DESTRUCTION_SYSTEM.md)
 - [Art direction](docs/ART_DIRECTION.md)
 - [Free toolchain](docs/FREE_TOOLCHAIN.md)
 - [Decisions](docs/DECISIONS.md)

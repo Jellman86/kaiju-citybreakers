@@ -79,3 +79,11 @@ Basis: an iPad A16 reproduction showed the former percentage positions resolving
 Increase the validated charge from 44 studs/second for 0.45 seconds to 80 studs/second for 0.6 seconds, producing an unobstructed travel budget of approximately 48 studs. On server acceptance, add a client-only 8-degree FOV kick, a short cyan particle burst, and a fading Brontide highlight; none of these cosmetics affect simulation or authority.
 
 Basis: an actual iPad report said charge appeared to do nothing. Reproduction proved that the touch request was accepted but moved only about 20.7 studs, which read too similarly to the 24 studs/second walk speed on a four-times-scale character and distant camera. A roughly 3.3× walk-speed burst plus three brief feedback channels creates a distinct locomotion verb without adding input blocking, hit-stop, or camera shake.
+
+## 2026-08-01 — Adopt the native, proxy-based destructible contract
+
+Use one strict shared contract for full and objective structures: three authored visual variants, one damage-query hitbox, intact and collapsed collision proxies, stable IDs, and sequenced server state. Replicated attributes reconstruct durable state; a compact server event triggers live client feedback. Make each complete structure an atomic streaming model and keep decorative geometry outside gameplay collision and queries.
+
+Basis: Roblox platform documentation supports tags and attributes, collision filtering and bounded spatial queries, atomic logical groups, server-authoritative outcomes, state-change replication, and client-local effects. The approach retains the already proven native overlap and remote path while eliminating hierarchy-specific variant assumptions and streamed Instance arguments. The claim that three states create enough spectacle remains H6, not a proven result.
+
+The Phase 2A reuse audit adopts no runtime dependency or external asset. The official Modern City kit remains a modular-workflow reference because a wholesale import would introduce thousands of mesh parts and scripts before layout or destruction performance is validated.

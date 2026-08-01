@@ -76,8 +76,15 @@ Required attributes:
 - `StructureId: string`
 - `MaxHealth: number`
 - `EnergyValue: number`
-- `DamageVariant: string`
-- `CollapsedVariant: string`
+- `MaterialProfile: string`
+
+Server-owned runtime attributes:
+
+- `CurrentHealth: number`
+- `DestructionState: Intact | Damaged | Collapsed`
+- `DestructionStateSequence: number`
+
+The full hierarchy, collision/query rules, evidence basis, and provisional gates are defined in [DESTRUCTION_SYSTEM.md](DESTRUCTION_SYSTEM.md).
 
 ### `ObjectiveTarget`
 
@@ -105,7 +112,7 @@ Later remotes:
 
 - `AbilityRequest`: client-to-server intent with ability ID and input sequence; the server evaluates the replicated character facing and authoritative hitbox.
 - `AbilityResult`: server-to-client confirmation/rejection and authoritative targets.
-- `DestructionState`: server-to-client structure state transitions.
+- `DestructionState`: server-to-client live transition feedback containing a stable structure ID, state, sequence, effect position, and material profile. Replicated attributes remain the durable late-join source of truth.
 - `ObjectiveState`: server-to-client objective progress.
 
 Every client-to-server payload has type, rate, ownership, state, and spatial validation.
@@ -116,13 +123,18 @@ Avoid unrestricted fracture simulation. Each building package contains authored 
 
 ```text
 Building
-├── Intact
-├── Damaged
-├── Collapsed
-└── Collision
+├── Visuals
+│   ├── Intact
+│   ├── Damaged
+│   └── Collapsed
+├── Collision
+│   ├── IntactProxy
+│   └── CollapsedProxy
+└── DamageHitbox
+    └── FxOrigin
 ```
 
-The server switches authoritative collision and visibility state. Each client emits pooled fragments, dust, camera impulses, and sound. Cosmetic debris has no gameplay collision and a short lifetime.
+The server switches authoritative health and simple collision proxies. Each client selects the visible authored variant and emits cosmetic fragments, dust, camera impulses, and sound. Cosmetic debris has no gameplay collision and a short lifetime. A fixed-cap pool remains Phase 2B work; Phase 2A retains native timed cleanup.
 
 ## Performance budgets
 

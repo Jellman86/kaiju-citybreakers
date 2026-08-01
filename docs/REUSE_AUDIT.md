@@ -60,3 +60,17 @@ The 2026-08-01 Creator Store re-check used free, verified-creator-only searches 
 | `rhino-ty/game-architect` | **Reject** | MIT licensed but strongly Steam/console/marketing oriented, with broad automatic triggering and unsourced persona assumptions that conflict with this project's evidence discipline and Roblox audience focus. |
 
 The adopted skills are development guidance, not proof. Numerical recommendations remain provisional until supported by Roblox documentation, research, profiling, or project playtests. They add no runtime code or player data collection.
+
+## 2026-08-01 — Phase 2A destruction audit
+
+| Need | Candidate | Decision | Reason |
+| --- | --- | --- | --- |
+| Structure discovery and configuration | Native `CollectionService` tags and attributes | **Use** | Saved, replicated, inspectable, and already used by the prototype. Added/removed signals support packages without a framework. |
+| Damage candidate filtering | Native collision groups plus `OverlapParams` | **Use** | One queryable hitbox per structure removes decorative geometry from authoritative overlaps and provides a bounded native query. |
+| Durable late-join state | Replicated server-owned attributes | **Use** | Avoids a bespoke snapshot service for the current state count; live events remain cosmetic triggers only. |
+| Complete streamed package | Native atomic model streaming | **Use provisionally** | Ensures the variant hierarchy arrives as a unit. Reassess memory after the twenty-structure stress scene; do not use persistent streaming as a shortcut. |
+| State-machine/destruction framework | Creator Store and open-source destruction packages | **Reject for Phase 2A** | The required forward-only three-state machine is small and game-specific. General frameworks add unknown remotes, scripts, physics, or lifecycle surface. |
+| Cosmetic object pool | Public PartCache copies and generic pools | **Defer** | No current candidate offered a clearly maintained canonical source and a better fit than a small fixed-cap local pool. Native timed cleanup remains until Phase 2B measures the stress path. |
+| City content | Roblox Modern City kit `13168370735` | **Reference; do not import wholesale** | Roblox publishes it and its pivot workflow is reusable, but the listing reports 3,025 MeshParts, 796,055 triangles, and eight scripts. Inspect selected pieces only after the contract and blockout pass. |
+
+No dependency or external asset was added by Phase 2A. Replacement plan: the shared contract is intentionally small; remove it if a future measured native or vetted package solves the same requirement with less code and equivalent security.
