@@ -37,7 +37,7 @@ Controls Waiting, Countdown, Active, and Results phases. Publishes timestamps ra
 
 ### KaijuService
 
-Spawns kaiju rigs, applies server-owned stats, validates ability requests, and manages knockout/revival state.
+Owns the replicated `Human`/`Kaiju` role, loads characters only after role-specific spawns exist, applies server-owned scale and movement metrics, assigns collision groups, builds the Brontide shell, and promotes a human if the kaiju leaves. The first player is the solo-safe kaiju; later players are humans during the feasibility slice.
 
 ### CombatService
 
@@ -72,6 +72,15 @@ Calculates round results on the server. Persistence is not implemented until the
 ## World contracts
 
 Use CollectionService tags and attributes so world building does not depend on fragile hierarchy paths.
+
+### Mixed-scale characters
+
+- `CharacterRole` is server-authored on both `Player` and character and is either `Kaiju` or `Human`.
+- The provisional Brontide uses real model scale `10`; the human retains the ordinary Roblox avatar scale. Automated acceptance measures the resulting bounds and requires at least a `10:1` standing-height ratio.
+- `KaijuCharacters`, `HumanCharacters`, and `HumanScaleGeometry` are registered collision groups. Character-to-character contact is non-colliding, while tagged human-scale geometry can block humans without trapping or flinging the kaiju.
+- Combat remotes reject human characters before cooldown or spatial work. Collision groups improve physical stability but never grant damage authority.
+- The kaiju uses the custom scale-aware camera and action bindings. The human uses the native Roblox camera and receives no kaiju actions during this foundation slice.
+- `KaijuSpawn`, `HumanSpawn`, and the tagged doorway reference are a feasibility lab, not final production level design.
 
 ### `Destructible`
 

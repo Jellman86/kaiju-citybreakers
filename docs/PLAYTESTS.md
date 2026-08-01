@@ -402,3 +402,27 @@ Retain the map scale, structure count, lean visual variants, server Beam correct
 - Tapping the exact artifact's `BEAM` control returned `accepted=true`, `hits=1`, and collapsed a registered structure. The generated `CHARGE` and `SMASH` controls separately returned accepted `charge` and `basic` results through the normal client/server path.
 - World, server, and client startup markers appeared without a project script error. Studio displayed `Successfully published!` and logged `Published "Kaiju Citybreakers" to Roblox.` for existing place `137103245194702` in universe `10609698937` at 4:41 PM BST.
 - A fresh physical-phone production join and Creator Hub Error Report review remain pending. This Mac has Roblox Studio but no Roblox player, so neither production-side gate is represented as passed.
+
+## 2026-08-01 — Genuine mixed-scale player foundation
+
+- Implementation commit: `641e84d6ac27409ded201362759df8dbddb0423e`
+- Environment: the existing Roblox Studio editor, one iPhone 16 landscape simulation run, then a native `StudioTestService` server with one initial and one late client; **zero human testers**.
+- Systems: server-owned roles, actual character scale, role-specific spawns/metrics/cameras/actions, collision groups, human-scale doorway reference, human combat rejection, late-join destruction reconstruction, and disconnect promotion.
+
+### One-client integration
+
+- The first player received the replicated `Kaiju` role and spawned as the real scaled Brontide in the generated city.
+- Measured character bounds were approximately `39.12 × 61.93 × 70.06` studs. The root spawned at approximately y=`30.36` in collision group `KaijuCharacters`.
+- The kaiju camera range was `58–105` studs. Brontide and the surrounding city rendered together in the iPhone 16 simulator, and no project runtime error appeared.
+
+### Native two-client regression
+
+- The original player was `Kaiju`; the late player was `Human`. Measured standing heights were `61.37` and `5.50` studs, an actual `11.17:1` model-bounds ratio rather than a camera-only illusion.
+- The human client retained `CameraType.Custom` with a `6–18` stud zoom range and had no Smash touch action.
+- A direct human basic-attack request left the intact target's health unchanged, exercising the server's role rejection rather than relying on the hidden client button.
+- The initial kaiju collapsed `north_warehouse` through normal cooldown and spatial validation. The existing client observed `10` live fragments; the late human reconstructed `Collapsed` state and observed `0` historical fragments.
+- The kaiju client then left through the native Studio test lifecycle. The remaining human was promoted and reloaded as `Kaiju`, measuring `61.71` studs tall. The regression returned `passed = true` with one player remaining.
+
+### Decision
+
+Retain scale `10` as the feasibility baseline: it produced a measured ratio above the provisional `10:1` gate while preserving the existing server-authoritative destruction path. This is not evidence that either role is fun, that touch controls are comfortable on hardware, or that two differently scaled moving characters meet the phone performance budget. Do not rebuild the city around this scale until a fresh physical-phone check and an uncoached two-person test validate scale readability, contact stability, navigation, and one useful human contribution.

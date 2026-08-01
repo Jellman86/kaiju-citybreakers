@@ -1,6 +1,6 @@
 # Multiplayer Studio regression
 
-The first automated multiplayer gate verifies durable destruction state with one existing client and one genuinely late client. It uses Roblox's native [`StudioTestService`](https://create.roblox.com/docs/reference/engine/classes/StudioTestService) and adds no package, service, runner, or cost.
+The automated multiplayer gate verifies durable destruction state and the mixed-scale role lifecycle with one existing client and one genuinely late client. It uses Roblox's native [`StudioTestService`](https://create.roblox.com/docs/reference/engine/classes/StudioTestService) and adds no package, service, runner, or cost.
 
 ## Evidence boundary
 
@@ -19,7 +19,7 @@ local result = StudioTestService:ExecuteMultiplayerTestAsync(
 print(result)
 ```
 
-The argument intentionally starts one client. The server harness collapses the north warehouse through that client's normal ability remote, then calls `StudioTestService:AddPlayers(1)` to create the late client. `EndTest()` returns one structured pass/fail result to the Edit-mode caller.
+The argument intentionally starts one client. The server harness collapses the north warehouse through that client's normal ability remote, then calls `StudioTestService:AddPlayers(1)` to create the late client. The first client is the kaiju and the late client is human. After the replication checks, the kaiju client leaves and the server must promote and reload the remaining player as the kaiju. `EndTest()` returns one structured pass/fail result to the Edit-mode caller.
 
 ## Acceptance contract
 
@@ -28,6 +28,11 @@ The argument intentionally starts one client. The server harness collapses the n
 - Server state ends at health `0`, `Collapsed`, sequence `2`, with the collapsed proxy active and damage hitbox queryable.
 - The existing client and late client independently report the same replicated attributes and show only the collapsed visual variant.
 - The existing client observes the live collapse effect; the late client receives no historical debris burst.
+- The first player has the replicated `Kaiju` role and the late player has the replicated `Human` role.
+- Actual character bounds maintain a standing-height ratio of at least `10:1`; camera ranges are `58–105` studs for the provisional kaiju and `6–18` studs for the human.
+- The kaiju and human roots use their separate collision groups, and the human cannot damage a structure by invoking the kaiju-only ability remote directly.
+- The human client has no Smash touch action and retains Roblox's native custom camera.
+- When the kaiju client leaves through `StudioTestService`, the remaining human is promoted, reloaded and reaches at least 90% of the original kaiju's measured height.
 - Any missing client, streamed model, state, visual, or proxy produces a bounded timeout and explicit failure reason.
 
 ## Production safety

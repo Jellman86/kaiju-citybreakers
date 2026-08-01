@@ -92,6 +92,8 @@ The Beam visibly traces a controllable path through multiple buildings, each con
 
 Prove one human-scale player and one physically giant Brontide in the same server before rebuilding the full city or producing human-versus-kaiju progression. See [MIXED_SCALE_PLAYERS.md](MIXED_SCALE_PLAYERS.md).
 
+**Status:** foundation implemented and automated two-client regression passed on 2026-08-01. Physical-device controls/performance and a useful human role remain open exit gates.
+
 #### Deliverables
 
 - Server-owned `Human` and `Kaiju` roles with solo-safe assignment, role-specific spawning and automatic human promotion if the kaiju leaves.
@@ -236,10 +238,10 @@ Ordered only after the vertical-slice gate:
 
 ## Immediate implementation sequence
 
-1. Implement Phase 2E's two-client role, spawn, real-bounds, collision and camera foundation without rebuilding the five-zone city.
-2. Validate the provisional `60–75` stud Brontide beside a human on Studio clients and a physical phone; retain, reduce or reject the scale from evidence.
+1. Validate the implemented `61.37`-stud Brontide and `5.50`-stud human foundation on a physical phone; retain, reduce or reject the measured `11.17:1` scale from evidence.
+2. Give the human one small, useful interaction and run an uncoached two-player navigation/destruction session before adding production human content.
 3. Implement Phase 2D's sustained Beam and tiered collapse presentation against the retained physical scale in one five-to-eight-building Central City street.
 4. Tune on a physical phone, then run the twenty-building destruction/performance and full-round reset gates before rolling the presentation across all structures.
-5. Run an uncoached mixed-scale navigation/destruction session and revise routes before adding scenery or human content.
+5. Revise mixed-scale routes from the two-player evidence before rebuilding scenery.
 6. Prototype exactly one scout drone only after mixed scale, Beam and destruction spectacle pass their mobile and readability gates; do not populate the whole map yet.
 7. Add energy collection and mutation choice only after both roles, Beam, Charge, Smash and the scout are readable together on phone.
