@@ -119,3 +119,9 @@ Extend west from a truthful cross street into one open park/plaza, then reconnec
 Basis: Brontide's measured extents, 48-stud charge, and 24–42 stud camera distances; the level-design introduce/build/release/test rhythm; Roblox's greybox playtest questions; and Roblox's guidance on object density, anchored geometry, collision, shadows, and built-in profiling. Production park kits remain deferred because this is a route and density test.
 
 Result: exact commit `ea02de3` added 38 parts and 11 models with no lights, completed the loop in both directions, kept eight camera rays clear at both distance limits, and preserved the authoritative gate path. Testing also found and closed a legacy side bypass with two primitive cordons. Retain this greybox but require an uncoached layout test and representative-device performance evidence before adding the dense avenue.
+
+## 2026-08-01 — Publish production from a clean Rojo artifact
+
+Treat a commit-labelled `.rbxlx` produced by `rojo build` as the production deployable. Keep live Rojo sync for iteration, restrict it to place `137103245194702`, and publish the tested artifact to that existing place through **Publish to Roblox As**. Require an explicit Studio success result followed by a fresh live-server smoke test.
+
+Basis: Rojo documents built place files and live sync as separate supported workflows. Production version 6 was reported as blank on an iPad even though Studio logged a successful publish from a live-synced session; the server showed the template avatar and baseplate with no city, HUD, or gameplay bootstrap. The same commit built into an isolated place artifact started the server and client, generated all 323 world descendants, and created the Brontide character. Publishing that artifact directly to the existing place returned Studio's explicit success result and destination place ID. Retain artifact publishing so the tested source state and the uploaded DataModel are the same unit.

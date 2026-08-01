@@ -29,6 +29,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 ### Changed
 
 - Repository visibility changed from private to public so standard GitHub-hosted CI remains free.
+- Production publishing now uses a clean, commit-labelled Rojo place artifact with a SHA-256 digest and mandatory fresh-server smoke test; Rojo sync is reserved for iteration.
 - Charge movement now uses a short native `LinearVelocity` constraint after Studio testing showed that a one-frame velocity was neutralized by the Humanoid controller.
 - Prototype onboarding now names Brontide and gives a single city-gate objective instead of presenting an abstract feel lab.
 - Charge now travels roughly 48 studs with a stronger speed differential, accepted-action FOV kick, cyan energy burst, and brief body highlight so it reads clearly at kaiju scale.
@@ -39,6 +40,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 ### Fixed
 
 - Disabled the template spawn and removed the overlapping runtime baseplate in the Kaiju Feel Lab.
+- Replaced the live-synced Studio publishing path after it produced a successful-looking upload whose production server contained only the template baseplate.
 - Made repository standards validation portable to the minimal GitHub Actions runner environment.
 - Prevented `CHARGE` and `SMASH` touch controls from overlapping or escaping the screen by sizing and arranging them within Roblox's live action-frame bounds, including a stacked narrow-screen fallback.
 

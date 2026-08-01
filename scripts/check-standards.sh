@@ -7,6 +7,7 @@ required_files=(
   "CONTRIBUTING.md"
   "SECURITY.md"
   "docs/PROJECT_STANDARDS.md"
+  "docs/RELEASE.md"
   "docs/DEPENDENCIES.md"
   "docs/RESEARCH.md"
   "docs/REUSE_AUDIT.md"
@@ -24,6 +25,11 @@ for required_file in "${required_files[@]}"; do
     exit 1
   fi
 done
+
+if ! grep --quiet '"servePlaceIds": \[137103245194702\]' default.project.json; then
+  echo "Rojo must remain restricted to the Kaiju Citybreakers production place." >&2
+  exit 1
+fi
 
 if ! grep --quiet '^## \[Unreleased\]$' CHANGELOG.md; then
   echo "CHANGELOG.md must contain an [Unreleased] section." >&2

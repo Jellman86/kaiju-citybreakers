@@ -265,3 +265,25 @@ The Phase 2 late-join state gate passes for one representative destructible. The
 ### Decision
 
 Retain the park/plaza, market positions, north loop, and gate cordons. The layout passes automated route, objective-integrity, physics, camera-clearance, and instance-budget gates. Do not add the dense avenue yet until an uncoached player tests branch recognition, route return, perceived scale, and whether the plaza is an enjoyable combat space. Representative-device frame time and memory also remain open.
+
+## 2026-08-01 — Production artifact publishing regression
+
+- Build commit: `9ccbd01`
+- Reported environment: physical iPad, one production client; one observed player report.
+- Reproduction environment: isolated Rojo-built `.rbxlx` in Roblox Studio, macOS, one local client and server.
+- Systems: production publishing boundary, server/client bootstrap, generated world, Brontide character, and HUD.
+
+### Incident
+
+Studio reported production version 6 successfully published from the live Rojo-synced editing session. A fresh iPad session instead showed the template baseplate and default avatar with no city, Brontide shell, round HUD, or gameplay controls. Those simultaneous absences identify a missing production bootstrap rather than an individual world-builder or UI failure.
+
+### Corrective verification
+
+- `rojo build default.project.json` produced an isolated place artifact containing the server and client script trees.
+- Playing that artifact printed the world, server, and client startup markers with no gameplay error.
+- The server generated `KaijuFeelLab` with exactly `323` descendants and replaced the test player with a Brontide character model containing `371` descendants.
+- The exact artifact was published to existing place `137103245194702` in universe `10609698937`; Studio entered `PublishSuccessful` and logged the destination IDs.
+
+### Decision
+
+Production releases now use the clean, exact-commit artifact workflow in `docs/RELEASE.md`, not direct publishing from a live-synced session. The corrective upload is complete, but the physical-iPad production smoke test remains pending until the reporter leaves the old server and joins a fresh one.

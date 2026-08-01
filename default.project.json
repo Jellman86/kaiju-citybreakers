@@ -1,5 +1,8 @@
 {
   "name": "KaijuCitybreakers",
+  "servePlaceIds": [137103245194702],
+  "placeId": 137103245194702,
+  "gameId": 10609698937,
   "tree": {
     "$className": "DataModel",
     "ReplicatedStorage": {
@@ -29,4 +32,3 @@
     }
   }
 }
-

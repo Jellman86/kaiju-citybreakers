@@ -74,6 +74,7 @@ Then open Roblox Studio, open the Rojo plugin, and connect it to the local serve
 - [Changelog](CHANGELOG.md)
 - [Contributing](CONTRIBUTING.md)
 - [Project standards](docs/PROJECT_STANDARDS.md)
+- [Release process](docs/RELEASE.md)
 - [Security policy](SECURITY.md)
 - [Game design](docs/GAME_DESIGN.md)
 - [Research and validation ledger](docs/RESEARCH.md)

@@ -71,6 +71,7 @@ Public repository visibility does not itself grant a reuse licence. A project-wi
 - Use Semantic Versioning tags in the form `vMAJOR.MINOR.PATCH` with optional prerelease identifiers.
 - Versions below `1.0.0` represent initial development and may change contracts.
 - Do not tag a version merely because code builds. A release requires a named scope, passing CI, a clean changelog section, recorded playtest evidence appropriate to the release, and a rollback point.
+- Production publishing **MUST** use the clean, exact-commit Rojo artifact and live-server smoke test in `docs/RELEASE.md`; a live-synced Studio session is not a release artifact.
 - Move `Unreleased` entries into a dated version section when tagging. Never rewrite a published version's changelog entry.
 
 ## 8. Definition of done
