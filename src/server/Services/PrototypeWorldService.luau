@@ -8,6 +8,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local DestructibleContract = require(ReplicatedStorage.Shared.DestructibleContract)
 local DestructibleStructureBuilder =
 	require(script.Parent.Parent.Builders.DestructibleStructureBuilder)
+local DistrictDressingBuilder = require(script.Parent.Parent.Builders.DistrictDressingBuilder)
 
 local PrototypeWorldService = {}
 PrototypeWorldService.__index = PrototypeWorldService
@@ -69,6 +70,21 @@ local function createVisualPart(
 	part.CanCollide = false
 	part.CanTouch = false
 	part.CanQuery = false
+	return part
+end
+
+local function createSurfacePart(
+	name: string,
+	size: Vector3,
+	cframe: CFrame,
+	color: Color3,
+	material: Enum.Material,
+	parent: Instance
+): Part
+	local part = createPart(name, size, cframe, color, material, parent)
+	part.CanTouch = false
+	part.CanQuery = false
+	part.CastShadow = false
 	return part
 end
 
@@ -247,6 +263,32 @@ local function createCrosswalk(parent: Instance, zPosition: number)
 			CFrame.new(index * 3.2, 0.08, zPosition),
 			Color3.fromRGB(225, 225, 211),
 			Enum.Material.Concrete,
+			parent
+		)
+	end
+end
+
+local function createGateCordons(parent: Instance)
+	for _, definition in
+		{
+			{ name = "GateCordonWest", size = 202, x = -139 },
+			{ name = "GateCordonEast", size = 72, x = 74 },
+		}
+	do
+		createSurfacePart(
+			definition.name,
+			Vector3.new(definition.size, 28, 5),
+			CFrame.new(definition.x, 14, -28),
+			Color3.fromRGB(65, 76, 83),
+			Enum.Material.Concrete,
+			parent
+		)
+		createTrimPart(
+			`{definition.name}Signal`,
+			Vector3.new(definition.size - 6, 1.4, 0.35),
+			CFrame.new(definition.x, 16, -25.4),
+			Color3.fromRGB(255, 153, 61),
+			Enum.Material.Neon,
 			parent
 		)
 	end
@@ -828,10 +870,10 @@ function PrototypeWorldService:Start()
 	world.Name = Config.Prototype.WorldName
 	world.Parent = workspace
 
-	createPart(
+	createSurfacePart(
 		"CityFoundation",
-		Vector3.new(220, 2, 220),
-		CFrame.new(0, -1, -18),
+		Vector3.new(350, 2, 260),
+		CFrame.new(-65, -1, -8),
 		CONCRETE,
 		Enum.Material.Concrete,
 		world
@@ -844,10 +886,10 @@ function PrototypeWorldService:Start()
 		Enum.Material.Asphalt,
 		world
 	)
-	createPart(
+	createSurfacePart(
 		"CrossStreet",
-		Vector3.new(220, 0.3, 28),
-		CFrame.new(0, 0.1, 24),
+		Vector3.new(350, 0.3, 28),
+		CFrame.new(-65, 0.1, 24),
 		ASPHALT,
 		Enum.Material.Asphalt,
 		world
@@ -864,10 +906,29 @@ function PrototypeWorldService:Start()
 		)
 	end
 	for _, z in { 7, 41 } do
-		createPart(
+		createSurfacePart(
 			`CrossSidewalk{z}`,
-			Vector3.new(220, 0.6, 5),
-			CFrame.new(0, 0.3, z),
+			Vector3.new(350, 0.6, 5),
+			CFrame.new(-65, 0.3, z),
+			CURB,
+			Enum.Material.Concrete,
+			world
+		)
+	end
+
+	createSurfacePart(
+		"ParkNorthConnector",
+		Vector3.new(135, 0.3, 40),
+		CFrame.new(-50.5, 0.1, 98),
+		ASPHALT,
+		Enum.Material.Asphalt,
+		world
+	)
+	for _, z in { 75, 121 } do
+		createSurfacePart(
+			`ParkNorthSidewalk{z}`,
+			Vector3.new(135, 0.6, 5),
+			CFrame.new(-50.5, 0.3, z),
 			CURB,
 			Enum.Material.Concrete,
 			world
@@ -906,13 +967,14 @@ function PrototypeWorldService:Start()
 		Color3.fromRGB(44, 55, 65)
 	)
 	createWall(world)
+	createGateCordons(world)
 
 	createWarehouse(world)
 	createTower(world)
 	createBuilding(
 		world,
 		"MarketWest",
-		Vector3.new(-48, 0, 22),
+		Vector3.new(-54, 0, -5),
 		Vector3.new(30, 20, 18),
 		Color3.fromRGB(112, 84, 76),
 		Color3.fromRGB(74, 56, 54)
@@ -920,7 +982,7 @@ function PrototypeWorldService:Start()
 	createBuilding(
 		world,
 		"MarketEast",
-		Vector3.new(49, 0, 20),
+		Vector3.new(53, 0, -5),
 		Vector3.new(32, 25, 18),
 		Color3.fromRGB(79, 94, 112),
 		Color3.fromRGB(52, 65, 79)
@@ -934,6 +996,7 @@ function PrototypeWorldService:Start()
 		Color3.fromRGB(46, 63, 67)
 	)
 	createSubstation(world)
+	DistrictDressingBuilder.BuildWestParkPlaza(world)
 
 	for _, z in { 57, 34, 4, -14, -49 } do
 		createStreetlight(world, Vector3.new(-15, 0, z), 1)

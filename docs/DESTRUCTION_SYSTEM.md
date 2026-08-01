@@ -118,7 +118,7 @@ The pre-Phase-2 Studio baseline, captured from one current camera view on 2026-0
 1. **Phase 2A — contract:** strict validation, registration, state machine, collision/query proxies, compact events, late-stream state selection.
 2. **Phase 2B — bounded spectacle:** fixed-cap debris pool, material response presets, cleanup and distance limits. Dust is deliberately gated on Phase 2C profiling.
 3. **Phase 2C — archetypes:** metric-derived warehouse, signal tower, and substation built through a reusable strict builder; see [DISTRICT_BLOCKOUT.md](DISTRICT_BLOCKOUT.md).
-4. **Phase 2D — mixed district:** measured Brontide metrics, warehouse lane, park/plaza, objective shortcut, and dense avenue greybox.
+4. **Phase 2D — mixed district:** measured Brontide metrics, warehouse lane, optional park/plaza loop, objective-safe reconnect, then a separately measured dense avenue greybox; see [MIXED_DISTRICT.md](MIXED_DISTRICT.md).
 5. **Phase 2E — evidence:** twenty-collapse stress test, two-client and late-join tests, SceneAnalysis/MicroProfiler capture, real-iPad run, and uncoached human playtest.
 
 The representative two-client late-join reconstruction gate passed at commit `eeaf523`. The twenty-collapse sequence, explicit stream-out/stream-in movement, representative-device profiling, and human readability evidence remain open.

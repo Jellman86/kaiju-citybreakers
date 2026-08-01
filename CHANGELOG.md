@@ -24,6 +24,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 - Fixed-cap client debris pool with one-collapse prewarming, oldest-active recycling, generation-safe delayed cleanup, observable statistics, and concrete, metal, and lightweight fragment presets.
 - Reusable source-controlled destructible builder plus warehouse, signal-tower, and electrical-substation greyboxes with aligned state variants, stable pivots, simple proxies, and distinct silhouettes.
 - Studio-only automated multiplayer regression that collapses a structure through one client, adds a late client, and verifies authoritative state, client visual reconstruction, collision proxies, and non-replayed debris.
+- West park/plaza greybox with a truthful cross-street branch, broad optional movement loop, low-density primitive dressing, a north reconnect, and district cordons that close the legacy city-gate bypass.
 
 ### Changed
 

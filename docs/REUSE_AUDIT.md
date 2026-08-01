@@ -96,3 +96,15 @@ No dependency, external asset, texture, or paid service is added. Replacement pl
 | Original Blender buildings | Custom low-poly meshes | **Defer to art replacement** | Blender becomes valuable after footprints and state readability pass. The builder fixes pivots and gameplay proxies so visuals can later be replaced without rewriting systems. |
 
 No dependency or external asset is adopted. Replacement plan: preserve structure IDs, pivots, attributes, hierarchy, proxies, and profiles while replacing only visual descendants with original optimized meshes after the blockout gate.
+
+## 2026-08-01 — Phase 2D park/plaza audit
+
+| Need | Candidate | Decision | Reason |
+| --- | --- | --- | --- |
+| Park/plaza greybox | Existing source-controlled primitive helpers and built-in materials | **Use** | The current question is route, scale, density, and camera clearance; native parts remain the smallest reviewable test. |
+| Foliage and civic props | Small reusable primitive kit | **Use provisionally** | A trunk/canopy pair, planter, paving ring, and landmark provide scale cues without scripts, textures, imports, or gameplay physics. |
+| Roblox Modern City kit `13168370735` | Selected road/park modules | **Reference only** | The kit's modular workflow is relevant, but importing production meshes cannot improve this greybox decision and would obscure the measured part delta. |
+| Creator Store park packs | Community assets | **Do not use** | Unknown scripts, collisions, textures, provenance, and inconsistent scale cost more to audit than the bounded primitive composition. |
+| Blender park assets | Original meshes | **Defer** | Replace the approved blockout kit only after route comprehension and target-device evidence justify production art. |
+
+No dependency, external asset, texture, or paid service is added. Replacement plan: keep the layout coordinates and gameplay surfaces stable while later replacing only decorative descendants with original optimized assets.
