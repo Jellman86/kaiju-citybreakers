@@ -476,3 +476,11 @@ Retain the asymmetric combat foundation for a physical two-device test. The engi
 ### Decision
 
 Retain the localized rupture system and its two-mark-per-structure budget. This engineering gate proves authoritative placement, bounded rendering, non-emissive state art and late-join durability; it does not yet prove the rupture silhouette or debris spectacle is convincing on a physical phone. Publish for the requested owner-device visual test and keep that human/device judgement explicitly pending.
+
+### Production publication
+
+- Published source commit: `9e6cf7ebba40fa03d303c7f49c05febd92dd24b4`.
+- Generated artifact: `build/KaijuCitybreakers.rbxlx`.
+- SHA-256: `958a1f64777fb79b82c5956864c562b8f389b3c3681866680d574c220ace2620`.
+- The synchronized sole Studio editor published the exact project source to existing place `137103245194702` in universe `10609698937` at 19:45 BST. Studio logged `Published new changes in "Kaiju Citybreakers" to Roblox.` and identified the release as `v13`.
+- A fresh physical-phone visual test remains pending; this release is intended for that owner-device check and the subjective rupture quality is not represented as passed.
