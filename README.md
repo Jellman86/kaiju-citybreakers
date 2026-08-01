@@ -87,6 +87,7 @@ Then open Roblox Studio, open the Rojo plugin, and connect it to the local serve
 - [Destruction system specification](docs/DESTRUCTION_SYSTEM.md)
 - [District blockout and archetypes](docs/DISTRICT_BLOCKOUT.md)
 - [Mixed district park/plaza blockout](docs/MIXED_DISTRICT.md)
+- [Mixed-scale human and kaiju feasibility](docs/MIXED_SCALE_PLAYERS.md)
 - [Multiplayer Studio regression](docs/MULTIPLAYER_TESTING.md)
 - [Art direction](docs/ART_DIRECTION.md)
 - [Free toolchain](docs/FREE_TOOLCHAIN.md)
