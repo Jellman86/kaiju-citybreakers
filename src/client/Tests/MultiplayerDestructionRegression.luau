@@ -3,7 +3,11 @@
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-local StudioTestService = game:GetService("StudioTestService")
+
+local StudioTestService: any = nil
+if RunService:IsStudio() then
+	StudioTestService = game:GetService("StudioTestService")
+end
 
 local DestructibleContract = require(ReplicatedStorage.Shared.DestructibleContract)
 local StudioTestProtocol = require(ReplicatedStorage.Shared.StudioTestProtocol)
@@ -22,7 +26,7 @@ local function waitUntil(predicate: () -> boolean, timeoutSeconds: number): bool
 end
 
 local function isRequestedTest(): boolean
-	if not RunService:IsStudio() then
+	if StudioTestService == nil then
 		return false
 	end
 

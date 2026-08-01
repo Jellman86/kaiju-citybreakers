@@ -39,6 +39,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 ### Fixed
 
+- Kept the Studio-only multiplayer regression out of live server and client startup, preventing published sessions from aborting before the city, Brontide, HUD, and controls load.
 - Disabled the template spawn and removed the overlapping runtime baseplate in the Kaiju Feel Lab.
 - Replaced the live-synced Studio publishing path after it produced a successful-looking upload whose production server contained only the template baseplate.
 - Prevented production players from spawning before the runtime city exists by disabling automatic character loading, loading them after world bootstrap, and explicitly placing Brontide on the generated spawn.

@@ -43,6 +43,22 @@ while IFS= read -r source_file; do
   fi
 done < <(find src -type f -name '*.luau' -print)
 
+production_entrypoints=(
+  "src/server/init.server.luau"
+  "src/client/init.client.luau"
+)
+
+if grep --extended-regexp --line-number '^local .*require\(script\.Tests\.' "${production_entrypoints[@]}"; then
+  echo "Production entrypoints must not load Studio-only tests at module scope." >&2
+  exit 1
+fi
+
+if grep --recursive --include='*.luau' --extended-regexp --line-number \
+  '^local StudioTestService = game:GetService\("StudioTestService"\)' src; then
+  echo "StudioTestService acquisition must be guarded by RunService:IsStudio()." >&2
+  exit 1
+fi
+
 tracked_generated="$(git ls-files -- '*.rbxl' '*.rbxlx' '*.rbxm' '*.rbxmx')"
 if [[ -n "${tracked_generated}" ]]; then
   echo "Generated Roblox files must not be tracked:" >&2

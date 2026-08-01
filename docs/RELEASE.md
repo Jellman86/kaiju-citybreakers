@@ -15,7 +15,8 @@ Rojo documents `rojo build -o build.rbxlx` as the supported way to assemble a co
 4. Use **File → Publish to Roblox As… → Kaiju Citybreakers → existing Kaiju Citybreakers → Overwrite**. Never add a new place during this flow.
 5. Require Studio's explicit success result and record the destination place ID from the Studio publish log.
 6. Leave any existing Roblox session, join a fresh production server, and repeat the smoke checks. A Studio-only pass is not evidence that production received the artifact.
-7. Record source commit, artifact name, place version if shown, device, result, and follow-up in `docs/PLAYTESTS.md`.
+7. Open Creator Hub's **Monitoring → Error Report**, filter to the production place and latest version, and verify that the fresh session introduced no bootstrap error.
+8. Record source commit, artifact name, place version if shown, device, result, and follow-up in `docs/PLAYTESTS.md`.
 
 Do not use **Publish to Roblox** from a live Rojo-synced editing session as the production release path. That path can appear successful while the live place does not contain the source-controlled bootstrap. The built artifact is the deployable unit and the Git commit is its rollback identity.
 
@@ -28,5 +29,6 @@ Do not use **Publish to Roblox** from a live Rojo-synced editing session as the 
 - Camera, movement, charge, and smash work on the test device.
 - At least one registered building progresses through its authored destruction states.
 - Studio/server output has no bootstrap error and includes the world, server, and client startup markers.
+- Creator Hub's Error Report has no new server or client bootstrap error for the published version.
 
 If any check fails, stop testing that version. Use Creator Hub place version history to restore the last known-good version, then diagnose from a clean artifact before publishing again.

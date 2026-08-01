@@ -2,6 +2,7 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 -- The release artifact has no authored SpawnLocation before this script builds
 -- the runtime city. Keep characters unloaded until KaijuService can place them
@@ -14,7 +15,6 @@ local KaijuService = require(script.Services.KaijuService)
 local PlaytestService = require(script.Services.PlaytestService)
 local PrototypeWorldService = require(script.Services.PrototypeWorldService)
 local RoundService = require(script.Services.RoundService)
-local MultiplayerDestructionRegression = require(script.Tests.MultiplayerDestructionRegression)
 
 local remotes = ReplicatedStorage:WaitForChild("Remotes")
 
@@ -57,7 +57,14 @@ destructionService:Start()
 roundService:Start()
 kaijuService:Start()
 combatService:Start()
-MultiplayerDestructionRegression.TryStart(roundService, remotes)
+
+-- StudioTestService is unavailable to live experience servers. Keep the test
+-- module completely outside the production bootstrap dependency graph so a
+-- Studio-only API can never prevent the city or player character from loading.
+if RunService:IsStudio() then
+	local MultiplayerDestructionRegression = require(script.Tests.MultiplayerDestructionRegression)
+	MultiplayerDestructionRegression.TryStart(roundService, remotes)
+end
 
 game:BindToClose(function()
 	combatService:Stop()
