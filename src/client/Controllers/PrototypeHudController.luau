@@ -58,7 +58,7 @@ function PrototypeHudController:Start()
 		"Title",
 		UDim2.fromScale(0.5, 0.035),
 		UDim2.fromOffset(360, 44),
-		"KAIJU FEEL LAB",
+		"BRONTIDE: CITYBREAKERS",
 		24,
 		screenGui
 	)
@@ -66,7 +66,7 @@ function PrototypeHudController:Start()
 		"Objective",
 		UDim2.fromScale(0.5, 0.095),
 		UDim2.fromOffset(560, 54),
-		"Q / SHIFT to CHARGE  •  E / CLICK to SMASH twice",
+		"BREAK THE GATE  •  CHARGE then SMASH twice",
 		20,
 		screenGui
 	)

@@ -33,6 +33,8 @@ A candidate must pass all applicable checks:
 | Production modular city | Roblox's free `Modular Building Kit - Modern City`, asset `13168370735` | **Candidate for Phase 2** | It is published by Roblox and includes a documented modular workflow. Inspect scripts, instance count, collisions, textures, and modification rights in a disposable place before adopting it. Do not insert it into the game place until that review passes. |
 | Destructible marketplace buildings | Community Creator Store results | **Do not use now** | Unknown scripts, structural-physics cost, inconsistent state contracts, and unclear fit. Our authored three-state requirement is small and game-specific. |
 | Kaiju marketplace rigs | Creator Store results | **Reject** | Search results are dominated by Godzilla, MonsterVerse, and other protected properties, conflicting with original-IP requirements. |
+| Original monster rig search | Free Creator Store models from verified-only search on 2026-08-01 | **Reject** | The results were unrelated or low-context community uploads and did not provide a clearly original, inspectable, mobile-ready rig. A lightweight original shell on the native R15 controller is lower risk for the comprehension prototype. |
+| First city readability pass | Roblox primitives and materials | **Use now** | Roads, windows, rooftops, vehicles, lights, and the breakable gate are small game-specific compositions. They remain reviewable in Git, match the staged-destruction contract, and avoid importing a large unknown scene before the layout is validated. |
 
 ## Sources reviewed
 
@@ -45,3 +47,5 @@ A candidate must pass all applicable checks:
 - [Official Modular Building Kit - Modern City](https://create.roblox.com/store/asset/13168370735)
 
 Roblox warns that unfamiliar packages can contain malicious scripts and recommends saving and inspecting them before use. Accordingly, third-party models are reviewed in a disposable place and never inserted directly into the source place as an experiment.
+
+The 2026-08-01 Creator Store re-check used free, verified-creator-only searches for an original monster rig and a low-poly city. No character result passed the originality, provenance, relevance, and inspection threshold. Community city packs were not adopted because the source-controlled primitive city solves the current readability test with less security and performance risk. The official Roblox modular kit remains the strongest later candidate.
