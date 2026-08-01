@@ -8,6 +8,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 ### Added
 
+- Research-backed Phase 2D roadmap for a sustained, server-authoritative demolition Beam and tiered, pooled destruction spectacle with mobile and Reduced Effects gates.
 - Research-led game design, technical architecture, roadmap, art direction, and validation ledger.
 - Free Rojo/Rokit/StyLua/Selene/Git LFS toolchain with public GitHub Actions validation.
 - Server-authoritative round state, charge, smash, and three-state destruction foundations.
