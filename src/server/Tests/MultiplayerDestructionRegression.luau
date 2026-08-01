@@ -13,6 +13,7 @@ end
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local DestructibleContract = require(ReplicatedStorage.Shared.DestructibleContract)
+local LocalizedDamage = require(ReplicatedStorage.Shared.LocalizedDamage)
 local PlayerRole = require(ReplicatedStorage.Shared.PlayerRole)
 local StudioTestProtocol = require(ReplicatedStorage.Shared.StudioTestProtocol)
 
@@ -29,6 +30,11 @@ type ClientReport = {
 	damagedVisible: number,
 	collapsedVisible: number,
 	debrisCount: number,
+	damageZoneState: string,
+	impactSequence: number,
+	localizedHoleCount: number,
+	localizedPartCount: number,
+	damagedNeonCount: number,
 	role: string,
 	cameraMin: number,
 	cameraMax: number,
@@ -84,6 +90,11 @@ local function parseReport(player: Player, payload: any): ClientReport?
 		or type(payload.damagedVisible) ~= "number"
 		or type(payload.collapsedVisible) ~= "number"
 		or type(payload.debrisCount) ~= "number"
+		or type(payload.damageZoneState) ~= "string"
+		or type(payload.impactSequence) ~= "number"
+		or type(payload.localizedHoleCount) ~= "number"
+		or type(payload.localizedPartCount) ~= "number"
+		or type(payload.damagedNeonCount) ~= "number"
 		or type(payload.role) ~= "string"
 		or type(payload.cameraMin) ~= "number"
 		or type(payload.cameraMax) ~= "number"
@@ -105,6 +116,11 @@ local function parseReport(player: Player, payload: any): ClientReport?
 		damagedVisible = payload.damagedVisible,
 		collapsedVisible = payload.collapsedVisible,
 		debrisCount = payload.debrisCount,
+		damageZoneState = payload.damageZoneState,
+		impactSequence = payload.impactSequence,
+		localizedHoleCount = payload.localizedHoleCount,
+		localizedPartCount = payload.localizedPartCount,
+		damagedNeonCount = payload.damagedNeonCount,
 		role = payload.role,
 		cameraMin = payload.cameraMin,
 		cameraMax = payload.cameraMax,
@@ -123,6 +139,22 @@ local function reportMatchesCollapsedState(report: ClientReport): boolean
 		and report.intactVisible == 0
 		and report.damagedVisible == 0
 		and report.collapsedVisible > 0
+		and report.localizedHoleCount == 0
+		and report.localizedPartCount == 0
+end
+
+local function reportMatchesLocalizedDamage(report: ClientReport): boolean
+	return report.state == "Damaged"
+		and report.sequence == 1
+		and report.health == 4
+		and report.intactVisible == 0
+		and report.damagedVisible > 0
+		and report.collapsedVisible == 0
+		and report.impactSequence == 1
+		and LocalizedDamage.CountMarks(report.damageZoneState) == 1
+		and report.localizedHoleCount == 1
+		and report.localizedPartCount == 5
+		and report.damagedNeonCount == 0
 end
 
 function MultiplayerDestructionRegression.TryStart(roundService: RoundService, remotes: Folder)
@@ -214,6 +246,69 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 			return
 		end
 
+		local localizedTarget = findTargetById(StudioTestProtocol.LocalizedTargetStructureId)
+		if not localizedTarget then
+			fail("localized-damage cooling tower was not registered")
+			return
+		end
+		local localizedHitbox = localizedTarget:FindFirstChild("DamageHitbox")
+		if not localizedHitbox or not localizedHitbox:IsA("BasePart") then
+			fail("localized-damage cooling tower hitbox was unavailable")
+			return
+		end
+		local localizedTargetPosition = localizedHitbox.Position
+		local localizedAttackPosition = localizedTargetPosition
+			+ Vector3.new(
+				0,
+				-5,
+				localizedHitbox.Size.Z * 0.5 + Config.Combat.BasicAttackForwardOffset
+			)
+		root.AssemblyLinearVelocity = Vector3.zero
+		root.AssemblyAngularVelocity = Vector3.zero
+		root.CFrame = CFrame.lookAt(localizedAttackPosition, localizedTargetPosition)
+		testRemote:FireClient(firstPlayer, { command = "attack", hits = 1 })
+
+		if
+			not waitUntil(function()
+				local zoneState =
+					localizedTarget:GetAttribute(DestructibleContract.Attribute.DamageZoneState)
+				return localizedTarget:GetAttribute(DestructibleContract.Attribute.State)
+						== "Damaged"
+					and localizedTarget:GetAttribute(DestructibleContract.Attribute.ImpactSequence) == 1
+					and type(zoneState) == "string"
+					and LocalizedDamage.CountMarks(zoneState) == 1
+			end, 8)
+		then
+			fail("cooling tower did not record the first localized Smash impact")
+			return
+		end
+
+		testRemote:FireClient(firstPlayer, {
+			command = "report",
+			stage = StudioTestProtocol.LocalizedExistingStage,
+			structureId = StudioTestProtocol.LocalizedTargetStructureId,
+			expectedState = "Damaged",
+		})
+		if
+			not waitUntil(function()
+				return reports[StudioTestProtocol.LocalizedExistingStage] ~= nil
+					or reportErrors[StudioTestProtocol.LocalizedExistingStage] ~= nil
+			end, 10)
+		then
+			fail("initial client did not report localized cooling-tower damage")
+			return
+		end
+		if reportErrors[StudioTestProtocol.LocalizedExistingStage] then
+			fail(
+				`initial localized report failed: {reportErrors[StudioTestProtocol.LocalizedExistingStage]}`
+			)
+			return
+		end
+		if not reportMatchesLocalizedDamage(reports[StudioTestProtocol.LocalizedExistingStage]) then
+			fail("initial client localized rupture did not match the server zone")
+			return
+		end
+
 		local targetPosition = target.DamageHitbox.Position
 		local attackPosition = targetPosition + Vector3.new(0, 4, 18)
 		root.AssemblyLinearVelocity = Vector3.zero
@@ -233,6 +328,8 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 		testRemote:FireClient(firstPlayer, {
 			command = "report",
 			stage = StudioTestProtocol.ExistingClientStage,
+			structureId = StudioTestProtocol.TargetStructureId,
+			expectedState = "Collapsed",
 		})
 		if
 			not waitUntil(function()
@@ -331,6 +428,37 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 			)
 		then
 			fail("controlled contact collision matrix was incorrect")
+			return
+		end
+
+		testRemote:FireClient(resolvedLatePlayer, {
+			command = "report",
+			stage = StudioTestProtocol.LocalizedLateStage,
+			structureId = StudioTestProtocol.LocalizedTargetStructureId,
+			expectedState = "Damaged",
+		})
+		if
+			not waitUntil(function()
+				return reports[StudioTestProtocol.LocalizedLateStage] ~= nil
+					or reportErrors[StudioTestProtocol.LocalizedLateStage] ~= nil
+			end, 15)
+		then
+			fail("late client did not reconstruct localized cooling-tower damage")
+			return
+		end
+		if reportErrors[StudioTestProtocol.LocalizedLateStage] then
+			fail(
+				`late localized report failed: {reportErrors[StudioTestProtocol.LocalizedLateStage]}`
+			)
+			return
+		end
+		local localizedLateReport = reports[StudioTestProtocol.LocalizedLateStage]
+		if not reportMatchesLocalizedDamage(localizedLateReport) then
+			fail("late client localized rupture did not match durable server state")
+			return
+		end
+		if localizedLateReport.debrisCount ~= 0 then
+			fail("late client replayed historical localized impact debris")
 			return
 		end
 
@@ -478,6 +606,8 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 		testRemote:FireClient(resolvedLatePlayer, {
 			command = "report",
 			stage = StudioTestProtocol.LateClientStage,
+			structureId = StudioTestProtocol.TargetStructureId,
+			expectedState = "Collapsed",
 		})
 		if
 			not waitUntil(function()
@@ -598,6 +728,16 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 			kaijuRespawnHealth = kaijuRespawnHealth,
 			contactVelocity = contactVelocity,
 			humanRespawnHealth = humanRespawnHealth,
+			localizedStructureId = StudioTestProtocol.LocalizedTargetStructureId,
+			localizedImpactSequence = localizedTarget:GetAttribute(
+				DestructibleContract.Attribute.ImpactSequence
+			),
+			localizedZoneState = localizedTarget:GetAttribute(
+				DestructibleContract.Attribute.DamageZoneState
+			),
+			localizedExistingHoles = reports[StudioTestProtocol.LocalizedExistingStage].localizedHoleCount,
+			localizedLateHoles = localizedLateReport.localizedHoleCount,
+			localizedDamagedNeon = localizedLateReport.damagedNeonCount,
 		})
 	end)
 end

@@ -6,9 +6,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local DestructibleContract = require(ReplicatedStorage.Shared.DestructibleContract)
+local LocalizedDamage = require(ReplicatedStorage.Shared.LocalizedDamage)
 local Types = require(ReplicatedStorage.Shared.Types)
 local CosmeticDebrisPool = require(script.Parent.Parent.Effects.CosmeticDebrisPool)
 local DestructionEffectProfiles = require(script.Parent.Parent.Effects.DestructionEffectProfiles)
+local LocalizedDamageRenderer = require(script.Parent.Parent.Effects.LocalizedDamageRenderer)
 
 type Components = DestructibleContract.Components
 type DestructionEvent = Types.DestructionEvent
@@ -19,6 +21,7 @@ type StructureView = {
 	components: Components,
 	connections: { RBXScriptConnection },
 	lastSequence: number,
+	localizedDamageRenderer: any,
 }
 
 local DestructionController = {}
@@ -38,10 +41,22 @@ local function isValidEvent(payload: any): boolean
 	return typeof(payload) == "table"
 		and typeof(payload.structureId) == "string"
 		and DestructibleContract.IsState(payload.state)
-		and typeof(payload.sequence) == "number"
-		and payload.sequence % 1 == 0
-		and payload.sequence >= 1
+		and typeof(payload.stateSequence) == "number"
+		and payload.stateSequence % 1 == 0
+		and payload.stateSequence >= 0
+		and typeof(payload.impactSequence) == "number"
+		and payload.impactSequence % 1 == 0
+		and payload.impactSequence >= 1
 		and typeof(payload.position) == "Vector3"
+		and typeof(payload.normal) == "Vector3"
+		and payload.normal.Magnitude > 0.9
+		and payload.normal.Magnitude < 1.1
+		and LocalizedDamage.IsAttackType(payload.attackType)
+		and typeof(payload.zoneIndex) == "number"
+		and payload.zoneIndex % 1 == 0
+		and payload.zoneIndex >= 1
+		and payload.zoneIndex <= LocalizedDamage.ZoneCount
+		and LocalizedDamage.NormalizeState(payload.zoneState) == payload.zoneState
 		and typeof(payload.materialProfile) == "string"
 end
 
@@ -52,7 +67,7 @@ function DestructionController.new(destructionStateRemote: RemoteEvent)
 	self._connections = {} :: { RBXScriptConnection }
 	self._views = {} :: { [Model]: StructureView }
 	self._viewsById = {} :: { [string]: StructureView }
-	self._lastEffectSequence = {} :: { [string]: number }
+	self._lastImpactSequence = {} :: { [string]: number }
 	self._debrisPool = CosmeticDebrisPool.new(
 		Config.Destruction.MaximumCosmeticDebris,
 		Config.Destruction.CosmeticDebrisPrewarmCount
@@ -78,6 +93,20 @@ function DestructionController:_syncState(view: StructureView)
 	then
 		view.lastSequence = sequence
 		self:_applyState(view, state :: DestructionState)
+		view.localizedDamageRenderer:Sync(
+			view.structure:GetAttribute(DestructibleContract.Attribute.DamageZoneState),
+			state :: DestructionState
+		)
+	end
+end
+
+function DestructionController:_syncLocalizedDamage(view: StructureView)
+	local state = view.structure:GetAttribute(DestructibleContract.Attribute.State)
+	if DestructibleContract.IsState(state) then
+		view.localizedDamageRenderer:Sync(
+			view.structure:GetAttribute(DestructibleContract.Attribute.DamageZoneState),
+			state
+		)
 	end
 end
 
@@ -103,6 +132,11 @@ function DestructionController:_register(tagged: Instance)
 		components = components,
 		connections = {},
 		lastSequence = 0,
+		localizedDamageRenderer = LocalizedDamageRenderer.new(
+			tagged,
+			components,
+			tagged:GetAttribute(DestructibleContract.Attribute.MaterialProfile) :: string
+		),
 	}
 	self._views[tagged] = view
 	self._viewsById[structureId] = view
@@ -119,6 +153,14 @@ function DestructionController:_register(tagged: Instance)
 			:GetAttributeChangedSignal(DestructibleContract.Attribute.StateSequence)
 			:Connect(function()
 				self:_syncState(view)
+			end)
+	)
+	table.insert(
+		view.connections,
+		tagged
+			:GetAttributeChangedSignal(DestructibleContract.Attribute.DamageZoneState)
+			:Connect(function()
+				self:_syncLocalizedDamage(view)
 			end)
 	)
 	self:_syncState(view)
@@ -138,6 +180,7 @@ function DestructionController:_unregister(tagged: Instance)
 		connection:Disconnect()
 	end
 	table.clear(view.connections)
+	view.localizedDamageRenderer:Destroy()
 	self._views[tagged] = nil
 
 	local structureId = tagged:GetAttribute(DestructibleContract.Attribute.StructureId)
@@ -172,6 +215,46 @@ function DestructionController:_emitCollapseDebris(event: DestructionEvent)
 	end
 end
 
+function DestructionController:_emitImpactDebris(event: DestructionEvent)
+	local player = Players.LocalPlayer
+	local character = player.Character
+	local rootPart = if character then character:FindFirstChild("HumanoidRootPart") else nil
+	if rootPart and rootPart:IsA("BasePart") then
+		local effectDistance = (rootPart.Position - event.position).Magnitude
+		if effectDistance > Config.Destruction.MaximumEffectDistance then
+			return
+		end
+	end
+
+	local profile = DestructionEffectProfiles.Get(event.materialProfile)
+	local attackScale = if event.attackType == "Charge"
+		then 1.35
+		elseif event.attackType == "Beam" then 0.65
+		else 1
+	local tangent = event.normal:Cross(Vector3.yAxis)
+	if tangent.Magnitude < 0.1 then
+		tangent = Vector3.xAxis
+	else
+		tangent = tangent.Unit
+	end
+	for index = 1, Config.Destruction.FragmentsPerImpact do
+		local spread = index - (Config.Destruction.FragmentsPerImpact + 1) * 0.5
+		self._debrisPool:Spawn(
+			CFrame.new(event.position + tangent * spread * 0.7 + Vector3.new(0, index % 2, 0)),
+			Vector3.new(1.2 + (index % 2), 0.8 + (index % 3) * 0.35, 1)
+				* profile.fragmentSizeScale
+				* attackScale,
+			profile.fragmentColor,
+			profile.fragmentMaterial,
+			event.normal * (13 + index * 2) * profile.fragmentSpeedScale * attackScale
+				+ tangent * spread * 3
+				+ Vector3.new(0, 8 + index * 1.5, 0),
+			Vector3.new(index * 0.7, -index, index * 0.4),
+			math.min(2.2, Config.Destruction.CosmeticDebrisLifetimeSeconds)
+		)
+	end
+end
+
 function DestructionController:_onStateEvent(payload: any)
 	if not isValidEvent(payload) then
 		return
@@ -179,17 +262,19 @@ function DestructionController:_onStateEvent(payload: any)
 
 	local event = payload :: DestructionEvent
 	local view = self._viewsById[event.structureId]
-	if view and event.sequence >= view.lastSequence then
-		view.lastSequence = event.sequence
+	if view and event.stateSequence >= view.lastSequence then
+		view.lastSequence = event.stateSequence
 		self:_applyState(view, event.state)
+		view.localizedDamageRenderer:Sync(event.zoneState, event.state)
 	end
 
-	local lastEffectSequence = self._lastEffectSequence[event.structureId] or 0
-	if event.sequence <= lastEffectSequence then
+	local lastImpactSequence = self._lastImpactSequence[event.structureId] or 0
+	if event.impactSequence <= lastImpactSequence then
 		return
 	end
-	self._lastEffectSequence[event.structureId] = event.sequence
+	self._lastImpactSequence[event.structureId] = event.impactSequence
 
+	self:_emitImpactDebris(event)
 	if event.state == "Collapsed" then
 		self:_emitCollapseDebris(event)
 	end
@@ -243,7 +328,7 @@ function DestructionController:Destroy()
 	for _, structure in registeredStructures do
 		self:_unregister(structure)
 	end
-	table.clear(self._lastEffectSequence)
+	table.clear(self._lastImpactSequence)
 	self._debrisPool:Destroy()
 end
 

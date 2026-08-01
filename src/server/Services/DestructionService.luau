@@ -4,12 +4,16 @@ local CollectionService = game:GetService("CollectionService")
 local PhysicsService = game:GetService("PhysicsService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Config = require(ReplicatedStorage.Shared.Config)
 local DestructibleContract = require(ReplicatedStorage.Shared.DestructibleContract)
+local LocalizedDamage = require(ReplicatedStorage.Shared.LocalizedDamage)
 local Types = require(ReplicatedStorage.Shared.Types)
 
 type Components = DestructibleContract.Components
 type DestructionEvent = Types.DestructionEvent
 type DestructionState = Types.DestructionState
+type StructureDamageContext = Types.StructureDamageContext
+type SurfaceProfile = LocalizedDamage.SurfaceProfile
 type StateCallback = (player: Player, structure: Model, state: DestructionState) -> ()
 
 type StructureRecord = {
@@ -20,6 +24,9 @@ type StructureRecord = {
 	components: Components,
 	state: DestructionState,
 	sequence: number,
+	impactSequence: number,
+	damageZoneState: string,
+	surfaceProfile: SurfaceProfile,
 }
 
 local DestructionService = {}
@@ -27,6 +34,16 @@ DestructionService.__index = DestructionService
 
 local function isFinitePositiveNumber(value: any): boolean
 	return typeof(value) == "number" and value == value and value > 0 and value < math.huge
+end
+
+local function isFiniteVector3(value: any): boolean
+	return typeof(value) == "Vector3"
+		and value.X == value.X
+		and value.Y == value.Y
+		and value.Z == value.Z
+		and math.abs(value.X) < math.huge
+		and math.abs(value.Y) < math.huge
+		and math.abs(value.Z) < math.huge
 end
 
 local function configureCollisionGroup(name: string)
@@ -109,9 +126,8 @@ end
 function DestructionService:_setState(
 	record: StructureRecord,
 	state: DestructionState,
-	player: Player?,
-	broadcast: boolean
-)
+	player: Player?
+): boolean
 	local changed = record.state ~= state
 	if changed then
 		record.sequence += 1
@@ -122,22 +138,10 @@ function DestructionService:_setState(
 	record.structure:SetAttribute(DestructibleContract.Attribute.State, state)
 	record.structure:SetAttribute(DestructibleContract.Attribute.StateSequence, record.sequence)
 
-	if not changed or not broadcast then
-		return
-	end
-
-	local payload: DestructionEvent = {
-		structureId = record.structureId,
-		state = state,
-		sequence = record.sequence,
-		position = record.components.fxOrigin.WorldPosition,
-		materialProfile = record.materialProfile,
-	}
-	self._destructionStateRemote:FireAllClients(payload)
-
-	if player then
+	if changed and player then
 		self._onStateChanged(player, record.structure, state)
 	end
+	return changed
 end
 
 function DestructionService:_register(tagged: Instance)
@@ -160,6 +164,9 @@ function DestructionService:_register(tagged: Instance)
 	local maxHealth = tagged:GetAttribute(DestructibleContract.Attribute.MaxHealth) :: number
 	local materialProfile =
 		tagged:GetAttribute(DestructibleContract.Attribute.MaterialProfile) :: string
+	local surfaceProfile = LocalizedDamage.NormalizeSurfaceProfile(
+		tagged:GetAttribute(DestructibleContract.Attribute.DamageSurfaceProfile)
+	)
 	local record: StructureRecord = {
 		structure = tagged,
 		structureId = structureId,
@@ -168,6 +175,9 @@ function DestructionService:_register(tagged: Instance)
 		components = components,
 		state = "Intact",
 		sequence = 0,
+		impactSequence = 0,
+		damageZoneState = LocalizedDamage.EmptyState,
+		surfaceProfile = surfaceProfile,
 	}
 
 	configureVisuals(components)
@@ -182,7 +192,10 @@ function DestructionService:_register(tagged: Instance)
 	self._records[tagged] = record
 	self._recordsById[structureId] = record
 	tagged:SetAttribute(DestructibleContract.Attribute.CurrentHealth, maxHealth)
-	self:_setState(record, "Intact", nil, false)
+	tagged:SetAttribute(DestructibleContract.Attribute.ImpactSequence, 0)
+	tagged:SetAttribute(DestructibleContract.Attribute.DamageZoneState, LocalizedDamage.EmptyState)
+	tagged:SetAttribute(DestructibleContract.Attribute.DamageSurfaceProfile, surfaceProfile)
+	self:_setState(record, "Intact", nil)
 end
 
 function DestructionService:_unregister(tagged: Instance)
@@ -224,9 +237,21 @@ function DestructionService:Start()
 	end
 end
 
-function DestructionService:Damage(player: Player, structure: Model, amount: number): boolean
+function DestructionService:Damage(
+	player: Player,
+	structure: Model,
+	amount: number,
+	context: StructureDamageContext
+): boolean
 	local record = self._records[structure]
-	if not record or not isFinitePositiveNumber(amount) then
+	if
+		not record
+		or not isFinitePositiveNumber(amount)
+		or typeof(context) ~= "table"
+		or not LocalizedDamage.IsAttackType(context.attackType)
+		or not isFiniteVector3(context.position)
+		or (context.normal ~= nil and not isFiniteVector3(context.normal))
+	then
 		return false
 	end
 
@@ -243,8 +268,43 @@ function DestructionService:Damage(player: Player, structure: Model, amount: num
 
 	local nextHealth = math.max(0, math.min(record.maxHealth, currentHealth - amount))
 	local nextState: DestructionState = if nextHealth <= 0 then "Collapsed" else "Damaged"
+	local zoneIndex = LocalizedDamage.ResolveImpactZone(
+		record.components.damageHitbox,
+		record.surfaceProfile,
+		context.position
+	)
+	local impactPosition, impactNormal = LocalizedDamage.ResolveZoneFrame(
+		record.components.damageHitbox,
+		record.surfaceProfile,
+		zoneIndex
+	)
+	local nextZoneState = LocalizedDamage.ApplyImpact(
+		record.damageZoneState,
+		zoneIndex,
+		context.attackType,
+		Config.Destruction.MaximumPersistentMarksPerStructure
+	)
+	record.damageZoneState = nextZoneState
+	record.impactSequence += 1
+
 	structure:SetAttribute(DestructibleContract.Attribute.CurrentHealth, nextHealth)
-	self:_setState(record, nextState, player, true)
+	structure:SetAttribute(DestructibleContract.Attribute.DamageZoneState, record.damageZoneState)
+	structure:SetAttribute(DestructibleContract.Attribute.ImpactSequence, record.impactSequence)
+	self:_setState(record, nextState, player)
+
+	local payload: DestructionEvent = {
+		structureId = record.structureId,
+		state = nextState,
+		stateSequence = record.sequence,
+		impactSequence = record.impactSequence,
+		position = impactPosition,
+		normal = impactNormal,
+		attackType = context.attackType,
+		zoneIndex = zoneIndex,
+		zoneState = record.damageZoneState,
+		materialProfile = record.materialProfile,
+	}
+	self._destructionStateRemote:FireAllClients(payload)
 
 	return true
 end
@@ -256,7 +316,12 @@ function DestructionService:Reset(structure: Model): boolean
 	end
 
 	structure:SetAttribute(DestructibleContract.Attribute.CurrentHealth, record.maxHealth)
-	self:_setState(record, "Intact", nil, true)
+	record.damageZoneState = LocalizedDamage.EmptyState
+	structure:SetAttribute(
+		DestructibleContract.Attribute.DamageZoneState,
+		LocalizedDamage.EmptyState
+	)
+	self:_setState(record, "Intact", nil)
 	return true
 end
 

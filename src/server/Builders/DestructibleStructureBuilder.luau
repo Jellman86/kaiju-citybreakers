@@ -23,6 +23,7 @@ export type Definition = {
 	collapsedCollisionSize: Vector3,
 	damageHitboxCFrame: CFrame,
 	damageHitboxSize: Vector3,
+	damageSurfaceProfile: string?,
 }
 
 type VisualBuilder = (visuals: VisualModels) -> ()
@@ -93,6 +94,10 @@ function DestructibleStructureBuilder.Build(
 	structure:SetAttribute(
 		DestructibleContract.Attribute.MaterialProfile,
 		definition.materialProfile
+	)
+	structure:SetAttribute(
+		DestructibleContract.Attribute.DamageSurfaceProfile,
+		definition.damageSurfaceProfile or "Box"
 	)
 
 	local visualRoot = createModel("Visuals", structure)

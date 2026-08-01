@@ -65,6 +65,8 @@ This focused slice comes before enemy production. It must make the existing city
 
 #### Deliverables
 
+- Replace arbitrary glowing damage seams with impact-local rupture marks. Every accepted structure hit carries a server-derived attack type and quantized surface zone; replicated zone state reconstructs the same holes for late joiners without replaying transient debris.
+- Prove archetype-specific damage first on the Arc Power Plant cooling towers: dark interior breach, torn non-emissive rim, attack-scaled silhouette, and no persistent Neon damage indicator. Retain authored health/collision/collapse states rather than runtime fracture physics.
 - Replace the single-impact Beam with a short hold-to-channel action: wind-up, approximately `1.5` seconds of active sweep, and recovery. Duration is a playtest parameter, not a final balance value.
 - Keep a server-owned Beam session with bounded begin, aim-update, and end requests. Resolve damage at a fixed low frequency instead of every rendered frame; validate the living character, direction cone, duration, cadence, range, and cooldown on every session.
 - Let the Beam draw a destructive path by damaging successive unique structures as aim moves or earlier structures collapse. Reuse the existing destructible registry, collision group, state machine, and cleared-rubble behaviour; cap targets per sample and per channel.
@@ -82,6 +84,7 @@ Compare bounded repeated `Spherecast` traversal with a native swept-volume overl
 - Confirm one channel cannot exceed its duration, sample rate, unique-target cap, or damage budget even with malformed or repeated remotes.
 - Stress a twenty-building chain while recording client/server frame time, memory trend, network traffic, active fragments, and concurrent emitters on a physical phone.
 - Verify that damaged and collapsed states remain visually distinct after effects finish, late joiners reconstruct authoritative states, and two clients cannot double-apply one player's Beam samples.
+- Confirm repeated hits create at most the configured persistent marks per structure, no damaged archetype uses placeholder Neon geometry, and reset/collapse removes localized marks without leaving client instances behind.
 - Check Reduced Effects, photosensitivity-safe flashing, camera comfort, and aim readability with no coaching.
 
 #### Exit gate

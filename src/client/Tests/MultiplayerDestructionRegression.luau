@@ -38,17 +38,48 @@ local function isRequestedTest(): boolean
 	return ok and args == StudioTestProtocol.MultiplayerDestructionTest
 end
 
-local function findTarget(): Model?
+local function findTarget(structureId: string): Model?
 	for _, tagged in CollectionService:GetTagged(DestructibleContract.Tag) do
 		if
 			tagged:IsA("Model")
-			and tagged:GetAttribute(DestructibleContract.Attribute.StructureId)
-				== StudioTestProtocol.TargetStructureId
+			and tagged:GetAttribute(DestructibleContract.Attribute.StructureId) == structureId
 		then
 			return tagged
 		end
 	end
 	return nil
+end
+
+local function countLocalizedDamage(target: Model): (number, number)
+	local container = target:FindFirstChild("ClientLocalizedDamage")
+	if not container or not container:IsA("Model") then
+		return 0, 0
+	end
+	local holes = 0
+	local visibleParts = 0
+	for _, descendant in container:GetDescendants() do
+		if descendant:IsA("BasePart") and descendant.LocalTransparencyModifier < 1 then
+			visibleParts += 1
+			if descendant.Name == "LocalizedDamageHole" then
+				holes += 1
+			end
+		end
+	end
+	return holes, visibleParts
+end
+
+local function countVisibleNeon(variant: Model): number
+	local count = 0
+	for _, descendant in variant:GetDescendants() do
+		if
+			descendant:IsA("BasePart")
+			and descendant.LocalTransparencyModifier < 1
+			and descendant.Material == Enum.Material.Neon
+		then
+			count += 1
+		end
+	end
+	return count
 end
 
 local function countVisibleParts(variant: Model): number
@@ -133,13 +164,18 @@ function MultiplayerDestructionRegression.TryStart(
 				return
 			end
 
-			if payload.command ~= "report" or type(payload.stage) ~= "string" then
+			if
+				payload.command ~= "report"
+				or type(payload.stage) ~= "string"
+				or type(payload.structureId) ~= "string"
+				or type(payload.expectedState) ~= "string"
+			then
 				return
 			end
 
 			local target: Model? = nil
 			waitUntil(function()
-				target = findTarget()
+				target = findTarget(payload.structureId)
 				return target ~= nil
 			end, 15)
 			if not target then
@@ -154,13 +190,13 @@ function MultiplayerDestructionRegression.TryStart(
 			if
 				not waitUntil(function()
 					return resolvedTarget:GetAttribute(DestructibleContract.Attribute.State)
-						== "Collapsed"
+						== payload.expectedState
 				end, 15)
 			then
 				testRemote:FireServer({
 					kind = "report_error",
 					stage = payload.stage,
-					reason = "collapsed attributes did not replicate to client",
+					reason = "expected destruction attributes did not replicate to client",
 				})
 				return
 			end
@@ -193,6 +229,7 @@ function MultiplayerDestructionRegression.TryStart(
 				})
 				return
 			end
+			local localizedHoleCount, localizedPartCount = countLocalizedDamage(resolvedTarget)
 
 			testRemote:FireServer({
 				kind = "report",
@@ -206,6 +243,15 @@ function MultiplayerDestructionRegression.TryStart(
 				damagedVisible = countVisibleParts(damaged),
 				collapsedVisible = countVisibleParts(collapsed),
 				debrisCount = countActiveDebris(),
+				damageZoneState = resolvedTarget:GetAttribute(
+					DestructibleContract.Attribute.DamageZoneState
+				),
+				impactSequence = resolvedTarget:GetAttribute(
+					DestructibleContract.Attribute.ImpactSequence
+				),
+				localizedHoleCount = localizedHoleCount,
+				localizedPartCount = localizedPartCount,
+				damagedNeonCount = countVisibleNeon(damaged),
 				role = Players.LocalPlayer:GetAttribute("CharacterRole"),
 				cameraMin = Players.LocalPlayer.CameraMinZoomDistance,
 				cameraMax = Players.LocalPlayer.CameraMaxZoomDistance,

@@ -222,13 +222,13 @@ local function createBuilding(
 				visuals.damaged
 			)
 			createTrimPart(
-				`EnergyCrack{side}`,
+				`StructuralSplit{side}`,
 				Vector3.new(0.5, math.max(7, size.Y * 0.45), 0.45),
 				origin
 					* CFrame.new(side * size.X * 0.2, size.Y * 0.5, -size.Z / 2 - 0.24)
 					* CFrame.Angles(0, 0, math.rad(side * 18)),
-				Color3.fromRGB(255, 137, 60),
-				Enum.Material.Neon,
+				Color3.fromRGB(39, 33, 31),
+				Enum.Material.SmoothPlastic,
 				visuals.damaged
 			)
 		end
@@ -277,6 +277,7 @@ local function createCoolingTower(
 		collapsedCollisionSize = Vector3.new(diameter, 1.5, diameter),
 		damageHitboxCFrame = origin * CFrame.new(0, height / 2, 0),
 		damageHitboxSize = Vector3.new(diameter + 4, height + 2, diameter + 4),
+		damageSurfaceProfile = "Cylinder",
 	}, function(visuals)
 		local intactShell = createVisualPart(
 			"CoolingShell",
@@ -306,15 +307,6 @@ local function createCoolingTower(
 			visuals.damaged
 		)
 		damagedShell.Shape = Enum.PartType.Cylinder
-		createTrimPart(
-			"EnergyFracture",
-			Vector3.new(1.2, height * 0.55, diameter + 0.5),
-			origin * CFrame.new(-diameter / 2 - 0.3, height * 0.58, 0),
-			Color3.fromRGB(255, 153, 61),
-			Enum.Material.Neon,
-			visuals.damaged
-		)
-
 		createCollapsedChunks(
 			visuals.collapsed,
 			origin,
@@ -440,6 +432,7 @@ local function createWall(parent: Instance): Model
 	wall:SetAttribute(DestructibleContract.Attribute.MaxHealth, Config.Prototype.WallMaxHealth)
 	wall:SetAttribute(DestructibleContract.Attribute.EnergyValue, 10)
 	wall:SetAttribute(DestructibleContract.Attribute.MaterialProfile, "Concrete")
+	wall:SetAttribute(DestructibleContract.Attribute.DamageSurfaceProfile, "Box")
 
 	local wallCFrame = CFrame.new(0, 11, -28)
 
@@ -481,13 +474,13 @@ local function createWall(parent: Instance): Model
 
 	for index = -1, 1 do
 		local crack = createTrimPart(
-			`Crack{index + 2}`,
+			`StructuralSplit{index + 2}`,
 			Vector3.new(0.35, 9, 0.35),
 			wallCFrame
 				* CFrame.new(index * 6, index * 2, -3.65)
 				* CFrame.Angles(0, 0, math.rad(index * 18 + 12)),
-			Color3.fromRGB(255, 139, 61),
-			Enum.Material.Neon,
+			Color3.fromRGB(42, 35, 33),
+			Enum.Material.SmoothPlastic,
 			damaged
 		)
 		crack.CanCollide = false
@@ -666,8 +659,8 @@ local function buildWarehouseVisuals(visuals: VisualModels, origin: CFrame)
 			origin
 				* CFrame.new(index * 10, 8 + index, -14.35)
 				* CFrame.Angles(0, 0, math.rad(index * 16 + 8)),
-			warningColor,
-			Enum.Material.Neon,
+			Color3.fromRGB(46, 39, 36),
+			Enum.Material.Metal,
 			visuals.damaged
 		)
 	end
@@ -790,13 +783,13 @@ local function buildTowerVisuals(visuals: VisualModels, origin: CFrame)
 	)
 	for index = -1, 1 do
 		createTrimPart(
-			`EnergyCrack{index + 2}`,
+			`StructuralSplit{index + 2}`,
 			Vector3.new(0.45, 11, 0.45),
 			origin
 				* CFrame.new(index * 6, 22 + index * 3, -13.25)
 				* CFrame.Angles(0, 0, math.rad(index * 20 + 9)),
-			Color3.fromRGB(255, 132, 62),
-			Enum.Material.Neon,
+			Color3.fromRGB(40, 34, 32),
+			Enum.Material.SmoothPlastic,
 			visuals.damaged
 		)
 	end
@@ -919,11 +912,11 @@ local function buildSubstationVisuals(visuals: VisualModels, origin: CFrame)
 			visuals.damaged
 		)
 		createTrimPart(
-			`ArcSeam{side}`,
+			`TornConduit{side}`,
 			Vector3.new(1, 7, 1),
 			origin * CFrame.new(10 + side * 2, 9, side * 8),
-			Color3.fromRGB(255, 145, 61),
-			Enum.Material.Neon,
+			Color3.fromRGB(39, 34, 32),
+			Enum.Material.Metal,
 			visuals.damaged
 		)
 	end

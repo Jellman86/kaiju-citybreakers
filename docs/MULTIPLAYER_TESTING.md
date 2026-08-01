@@ -14,18 +14,20 @@ With Rojo connected and Studio in Edit mode, execute this through a plugin-secur
 local StudioTestService = game:GetService("StudioTestService")
 local result = StudioTestService:ExecuteMultiplayerTestAsync(
 	1,
-	"KaijuMultiplayerCombatV2"
+	"KaijuLocalizedDestructionV3"
 )
 print(result)
 ```
 
-The argument intentionally starts one client. The server harness collapses the north warehouse through that client's normal ability remote, then calls `StudioTestService:AddPlayers(1)` to create the late client. The first client is the kaiju and the late client is human. After the replication checks, the kaiju client leaves and the server must promote and reload the remaining player as the kaiju. `EndTest()` returns one structured pass/fail result to the Edit-mode caller.
+The argument intentionally starts one client. The server harness first damages an Arc Power Plant cooling tower through that client's normal Smash path, then collapses the north warehouse and calls `StudioTestService:AddPlayers(1)` to create the late client. The first client is the kaiju and the late client is human. After the replication checks, the kaiju client leaves and the server must promote and reload the remaining player as the kaiju. `EndTest()` returns one structured pass/fail result to the Edit-mode caller.
 
 ## Acceptance contract
 
 - The first client becomes ready and the normal round reaches `Active`.
+- One spatially valid Smash records one server-derived cooling-tower surface zone, shows exactly one five-part localized rupture, and leaves zero visible Neon parts in the damaged variant.
+- The late client reconstructs the same rupture from `DamageZoneState` without replaying historical impact debris.
 - Three spatially valid, cooldown-respecting client attack requests collapse `north_warehouse`.
-- Server state ends at health `0`, `Collapsed`, sequence `2`, with the collapsed proxy active and damage hitbox queryable.
+- Server state ends at health `0`, `Collapsed`, sequence `2`, with the collapsed proxy active and damage hitbox no longer queryable.
 - The existing client and late client independently report the same replicated attributes and show only the collapsed visual variant.
 - The existing client observes the live collapse effect; the late client receives no historical debris burst.
 - The first player has the replicated `Kaiju` role and the late player has the replicated `Human` role.

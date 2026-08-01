@@ -97,6 +97,9 @@ Server-owned runtime attributes:
 - `CurrentHealth: number`
 - `DestructionState: Intact | Damaged | Collapsed`
 - `DestructionStateSequence: number`
+- `DamageImpactSequence: number`
+- `DamageZoneState: string` — fixed-width compact zone encoding; `-`, `S`, `C`, and `B` mean empty, Smash, Charge, and Beam.
+- `DamageSurfaceProfile: Box | Cylinder`
 
 The full hierarchy, collision/query rules, evidence basis, and provisional gates are defined in [DESTRUCTION_SYSTEM.md](DESTRUCTION_SYSTEM.md).
 

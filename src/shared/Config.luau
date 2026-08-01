@@ -50,7 +50,12 @@ local Config = {
 		CosmeticDebrisPrewarmCount = 10,
 		CosmeticDebrisLifetimeSeconds = 5,
 		FragmentsPerCollapse = 10,
+		FragmentsPerImpact = 5,
 		MaximumEffectDistance = 600,
+		MaximumPersistentMarksPerStructure = 2,
+		SmashMarkDiameter = 12,
+		ChargeMarkDiameter = 18,
+		BeamMarkDiameter = 8,
 	},
 
 	MixedScale = {

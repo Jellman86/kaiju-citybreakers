@@ -8,6 +8,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 ### Added
 
+- Localized authored building damage with server-derived surface zones, Smash/Charge/Beam-shaped rupture marks, compact late-join reconstruction, and bounded pooled impact chips.
 - Initial mixed-scale player foundation with one server-assigned giant Brontide, human-sized later players, role-specific spawns/cameras/metrics, non-flinging collision groups, and a human-scale doorway reference.
 - Native multiplayer regression coverage for measured role scale, human combat rejection, role-specific cameras/actions, late-join destruction reconstruction, and automatic kaiju promotion after disconnect.
 - Asymmetric mixed-scale combat foundation with a cross-device human energy blaster, damage and death for both roles, role-preserving respawns, kaiju attacks against humans, and controlled physical kaiju contact.
@@ -38,6 +39,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 ### Changed
 
+- Damaged cooling towers and other building archetypes now use dark physical splits and impact-local cavities instead of persistent orange Neon crack plates; every accepted hit emits a sequenced localized-damage event even when the structure remains `Damaged`.
 - Repository visibility changed from private to public so standard GitHub-hosted CI remains free.
 - Production publishing now uses a clean, commit-labelled Rojo place artifact with a SHA-256 digest and mandatory fresh-server smoke test; Rojo sync is reserved for iteration.
 - Charge movement now uses a short native `LinearVelocity` constraint after Studio testing showed that a one-frame velocity was neutralized by the Humanoid controller.

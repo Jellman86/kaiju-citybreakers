@@ -122,3 +122,15 @@ No dependency, external asset, texture, or paid service is added. Replacement pl
 | Human/kaiju physical contact | One native smooth welded contact proxy plus collision groups and a throttled server overlap | **Use provisionally** | Full-rig collision is unstable at the measured scale difference. One inspectable proxy provides physical blocking while explicit server logic owns damage and bounded knockback. |
 
 No dependency, external asset, paid service or new production art is adopted. Replace the enlarged R15 proxy with an original Blender custom humanoid only after actual bounds, role fun, camera comfort and mobile performance pass.
+
+## 2026-08-01 — Localized authored-damage audit
+
+| Need | Candidate | Decision | Reason |
+| --- | --- | --- | --- |
+| Durable impact-local damage | Native attributes plus a shared fixed-zone codec | **Use** | A compact server-owned string reconstructs hit location and attack type for late joiners without replicating arbitrary geometry or trusting client coordinates. |
+| Persistent rupture presentation | Small client-authored primitive cavity and torn rim | **Use provisionally** | It directly replaces the observed Neon placeholder, uses built-in materials, remains non-physical, and is capped per structure. Retain only if phone playtests find it more convincing. |
+| Runtime `SubtractAsync`/CSG | Native CSG operation | **Reject for this slice** | It yields and would create changing complex geometry on the authoritative path; the current hypothesis does not require arbitrary topology. |
+| Runtime `EditableMesh` cutting | Native mesh API | **Defer** | Published use requires the Mesh/Image API setting and eligible account verification, and creation can fail against device-specific editable-memory budgets. Reassess only if authored zones cannot meet the visual gate. |
+| Marketplace destruction framework | Creator Store/community packages | **Reject** | The existing strict registry, state machine, queries, late-join attributes, and debris pool already cover the requirement with less security, licence, and performance surface. |
+
+No dependency, external asset, texture, paid service, or new permission is added. Replacement plan: preserve the impact metadata and replace only the primitive client renderer with original archetype-specific Blender breakaway meshes if H10 passes.

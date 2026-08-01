@@ -325,7 +325,15 @@ function CombatService:_performBasicAttack(player: Player, sequence: number)
 		if structure and not seen[structure] then
 			seen[structure] = true
 			if
-				self._destructionService:Damage(player, structure, Config.Combat.BasicAttackDamage)
+				self._destructionService:Damage(
+					player,
+					structure,
+					Config.Combat.BasicAttackDamage,
+					{
+						attackType = "Smash",
+						position = hitboxCFrame.Position,
+					}
+				)
 			then
 				hitCount += 1
 				if hitCount >= Config.Combat.MaximumStructuresPerAttack then
@@ -434,7 +442,11 @@ function CombatService:_performCharge(player: Player, sequence: number)
 						self._destructionService:Damage(
 							player,
 							structure,
-							Config.Combat.ChargeImpactDamage
+							Config.Combat.ChargeImpactDamage,
+							{
+								attackType = "Charge",
+								position = impactCFrame.Position,
+							}
 						)
 					then
 						impactCount += 1
@@ -562,7 +574,11 @@ function CombatService:_performBeam(player: Player, sequence: number, requestedD
 		local structure = findDestructible(raycastResult.Instance)
 		if
 			structure
-			and self._destructionService:Damage(player, structure, Config.Combat.BeamDamage)
+			and self._destructionService:Damage(player, structure, Config.Combat.BeamDamage, {
+				attackType = "Beam",
+				position = raycastResult.Position,
+				normal = raycastResult.Normal,
+			})
 		then
 			hitCount = 1
 		end

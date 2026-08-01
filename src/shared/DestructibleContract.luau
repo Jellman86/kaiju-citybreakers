@@ -14,6 +14,9 @@ DestructibleContract.Attribute = table.freeze({
 	MaterialProfile = "MaterialProfile",
 	State = "DestructionState",
 	StateSequence = "DestructionStateSequence",
+	ImpactSequence = "DamageImpactSequence",
+	DamageZoneState = "DamageZoneState",
+	DamageSurfaceProfile = "DamageSurfaceProfile",
 })
 
 export type DestructionState = "Intact" | "Damaged" | "Collapsed"
@@ -68,6 +71,12 @@ function DestructibleContract.Validate(structure: Model): (Components?, string?)
 	local materialProfile = structure:GetAttribute(DestructibleContract.Attribute.MaterialProfile)
 	if typeof(materialProfile) ~= "string" or materialProfile == "" then
 		return nil, `{structure:GetFullName()} requires a non-empty MaterialProfile attribute`
+	end
+
+	local damageSurfaceProfile =
+		structure:GetAttribute(DestructibleContract.Attribute.DamageSurfaceProfile)
+	if damageSurfaceProfile ~= "Box" and damageSurfaceProfile ~= "Cylinder" then
+		return nil, `{structure:GetFullName()} requires DamageSurfaceProfile Box or Cylinder`
 	end
 
 	local visualsInstance, visualsError = requireChild(structure, "Visuals", "Model")
