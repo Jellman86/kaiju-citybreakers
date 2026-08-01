@@ -14,11 +14,37 @@ local EYE_COLOR = Color3.fromRGB(255, 190, 64)
 local SPAWN_CLEARANCE_STUDS = 1
 
 local function getBodyPart(character: Model, name: string): BasePart?
-	local bodyPart = character:FindFirstChild(name)
+	local bodyPart = character:FindFirstChild(name, true)
 	if bodyPart and bodyPart:IsA("BasePart") then
 		return bodyPart
 	end
 	return nil
+end
+
+local function createHeadAimPivot(character: Model, shell: Model)
+	local head = getBodyPart(character, "Head")
+	if not head then
+		return
+	end
+
+	local pivot = Instance.new("Part")
+	pivot.Name = "HeadAimPivot"
+	pivot.Size = Vector3.one
+	pivot.CFrame = head.CFrame
+	pivot.Transparency = 1
+	pivot.Anchored = false
+	pivot.CanCollide = false
+	pivot.CanQuery = false
+	pivot.CanTouch = false
+	pivot.Massless = true
+	pivot.CastShadow = false
+	pivot.Parent = shell
+
+	local motor = Instance.new("Motor6D")
+	motor.Name = "HeadAimMotor"
+	motor.Part0 = head
+	motor.Part1 = pivot
+	motor.Parent = pivot
 end
 
 local function createShellPart(
@@ -100,6 +126,7 @@ local function createBrontideShell(character: Model)
 	shell.Name = "BrontideVisual"
 	shell:SetAttribute("OriginalCharacter", "Brontide")
 	shell.Parent = character
+	createHeadAimPivot(character, shell)
 
 	attachShellPart(
 		character,
@@ -149,7 +176,7 @@ local function createBrontideShell(character: Model)
 	attachShellPart(
 		character,
 		shell,
-		"Head",
+		"HeadAimPivot",
 		"Skull",
 		Vector3.new(7, 5.8, 6.5),
 		CFrame.new(0, 0.2, 0),
@@ -160,7 +187,7 @@ local function createBrontideShell(character: Model)
 	attachShellPart(
 		character,
 		shell,
-		"Head",
+		"HeadAimPivot",
 		"Muzzle",
 		Vector3.new(5.8, 2.8, 5),
 		CFrame.new(0, -1.1, -4),
@@ -171,7 +198,7 @@ local function createBrontideShell(character: Model)
 	attachShellPart(
 		character,
 		shell,
-		"Head",
+		"HeadAimPivot",
 		"LeftEye",
 		Vector3.new(0.8, 0.8, 0.8),
 		CFrame.new(-1.65, 0.65, -3),
@@ -182,7 +209,7 @@ local function createBrontideShell(character: Model)
 	attachShellPart(
 		character,
 		shell,
-		"Head",
+		"HeadAimPivot",
 		"RightEye",
 		Vector3.new(0.8, 0.8, 0.8),
 		CFrame.new(1.65, 0.65, -3),
@@ -193,7 +220,7 @@ local function createBrontideShell(character: Model)
 	attachShellPart(
 		character,
 		shell,
-		"Head",
+		"HeadAimPivot",
 		"CrownLeft",
 		Vector3.new(1.4, 4.5, 1.4),
 		CFrame.new(-2, 3, 0.4) * CFrame.Angles(0, 0, math.rad(-24)),
@@ -204,7 +231,7 @@ local function createBrontideShell(character: Model)
 	attachShellPart(
 		character,
 		shell,
-		"Head",
+		"HeadAimPivot",
 		"CrownCentre",
 		Vector3.new(1.6, 5.5, 1.6),
 		CFrame.new(0, 3.5, 0.8) * CFrame.Angles(math.rad(-10), 0, 0),
@@ -215,7 +242,7 @@ local function createBrontideShell(character: Model)
 	attachShellPart(
 		character,
 		shell,
-		"Head",
+		"HeadAimPivot",
 		"CrownRight",
 		Vector3.new(1.4, 4.5, 1.4),
 		CFrame.new(2, 3, 0.4) * CFrame.Angles(0, 0, math.rad(24)),

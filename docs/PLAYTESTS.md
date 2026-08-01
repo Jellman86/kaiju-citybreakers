@@ -362,3 +362,33 @@ Retain the staged city expansion, three-action layout, Charge impact, and Beam f
 - The runtime audit found `17` unique tagged destructibles and `0` invalid contracts. Server and client startup markers appeared without a project script error.
 - Studio entered `PublishSuccessful` and logged `Published "Kaiju Citybreakers" to Roblox.` for existing place `137103245194702` in universe `10609698937` at 3:03 PM.
 - A fresh production-client visual smoke test remains pending because this Mac has Roblox Studio but no Roblox player, and the available browser session is not signed in. Creator Hub Error Report review is also pending authenticated access. Neither pending gate is represented as passed.
+
+## 2026-08-01 — Mega-district structural audit and Beam redesign trigger
+
+- Implementation: local working tree on `agent/beam-and-mega-districts`; not yet published.
+- Environment: clean Rojo-built `.rbxlx`, Roblox Studio iPhone 16 landscape emulation at `852 × 393`, one local client and server; **zero human testers in Studio**.
+- Human evidence: a physical-device player reported that the published Beam appeared to do nothing and requested cursor-following mouth fire with a lagging head turn.
+
+### Results
+
+- The runtime generated `33` unique valid destructibles across Central City, Titan Park, Arc Power Plant, Mount Brontide, and Azure Lake.
+- The generated world contained `1,271` descendants and `962` `BasePart` instances, with `0` invalid destruction contracts, `0` unanchored world parts, and the existing `10` lights.
+- The temporary gameplay title, instructions, and timer were absent in the updated phone build. The test then identified and removed a separate gate instruction billboard before release.
+- Phone controls remained visible inside the landscape safe area. Short-range zone labels replaced the first oversized labels that obscured the spawn view.
+- Static checks passed with zero Selene errors, warnings, or parse errors and produced the place artifact.
+- A normal aimed Beam hit the low Titan Park pavilion once and changed health `2 → 0`, `Intact → Collapsed`.
+- A normal aimed Beam hit the tall CentralNorthWestTower once and changed health `5 → 3`, `Intact → Damaged`.
+- The same request geometry left the deliberately off-axis CentralNorthEastTower at health `5`, `Intact`, with zero confirmed hits.
+- Tapping the actual generated iPhone `BEAM` action collapsed the Titan Park conservatory, proving the touch action rather than only a direct remote request.
+- Player-scale captures showed the intended open park, cyan-channel power plant, angular mountain ridge, broad lake and marina, and dense central skyline as distinct silhouettes.
+- In the final rebuilt artifact, a touch camera drag produced `-76.00°` raw camera-relative yaw; the dedicated `HeadAimMotor` retained `-38.05°` through its `C0` offset after the animation pass, matching the authored head-turn limit.
+- The final audit remained at `962` generated-world parts, `33` valid destructibles, `0` invalid contracts, `0` unanchored world parts, and `10` lights. The head pivot is a single character part outside the generated-world count.
+
+### Pending human/device gates
+
+- Complete a physical-phone performance, comfort, and comprehension test across all five districts.
+- Judge the `0.18` second Beam tracking response and `38°` head limit during natural play; Studio proves routing and bounds, not subjective feel.
+
+### Decision
+
+Retain the map scale, structure count, lean visual variants, server Beam correction, and dedicated head pivot. The exact-build engineering gate passes. Publish for the requested physical-device iteration while keeping performance, comfort, comprehension, and subjective Beam feel explicitly unverified.

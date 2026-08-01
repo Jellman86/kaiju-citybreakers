@@ -83,6 +83,16 @@ One complete five-to-eight-minute run works from join to replay with no manual i
 - Difficulty director based on player count and round performance.
 - Server-side reward calculation.
 
+### Enemy implementation order
+
+1. Define one server-owned enemy contract and a small state machine: idle, acquire, telegraph, attack, recover, stagger, and defeated.
+2. Add one scout drone using authored aerial patrol nodes and line-of-sight checks; it fires slow, dodgeable projectiles and never needs ground pathfinding.
+3. Add Arc Power Plant turrets as stationary area denial, reusing the same damage, team, telegraph, and pooling contracts.
+4. Add one ground defence unit using native `PathfindingService`, realistic agent dimensions, district cost modifiers, bounded replanning, and a direct-steering fallback.
+5. Build the defence-mech boss only after the drone and turret are readable and performant on mobile.
+
+Enemy decisions, health, damage, targeting, and rewards remain server-owned. Clients predict only harmless presentation such as wind-up effects and projectile trails. Active counts, perception frequency, path recomputation, projectiles, and effects receive explicit budgets before content multiplication; see [ENEMY_SYSTEM.md](ENEMY_SYSTEM.md).
+
 ### Exit gate
 
 Solo and two-player teams can win through readable play rather than damage racing or exploits.
@@ -171,3 +181,11 @@ Ordered only after the vertical-slice gate:
 5. Third kaiju and second district.
 6. Dominion competitive prototype.
 7. Optional atmospheric human-survival event.
+
+## Immediate implementation sequence
+
+1. Finish physical-device validation of the aimed mouth Beam and mega-district blockout.
+2. Run an uncoached navigation/destruction session in all five zones and revise scale or routes before adding more scenery.
+3. Complete the twenty-building destruction/performance test and the current full-round reset gate.
+4. Prototype exactly one scout drone in a small encounter slice; do not populate the whole map yet.
+5. Add energy collection and mutation choice only after Beam, Charge, Smash, and the scout are readable together on phone.

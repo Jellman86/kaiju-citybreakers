@@ -147,3 +147,21 @@ Basis: Roblox's client-server security guidance requires combat outcomes, cadenc
 Watch the native Jump button's final absolute position, size, and visibility, then arrange Beam, Charge, and Smash outside that rectangle with proportional gaps. Prefer a horizontal row to the left of Jump and fall back to a bounded vertical column only when the available width is insufficient.
 
 Basis: a physical iPhone screenshot showed Smash sharing the native Jump button's footprint even though the initial Studio layout appeared valid. Roblox creates and settles native controls asynchronously. A one-time descendant callback observed the button before its final geometry; property-driven relayout addresses the observed timing fault and remains subject to a final physical-phone check.
+
+## 2026-08-01 — Expand into five performance-bounded greybox zones
+
+Use a `1400 × 1100` foundation and five distinct material, density, silhouette, and landmark zones: Central City, Titan Park, Arc Power Plant, Mount Brontide, and Azure Lake. Keep all authored building silhouettes inside the existing atomic three-state destruction contract, keep terrain-like dressing non-queryable, use lean state variants for new buildings, and retain instance streaming.
+
+Basis: the stakeholder requested a much larger city with clear places rather than more repeated blocks. Roblox recommends greybox testing, spatially coherent streaming models, anchored static scenery, built-in materials, simple collision, and measuring before optimization. A new imported city kit or unrestricted physics system would discard the validated destruction contract and introduce unmeasured mobile cost. The working-tree audit records 33 valid destructibles and 962 world parts, below the provisional 1,000-part ceiling; zone comprehension and physical-device performance remain unproven.
+
+## 2026-08-01 — Supersede the horizontal Beam ray with shared aimed mouth fire
+
+Use one exponentially smoothed client aim direction for Brontide's head pose and Beam request. Keyboard/mouse derives it from the pointer ray; touch and gamepad use the camera centre. Fire immediate harmless muzzle feedback from the mouth, while the server validates the request against the living character, cooldown, round, finite vector bounds, vertical limits, and a 75-degree forward cone before running a nine-stud-radius native sphere cast against only destructible hitboxes.
+
+Basis: a physical-device report said Beam did nothing. The prior synthetic test hit a tall tower, but the horizontal cast originated above many low roofs, making a valid request appear broken. Roblox's weapon-targeting guidance permits client aim intent only when the server validates origin/context/cadence and resolves the actual hit. The smoothed pose is presentation; server cooldown, cast, target, and damage remain authoritative. The exact lag, turn limits, radius, and visual duration remain playtest parameters.
+
+## 2026-08-01 — Prototype one lightweight scout before a defender army
+
+The first enemy slice contains one server-owned scout-drone archetype with authored air patrol nodes, bounded line-of-sight acquisition, a long telegraph, a slow projectile, stagger, and defeat. Ground units later reuse native `PathfindingService` and modifiers; the boss is deferred until the drone and turret pass readability and performance gates.
+
+Basis: Roblox provides native ground pathfinding and warns that many server-animated Humanoids can be expensive. A flying scout does not need a custom navmesh or ground-path computation. One shared state, team, damage, pooling, and authority contract avoids multiplying parallel AI systems before their contribution to the destruction loop is proven. See [ENEMY_SYSTEM.md](ENEMY_SYSTEM.md).

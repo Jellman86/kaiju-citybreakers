@@ -27,6 +27,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 - West park/plaza greybox with a truthful cross-street branch, broad optional movement loop, low-density primitive dressing, a north reconnect, and district cordons that close the legacy city-gate bypass.
 - Eight-building east and south district expansion with a second avenue, southern cross street, longer central route, and staged destruction for every city building.
 - Server-authoritative Brontide energy beam with keyboard, gamepad, and touch input, a four-second cooldown, validated raycast damage, and client-local beam feedback.
+- Five-zone mega-district blockout across Central City, Titan Park, Arc Power Plant, Mount Brontide, and Azure Lake, with 33 smashable structures and an eight-times-larger foundation.
+- Mouse/reticle-aware Beam aiming shared by Brontide's eased head turn, mouth muzzle cue, and server-validated swept hit query.
+- Dedicated Brontide visual-head pivot so the skull, eyes, crown, and mouth can visibly track Beam aim without fighting the native avatar animator.
 
 ### Changed
 
@@ -41,6 +44,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 - Charge now damages up to four structures along its server-measured travel path and produces a distinct impact flash and camera response on a confirmed hit.
 - Collapsed structures leave the attack-query collision group until reset, allowing charge, Smash, and Beam to reach intact buildings behind cleared rubble.
 - Touch layout now arranges Beam, Charge, and Smash around Roblox's finalized Jump-button rectangle and recomputes when native control geometry changes.
+- Beam now uses a forgiving native sphere cast from Brontide's mouth, accepts only a bounded forward aim direction, reaches 240 studs, and displays a thicker confirmed beam for 0.45 seconds.
+- New district buildings use lean authored state variants to keep the expanded world below the provisional 1,000-part mobile ceiling.
+- Removed the temporary title, instructions, round timer, and gate instruction billboard from the gameplay view; only action controls remain.
 
 ### Fixed
 
@@ -51,6 +57,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 - Prevented production players from spawning before the runtime city exists by disabling automatic character loading, loading them after world bootstrap, and explicitly placing Brontide on the generated spawn.
 - Made repository standards validation portable to the minimal GitHub Actions runner environment.
 - Prevented `CHARGE` and `SMASH` touch controls from overlapping or escaping the screen by sizing and arranging them within Roblox's live action-frame bounds, including a stacked narrow-screen fallback.
+- Prevented Beam from passing above low buildings by replacing its chest-height horizontal ray with an aimed, nine-stud-radius server sweep.
+- Prevented the native avatar animation pass from clearing Brontide's visible head turn by driving the dedicated pivot's persistent joint offset.
 
 ### Security
 

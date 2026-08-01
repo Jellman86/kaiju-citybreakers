@@ -64,13 +64,15 @@ Tutorials use icons, highlighted targets, camera framing, and short prompts. Avo
 
 ### Map
 
-One compact coastal district with:
+One bounded coastal mega-district blockout with five distinct zones:
 
-- Harbour spawn.
-- Warehouse block for initial destruction.
-- Power substation as objective one.
-- Downtown avenue as a spectacle corridor.
-- Defence hangar as objective two and boss arena.
+- Central City for initial destruction and vertical spectacle.
+- Titan Park for open movement, dodge training, and a low-density rest beat.
+- Arc Power Plant for industrial destruction, a future energy objective, and later turrets.
+- Mount Brontide for elevation, a landmark approach, and later ground-defender route tests.
+- Azure Lake for shoreline navigation, marina destruction, and later aerial encounters.
+
+The current `1400 × 1100` greybox tests district identity and routes; it is not an open-world commitment. Every building silhouette is smashable, while terrain-like landmarks remain stable navigation anchors.
 
 ### Starter kaiju: working codename Brontide
 
