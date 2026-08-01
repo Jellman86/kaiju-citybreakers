@@ -11,6 +11,14 @@ local Config = {
 	Combat = {
 		MaximumAimDistance = 250,
 		AbilityRequestRatePerSecond = 8,
+		BasicAttackCooldownSeconds = 0.65,
+		BasicAttackDamage = 1,
+		BasicAttackHitboxSize = Vector3.new(30, 24, 26),
+		BasicAttackForwardOffset = 13,
+		MaximumStructuresPerAttack = 3,
+		ChargeCooldownSeconds = 2.5,
+		ChargeDurationSeconds = 0.45,
+		ChargeVerticalVelocity = 2,
 	},
 
 	Destruction = {
@@ -24,6 +32,16 @@ local Config = {
 		MaxHealth = 1000,
 		WalkSpeed = 24,
 		ChargeSpeed = 44,
+		PrototypeScale = 4,
+		CameraMinZoom = 24,
+		CameraMaxZoom = 42,
+		CameraFieldOfView = 67,
+	},
+
+	Prototype = {
+		WorldName = "KaijuFeelLab",
+		WallStructureId = "feel_lab_wall",
+		WallMaxHealth = 2,
 	},
 }
 

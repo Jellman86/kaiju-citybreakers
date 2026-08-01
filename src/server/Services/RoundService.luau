@@ -95,6 +95,10 @@ function RoundService:_runLoop()
 	end
 end
 
+function RoundService:GetPhase(): RoundPhase
+	return self._phase
+end
+
 function RoundService:Start()
 	if self._running then
 		return

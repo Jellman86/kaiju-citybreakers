@@ -31,6 +31,7 @@ The source repository is public. [Standard GitHub-hosted Actions runners are fre
 ## Dependency policy
 
 - Prefer no dependency over a small dependency.
+- Apply the decision checklist in `REUSE_AUDIT.md`; prefer a vetted dependency over reimplementing substantial general-purpose functionality.
 - Dependencies must have a compatible open-source licence and an active source repository.
 - Record the reason and licence before adding a dependency.
 - Do not use a hosted service that becomes required for local development or normal gameplay unless Roblox includes it at no additional cost.

@@ -31,6 +31,13 @@
 - Label numerical design gates as provisional project thresholds unless a cited source establishes them.
 - Record the result, sample size, build commit, and resulting decision in `docs/DECISIONS.md` before expanding a tested system.
 
+## Reuse discipline
+
+- Read `docs/REUSE_AUDIT.md` before adding a framework, utility package, Creator Store asset, controller, or substantial new asset pipeline.
+- Prefer Roblox-native functionality and vetted, pinned open-source code when it is simpler and safer than custom work.
+- Inspect external models in a disposable place before adoption; remove unknown scripts, record provenance, and profile the result.
+- Do not add a dependency or asset merely because it is free. It must pass the reuse acceptance checklist and solve the current requirement better.
+
 ## Scope discipline
 
 - The vertical slice includes one kaiju, one district, one enemy, and one complete round.
