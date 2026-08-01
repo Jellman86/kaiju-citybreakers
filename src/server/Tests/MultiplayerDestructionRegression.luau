@@ -1,6 +1,7 @@
 --!strict
 
 local CollectionService = game:GetService("CollectionService")
+local PhysicsService = game:GetService("PhysicsService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -33,6 +34,9 @@ type ClientReport = {
 	cameraMax: number,
 	cameraType: string,
 	hasSmashButton: boolean,
+	hasHumanFireButton: boolean,
+	hasHumanReticle: boolean,
+	characterHealth: number,
 }
 
 local MultiplayerDestructionRegression = {}
@@ -85,6 +89,9 @@ local function parseReport(player: Player, payload: any): ClientReport?
 		or type(payload.cameraMax) ~= "number"
 		or type(payload.cameraType) ~= "string"
 		or type(payload.hasSmashButton) ~= "boolean"
+		or type(payload.hasHumanFireButton) ~= "boolean"
+		or type(payload.hasHumanReticle) ~= "boolean"
+		or type(payload.characterHealth) ~= "number"
 	then
 		return nil
 	end
@@ -103,6 +110,9 @@ local function parseReport(player: Player, payload: any): ClientReport?
 		cameraMax = payload.cameraMax,
 		cameraType = payload.cameraType,
 		hasSmashButton = payload.hasSmashButton,
+		hasHumanFireButton = payload.hasHumanFireButton,
+		hasHumanReticle = payload.hasHumanReticle,
+		characterHealth = payload.characterHealth,
 	}
 end
 
@@ -290,6 +300,9 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 		end
 		local kaijuRoot = kaijuCharacter:FindFirstChild("HumanoidRootPart")
 		local humanRoot = humanCharacter:FindFirstChild("HumanoidRootPart")
+		local humanHumanoid = humanCharacter:FindFirstChildOfClass("Humanoid")
+		local kaijuHumanoid = kaijuCharacter:FindFirstChildOfClass("Humanoid")
+		local contactHull = kaijuCharacter:FindFirstChild("KaijuContactHull")
 		if
 			not kaijuRoot
 			or not kaijuRoot:IsA("BasePart")
@@ -297,8 +310,27 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 			or not humanRoot:IsA("BasePart")
 			or kaijuRoot.CollisionGroup ~= PlayerRole.CollisionGroup.Kaiju
 			or humanRoot.CollisionGroup ~= PlayerRole.CollisionGroup.Human
+			or not humanHumanoid
+			or not kaijuHumanoid
+			or not contactHull
+			or not contactHull:IsA("BasePart")
+			or not contactHull.CanCollide
+			or contactHull.CollisionGroup ~= PlayerRole.CollisionGroup.KaijuContact
 		then
-			fail("role character collision groups were not applied")
+			fail("role collision groups or kaiju contact hull were not applied")
+			return
+		end
+		if
+			not PhysicsService:CollisionGroupsAreCollidable(
+				PlayerRole.CollisionGroup.KaijuContact,
+				PlayerRole.CollisionGroup.Human
+			)
+			or PhysicsService:CollisionGroupsAreCollidable(
+				PlayerRole.CollisionGroup.Kaiju,
+				PlayerRole.CollisionGroup.Human
+			)
+		then
+			fail("controlled contact collision matrix was incorrect")
 			return
 		end
 
@@ -325,6 +357,123 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 			fail("human client damaged a kaiju-only destructible")
 			return
 		end
+
+		kaijuRoot.Anchored = true
+		humanRoot.Anchored = true
+		kaijuRoot.CFrame = CFrame.lookAt(Vector3.new(0, 200, 80), Vector3.new(0, 200, 0))
+		humanRoot.CFrame = CFrame.lookAt(Vector3.new(0, 200, 0), kaijuRoot.Position)
+		local kaijuHealthBeforeHumanFire = kaijuHumanoid.Health
+		testRemote:FireClient(resolvedLatePlayer, {
+			command = "human_fire",
+			shots = 1,
+			target = kaijuRoot.Position,
+		})
+		if
+			not waitUntil(function()
+				return kaijuHumanoid.Health
+					<= kaijuHealthBeforeHumanFire - Config.Combat.HumanFireDamage
+			end, 5)
+		then
+			fail("server-validated human fire did not damage the kaiju")
+			return
+		end
+		local kaijuHealthAfterHumanFire = kaijuHumanoid.Health
+		local kaijuCharacterBeforeDeath = kaijuCharacter
+		local remainingShots = math.ceil(kaijuHealthAfterHumanFire / Config.Combat.HumanFireDamage)
+		testRemote:FireClient(resolvedLatePlayer, {
+			command = "human_fire",
+			shots = remainingShots,
+			target = kaijuRoot.Position,
+		})
+		if
+			not waitUntil(function()
+				return kaijuHumanoid.Health <= 0
+			end, remainingShots * (Config.Combat.HumanFireCooldownSeconds + 0.1) + 5)
+		then
+			fail(
+				`human fire damaged but did not defeat the kaiju; health={kaijuHumanoid.Health}, shots={remainingShots}`
+			)
+			return
+		end
+		if
+			not waitUntil(function()
+				local replacement = firstPlayer.Character
+				local replacementHumanoid = if replacement
+					then replacement:FindFirstChildOfClass("Humanoid")
+					else nil
+				return replacement ~= nil
+					and replacement ~= kaijuCharacterBeforeDeath
+					and replacement:GetAttribute(PlayerRole.Attribute) == PlayerRole.Kaiju
+					and replacement:FindFirstChild("BrontideVisual") ~= nil
+					and replacement:FindFirstChild("KaijuContactHull") ~= nil
+					and replacementHumanoid ~= nil
+					and replacementHumanoid.Health == Config.StarterKaiju.MaxHealth
+			end, Players.RespawnTime + 15)
+		then
+			fail("defeated kaiju did not respawn with the Kaiju role and full health")
+			return
+		end
+		kaijuCharacter = firstPlayer.Character :: Model
+		kaijuRoot = kaijuCharacter:FindFirstChild("HumanoidRootPart") :: BasePart
+		kaijuHumanoid = kaijuCharacter:FindFirstChildOfClass("Humanoid") :: Humanoid
+		contactHull = kaijuCharacter:FindFirstChild("KaijuContactHull") :: BasePart
+		local kaijuRespawnHealth = kaijuHumanoid.Health
+
+		kaijuRoot.Anchored = false
+		humanRoot.Anchored = false
+		kaijuRoot.CFrame = CFrame.lookAt(Vector3.new(0, 30, 120), Vector3.new(0, 30, 0))
+		kaijuRoot.AssemblyLinearVelocity = Vector3.zero
+		humanRoot.CFrame = CFrame.new(0, 30, 109)
+		humanRoot.AssemblyLinearVelocity = Vector3.zero
+		local humanHealthBeforeContact = humanHumanoid.Health
+		if
+			not waitUntil(function()
+				return humanHumanoid.Health
+					<= humanHealthBeforeContact - Config.MixedScale.ContactDamage
+			end, 3)
+		then
+			fail("kaiju contact query did not damage the human")
+			return
+		end
+		local contactVelocity = humanRoot.AssemblyLinearVelocity.Magnitude
+		if contactVelocity > Config.MixedScale.MaximumContactVelocity + 1 then
+			fail(`controlled contact exceeded its velocity cap: {contactVelocity}`)
+			return
+		end
+
+		local humanCharacterBeforeDeath = humanCharacter
+		kaijuRoot.CFrame = CFrame.lookAt(Vector3.new(0, 30, 120), Vector3.new(0, 30, 70))
+		humanRoot.CFrame = CFrame.new(0, 30, 70)
+		kaijuRoot.AssemblyLinearVelocity = Vector3.zero
+		humanRoot.AssemblyLinearVelocity = Vector3.zero
+		task.wait(Config.Combat.BasicAttackCooldownSeconds + 0.1)
+		testRemote:FireClient(firstPlayer, { command = "attack", hits = 1 })
+		if not waitUntil(function()
+			return humanHumanoid.Health <= 0
+		end, 5) then
+			fail("kaiju basic attack did not defeat the human")
+			return
+		end
+		if
+			not waitUntil(function()
+				local replacement = resolvedLatePlayer.Character
+				local replacementHumanoid = if replacement
+					then replacement:FindFirstChildOfClass("Humanoid")
+					else nil
+				return replacement ~= nil
+					and replacement ~= humanCharacterBeforeDeath
+					and replacement:GetAttribute(PlayerRole.Attribute) == PlayerRole.Human
+					and replacementHumanoid ~= nil
+					and replacementHumanoid.Health == Config.Human.MaxHealth
+			end, Players.RespawnTime + 15)
+		then
+			fail("defeated human did not respawn with the Human role and full health")
+			return
+		end
+		humanCharacter = resolvedLatePlayer.Character :: Model
+		humanRoot = humanCharacter:FindFirstChild("HumanoidRootPart") :: BasePart
+		humanHumanoid = humanCharacter:FindFirstChildOfClass("Humanoid") :: Humanoid
+		local humanRespawnHealth = humanHumanoid.Health
 
 		testRemote:FireClient(resolvedLatePlayer, {
 			command = "report",
@@ -366,6 +515,8 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 			existingReport.role ~= PlayerRole.Kaiju
 			or existingReport.cameraMin ~= Config.StarterKaiju.CameraMinZoom
 			or existingReport.cameraMax ~= Config.StarterKaiju.CameraMaxZoom
+			or existingReport.hasHumanFireButton
+			or existingReport.hasHumanReticle
 		then
 			fail("kaiju client did not apply its role camera metrics")
 			return
@@ -376,6 +527,9 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 			or lateReport.cameraMax ~= Config.Human.CameraMaxZoom
 			or lateReport.cameraType ~= tostring(Enum.CameraType.Custom)
 			or lateReport.hasSmashButton
+			or not lateReport.hasHumanFireButton
+			or not lateReport.hasHumanReticle
+			or lateReport.characterHealth ~= Config.Human.MaxHealth
 		then
 			fail("human client retained kaiju camera or touch-action state")
 			return
@@ -405,6 +559,8 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 					and resolvedLatePlayer:GetAttribute(PlayerRole.Attribute) == PlayerRole.Kaiju
 					and promotedCharacter ~= nil
 					and promotedCharacter:GetAttribute(PlayerRole.Attribute) == PlayerRole.Kaiju
+					and promotedCharacter:FindFirstChild("BrontideVisual") ~= nil
+					and promotedCharacter:GetExtentsSize().Y >= kaijuHeight * 0.9
 			end, 20)
 		then
 			fail("remaining human was not promoted after the kaiju left")
@@ -412,7 +568,7 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 		end
 		local promotedHeight = (resolvedLatePlayer.Character :: Model):GetExtentsSize().Y
 		if promotedHeight < kaijuHeight * 0.9 then
-			fail("promoted human did not respawn at kaiju scale")
+			fail(`promoted human height {promotedHeight} was below kaiju height {kaijuHeight}`)
 			return
 		end
 
@@ -436,6 +592,12 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 			humanCamera = `{lateReport.cameraMin}-{lateReport.cameraMax}`,
 			humanCameraType = lateReport.cameraType,
 			humanHadSmashButton = lateReport.hasSmashButton,
+			humanHadFireButton = lateReport.hasHumanFireButton,
+			humanHadReticle = lateReport.hasHumanReticle,
+			kaijuHealthAfterHumanFire = kaijuHealthAfterHumanFire,
+			kaijuRespawnHealth = kaijuRespawnHealth,
+			contactVelocity = contactVelocity,
+			humanRespawnHealth = humanRespawnHealth,
 		})
 	end)
 end

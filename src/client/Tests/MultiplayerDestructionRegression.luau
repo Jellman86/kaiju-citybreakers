@@ -101,6 +101,31 @@ function MultiplayerDestructionRegression.TryStart(
 				end
 				return
 			end
+			if
+				payload.command == "human_fire"
+				and type(payload.shots) == "number"
+				and typeof(payload.target) == "Vector3"
+			then
+				task.wait(0.3)
+				for _ = 1, payload.shots do
+					local character = Players.LocalPlayer.Character
+					local head = character and character:FindFirstChild("Head")
+					local origin = if head and head:IsA("BasePart")
+						then head.Position
+						else Vector3.zero
+					local direction = payload.target - origin
+					if direction.Magnitude > 0.001 then
+						sequence += 1
+						abilityRequestRemote:FireServer({
+							abilityId = "humanFire",
+							sequence = sequence,
+							aimDirection = direction.Unit,
+						})
+					end
+					task.wait(0.42)
+				end
+				return
+			end
 			if payload.command == "leave" then
 				if StudioTestService:CanLeaveTest() then
 					StudioTestService:LeaveTest()
@@ -188,6 +213,17 @@ function MultiplayerDestructionRegression.TryStart(
 					then tostring(workspace.CurrentCamera.CameraType)
 					else "Unavailable",
 				hasSmashButton = ContextActionService:GetButton("KaijuBasicAttack") ~= nil,
+				hasHumanFireButton = ContextActionService:GetButton("HumanBlasterFire") ~= nil,
+				hasHumanReticle = Players.LocalPlayer.PlayerGui:FindFirstChild(
+					"HumanAimReticle",
+					true
+				) ~= nil,
+				characterHealth = if Players.LocalPlayer.Character
+						and Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+					then (
+						Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid") :: Humanoid
+					).Health
+					else -1,
 			})
 		end)
 

@@ -1,6 +1,6 @@
 # Mixed-scale human and kaiju feasibility
 
-Status: research recommendation; no production implementation decision has been made.
+Status: feasibility implementation in progress; physical-device and human playtest gates remain open.
 
 ## Conclusion
 
@@ -38,7 +38,9 @@ Roblox documents one stud as approximately `28 cm`. A `60–75` stud kaiju would
 ### Collision and combat
 
 - Use separate `HumanCharacter`, `KaijuCharacter`, `World`, and attack-query collision groups.
-- Do not make the enormous kaiju physically shove the human character. Disable direct character-character collision to prevent accidental flinging, then resolve stomps, grabs, beams, projectiles, and hazards through server-validated spatial queries and explicit damage rules.
+- Humans must be physically blocked by Brontide, but not by every articulated giant limb. Keep the full character groups non-colliding and add one smooth, massless contact hull that collides only with humans. This is an engineering hypothesis that must be replaced by a server-owned boundary if representative tests still produce unstable launching.
+- Resolve contact damage, bounded knockback, Smash, Charge, Beam, and human weapon hits through server-validated spatial queries and explicit damage rules. A physics touch alone is never proof of a valid hit.
+- Humans use a stylized energy blaster and ordinary Humanoid health/death. Brontide can also be defeated. Both roles respawn through the existing manual character lifecycle; no gore or realistic civilian framing is introduced.
 - Keep movement and combat server-checked. Roblox normally gives clients authority over their character physics, so neither scale nor a reported touch is proof that a valid hit occurred.
 - Treat a building collapse containing a human as an authored gameplay event: telegraph it, provide an escape route, and prevent permanent trapping. Cosmetic debris remains non-authoritative and locally bounded.
 
@@ -64,6 +66,7 @@ Build a separate two-client **Mixed-Scale Lab** before resizing the production c
 - The human and kaiju maintain at least a `10:1` standing-height ratio in actual model bounds.
 - Neither camera clips into its own character or loses the other role during the teaching encounter.
 - Direct contact cannot fling either player; all damage is reproduced by an authoritative query in a two-client test.
+- Human fire can damage and defeat the kaiju, while Smash, Charge, Beam, and sustained contact can damage and defeat humans.
 - The human completes a useful task and the kaiju completes a useful task without verbal coaching.
 - The human can identify intact, threatened, and collapsed structures from their camera height.
 - The physical-phone client remains at or above the project's provisional `30 FPS` destruction threshold, with no unbounded memory, instance, physics, or remote growth.

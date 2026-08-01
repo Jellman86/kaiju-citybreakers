@@ -100,11 +100,14 @@ Prove one human-scale player and one physically giant Brontide in the same serve
 - One provisional `60–75` stud Brontide beside an ordinary `5–6.5` stud R15 human, with actual model bounds maintaining at least a provisional `10:1` standing-height ratio.
 - Separate role metrics for movement, camera, spawn clearance, collision and combat reach.
 - Non-colliding human/kaiju character groups so the giant cannot fling a human; explicit server spatial queries remain the only source of combat and destruction outcomes.
+- A smooth kaiju contact hull that physically blocks humans while server queries apply capped contact damage and knockback; raw limb collision remains disabled.
+- A stylized cross-device human blaster, damageable Humanoids for both roles, kaiju attacks that can defeat humans, and role-preserving respawn.
 - A small human-scale doorway/approach reference inside the greybox and one useful mixed-role interaction before any production-scale human content.
 
 #### Validation
 
 - Run the native two-client Studio regression with one kaiju and one human, including role replication, actual bounds, respawn/promotion, collision filtering and human rejection from kaiju-only remotes.
+- Extend the regression through human fire damaging the kaiju, a kaiju attack defeating the human, role-preserving human respawn, and contact-hull collision/damage checks.
 - Verify both cameras, touch controls, human-scale navigation and kaiju-scale traversal on a physical phone.
 - Measure client/server frame time, memory, moving character parts and streaming behaviour with both roles present.
 - Conduct an uncoached two-player test in which both roles complete a useful task and can explain their contribution.

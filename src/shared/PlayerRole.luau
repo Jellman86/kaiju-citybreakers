@@ -10,6 +10,9 @@ PlayerRole.HumanScaleGeometryTag = "HumanScaleGeometry"
 PlayerRole.CollisionGroup = table.freeze({
 	Kaiju = "KaijuCharacters",
 	Human = "HumanCharacters",
+	KaijuContact = "KaijuContact",
+	KaijuDamageQuery = "KaijuDamageQuery",
+	HumanWeaponQuery = "HumanWeaponQuery",
 	HumanScaleGeometry = "HumanScaleGeometry",
 })
 
@@ -26,6 +29,10 @@ end
 
 function PlayerRole.IsKaiju(player: Player): boolean
 	return PlayerRole.Get(player) == PlayerRole.Kaiju
+end
+
+function PlayerRole.IsHuman(player: Player): boolean
+	return PlayerRole.Get(player) == PlayerRole.Human
 end
 
 return table.freeze(PlayerRole)

@@ -24,6 +24,11 @@
       }
     },
     "StarterPlayer": {
+      "StarterCharacterScripts": {
+        "Health": {
+          "$path": "src/character/Health.server.luau"
+        }
+      },
       "StarterPlayerScripts": {
         "Client": {
           "$path": "src/client"

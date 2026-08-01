@@ -177,3 +177,11 @@ Basis: the stakeholder reports that the Beam needs to last longer, draw a destru
 Assign the first player as the solo-safe kaiju and later players as humans, with automatic promotion when the kaiju leaves. Prototype Brontide at scale `10`—expected to produce approximately `60–75` studs of actual height—beside an ordinary avatar. Give the roles separate server-owned spawn and movement metrics, separate local cameras, and non-colliding character groups. Keep all attacks kaiju-only and server-authoritative.
 
 Basis: the stakeholder wants human-size and kaiju-size players to coexist without relying on perceived-scale tricks. Roblox supports manual character loading, custom humanoids, model scaling, per-player cameras and collision groups, but does not publish a generally safe maximum in-experience character scale. The scale, role fun and mobile cost therefore remain hypotheses. The existing R15 controller and original primitive shell are reused for the feasibility build; no external rig, character framework or asset is adopted. See [MIXED_SCALE_PLAYERS.md](MIXED_SCALE_PLAYERS.md).
+
+## 2026-08-01 — Make mixed-scale players opposing combatants
+
+Allow humans and Brontide to damage and defeat each other in the feasibility lab. Humans receive one stylized energy blaster resolved by a server raycast; Smash, Charge, Beam and sustained kaiju contact can damage humans. Both roles retain native Humanoid death and the manual role-preserving respawn lifecycle.
+
+Disable Roblox's automatic passive Humanoid regeneration for the lab. It otherwise changes shots-to-defeat during a sustained exchange and makes damage tuning less legible. Any future healing will be an explicit server-owned mechanic with its own evidence gate.
+
+Direct full-rig collision remains disabled because client-owned articulated giant limbs create an avoidable flinging and exploit surface. A single smooth, massless contact hull physically blocks human characters, while a throttled server overlap owns contact damage and clamps knockback. This satisfies the requested physical confrontation while keeping the damaging outcome authoritative. The tuning and the stability of even this bounded proxy remain hypotheses until a physical two-device test.

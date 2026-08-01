@@ -14,7 +14,7 @@ With Rojo connected and Studio in Edit mode, execute this through a plugin-secur
 local StudioTestService = game:GetService("StudioTestService")
 local result = StudioTestService:ExecuteMultiplayerTestAsync(
 	1,
-	"KaijuMultiplayerDestructionV1"
+	"KaijuMultiplayerCombatV2"
 )
 print(result)
 ```
@@ -30,8 +30,11 @@ The argument intentionally starts one client. The server harness collapses the n
 - The existing client observes the live collapse effect; the late client receives no historical debris burst.
 - The first player has the replicated `Kaiju` role and the late player has the replicated `Human` role.
 - Actual character bounds maintain a standing-height ratio of at least `10:1`; camera ranges are `58–105` studs for the provisional kaiju and `6–18` studs for the human.
-- The kaiju and human roots use their separate collision groups, and the human cannot damage a structure by invoking the kaiju-only ability remote directly.
-- The human client has no Smash touch action and retains Roblox's native custom camera.
+- The full kaiju and human rigs remain in separate non-colliding groups; a smooth `KaijuContactHull` physically collides with the human group and not the world.
+- A server contact query applies the configured human damage and keeps the explicit knockback within its velocity cap.
+- The human cannot damage a structure by invoking a kaiju-only ability directly, but one normal human blaster request raycasts from the server-known character and damages Brontide by the configured amount.
+- One normal kaiju Smash defeats the human; the same player respawns at full health with the `Human` role.
+- The human client has a Fire touch action, no Smash touch action, and retains Roblox's native custom camera.
 - When the kaiju client leaves through `StudioTestService`, the remaining human is promoted, reloaded and reaches at least 90% of the original kaiju's measured height.
 - Any missing client, streamed model, state, visual, or proxy produces a bounded timeout and explicit failure reason.
 

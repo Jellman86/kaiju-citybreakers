@@ -170,6 +170,10 @@ function AimController:GetAimDirection(): Vector3
 	end
 
 	local _, rootPart = getCharacterParts()
+	local camera = Workspace.CurrentCamera
+	if rootPart and camera then
+		return self:_getDesiredAimDirection(rootPart, camera)
+	end
 	return if rootPart then rootPart.CFrame.LookVector else -Vector3.zAxis
 end
 

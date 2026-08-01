@@ -15,6 +15,7 @@ type AbilityResult = Types.AbilityResult
 local ACTION_BASIC_ATTACK = "KaijuBasicAttack"
 local ACTION_CHARGE = "KaijuCharge"
 local ACTION_BEAM = "KaijuEnergyBeam"
+local ACTION_HUMAN_FIRE = "HumanBlasterFire"
 local TOUCH_BUTTON_MIN_SIZE = 72
 local TOUCH_BUTTON_MAX_SIZE = 96
 local TOUCH_BUTTON_FRAME_HEIGHT_RATIO = 0.25
@@ -40,15 +41,87 @@ function CombatController.new(
 	self._lastRequestedAt = -math.huge
 	self._lastChargeRequestedAt = -math.huge
 	self._lastBeamRequestedAt = -math.huge
+	self._lastHumanFireRequestedAt = -math.huge
 	self._jumpLayoutConnections = {} :: { RBXScriptConnection }
 	self._playerGuiDescendantAddedConnection = nil :: RBXScriptConnection?
 	self._resultConnection = nil :: RBXScriptConnection?
 	self._touchLayoutConnection = nil :: RBXScriptConnection?
 	self._touchLayoutPositionConnection = nil :: RBXScriptConnection?
 	self._roleConnection = nil :: RBXScriptConnection?
+	self._humanReticleGui = nil :: ScreenGui?
 	self._actionsBound = false
 
 	return self
+end
+
+function CombatController:_createHumanReticle()
+	if self._humanReticleGui then
+		return
+	end
+	local playerGui = player:FindFirstChildOfClass("PlayerGui")
+	if not playerGui then
+		return
+	end
+
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "HumanCombatHud"
+	gui.IgnoreGuiInset = true
+	gui.ResetOnSpawn = false
+	gui.DisplayOrder = 15
+
+	local reticle = Instance.new("Frame")
+	reticle.Name = "HumanAimReticle"
+	reticle.AnchorPoint = Vector2.new(0.5, 0.5)
+	reticle.Position = UDim2.fromScale(0.5, 0.5)
+	reticle.Size = UDim2.fromOffset(26, 26)
+	reticle.BackgroundTransparency = 1
+	reticle.Parent = gui
+
+	for _, definition in
+		{
+			{ name = "Top", position = UDim2.fromOffset(12, 1), size = UDim2.fromOffset(2, 7) },
+			{ name = "Bottom", position = UDim2.fromOffset(12, 18), size = UDim2.fromOffset(2, 7) },
+			{ name = "Left", position = UDim2.fromOffset(1, 12), size = UDim2.fromOffset(7, 2) },
+			{ name = "Right", position = UDim2.fromOffset(18, 12), size = UDim2.fromOffset(7, 2) },
+		}
+	do
+		local line = Instance.new("Frame")
+		line.Name = definition.name
+		line.Position = definition.position
+		line.Size = definition.size
+		line.BackgroundColor3 = Color3.fromRGB(230, 249, 255)
+		line.BackgroundTransparency = 0.12
+		line.BorderSizePixel = 0
+		line.Parent = reticle
+	end
+
+	gui.Parent = playerGui
+	self._humanReticleGui = gui
+end
+
+function CombatController:_destroyHumanReticle()
+	if self._humanReticleGui then
+		self._humanReticleGui:Destroy()
+		self._humanReticleGui = nil
+	end
+end
+
+function CombatController:_requestHumanFire()
+	if not PlayerRole.IsHuman(player) then
+		return
+	end
+	local now = os.clock()
+	if now - self._lastHumanFireRequestedAt < Config.Combat.HumanFireCooldownSeconds then
+		return
+	end
+
+	self._lastHumanFireRequestedAt = now
+	self._sequence += 1
+	self._abilityRequestRemote:FireServer({
+		abilityId = "humanFire",
+		sequence = self._sequence,
+		aimDirection = self._aimController:GetAimDirection(),
+	})
 end
 
 function CombatController:_requestBeam()
@@ -386,6 +459,36 @@ function CombatController:_emitBeam(origin: Vector3, target: Vector3, hit: boole
 	)
 end
 
+function CombatController:_emitHumanShot(origin: Vector3, target: Vector3, hit: boolean)
+	local delta = target - origin
+	local length = delta.Magnitude
+	if length < 0.1 then
+		return
+	end
+
+	local tracer = Instance.new("Part")
+	tracer.Name = "HumanBlasterTracer"
+	tracer.Size = Vector3.new(0.18, 0.18, length)
+	tracer.CFrame = CFrame.lookAt(origin + delta * 0.5, target)
+	tracer.Color = if hit then Color3.fromRGB(255, 211, 84) else Color3.fromRGB(86, 190, 255)
+	tracer.Material = Enum.Material.Neon
+	tracer.Transparency = 0.05
+	tracer.Anchored = true
+	tracer.CanCollide = false
+	tracer.CanTouch = false
+	tracer.CanQuery = false
+	tracer.CastShadow = false
+	tracer.Parent = workspace
+
+	TweenService:Create(
+		tracer,
+		TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ Transparency = 1 }
+	):Play()
+	Debris:AddItem(tracer, 0.15)
+	self:_emitImpactFeedback(target, tracer.Color, if hit then 0.8 else 0.35)
+end
+
 local function styleTouchButton(button: ImageButton, color: Color3, buttonSize: number)
 	button.AnchorPoint = Vector2.zero
 	button.Size = UDim2.fromOffset(buttonSize, buttonSize)
@@ -525,6 +628,55 @@ function CombatController:_layoutTouchButtons()
 	styleTouchButton(beamButton, Color3.fromRGB(34, 133, 222), buttonSize)
 end
 
+function CombatController:_layoutHumanTouchButton()
+	local fireButton = ContextActionService:GetButton(ACTION_HUMAN_FIRE)
+	if not fireButton or not fireButton:IsA("ImageButton") then
+		return
+	end
+	fireButton.Name = "HumanFireTouchButton"
+	local buttonFrame = fireButton.Parent
+	if not buttonFrame or not buttonFrame:IsA("GuiObject") then
+		return
+	end
+
+	local frameSize = buttonFrame.AbsoluteSize
+	local buttonSize = math.clamp(
+		math.round(frameSize.Y * TOUCH_BUTTON_FRAME_HEIGHT_RATIO),
+		TOUCH_BUTTON_MIN_SIZE,
+		TOUCH_BUTTON_MAX_SIZE
+	)
+	local gap = math.max(12, math.round(buttonSize * TOUCH_BUTTON_GAP_RATIO))
+	local position = Vector2.new(
+		math.max(gap, math.round(frameSize.X - gap - buttonSize)),
+		math.max(gap, math.round(frameSize.Y - gap - buttonSize))
+	)
+	local playerGui = player:FindFirstChildOfClass("PlayerGui")
+	local jumpButton = playerGui and playerGui:FindFirstChild("JumpButton", true)
+	if
+		jumpButton
+		and jumpButton:IsA("GuiObject")
+		and overlapsGuiObject(position, buttonSize, buttonFrame, jumpButton, gap)
+	then
+		local jumpLeftInFrame = jumpButton.AbsolutePosition.X - buttonFrame.AbsolutePosition.X
+		local screenLeftInFrame = -buttonFrame.AbsolutePosition.X
+		position = Vector2.new(
+			math.max(screenLeftInFrame + gap, math.round(jumpLeftInFrame - gap - buttonSize)),
+			position.Y
+		)
+	end
+
+	ContextActionService:SetPosition(ACTION_HUMAN_FIRE, UDim2.fromOffset(position.X, position.Y))
+	styleTouchButton(fireButton, Color3.fromRGB(52, 145, 230), buttonSize)
+end
+
+function CombatController:_layoutRoleTouchButtons()
+	if PlayerRole.IsKaiju(player) then
+		self:_layoutTouchButtons()
+	elseif PlayerRole.IsHuman(player) then
+		self:_layoutHumanTouchButton()
+	end
+end
+
 function CombatController:_disconnectJumpLayoutConnections()
 	for _, connection in self._jumpLayoutConnections do
 		connection:Disconnect()
@@ -542,7 +694,7 @@ function CombatController:_watchJumpButton(instance: Instance)
 	local function relayout()
 		task.defer(function()
 			if jumpButton.Parent then
-				self:_layoutTouchButtons()
+				self:_layoutRoleTouchButtons()
 			end
 		end)
 	end
@@ -561,11 +713,13 @@ function CombatController:_unbindActions()
 		return
 	end
 	self._actionsBound = false
+	self:_destroyHumanReticle()
 	self:_resetChargeCooldownVisual()
 	self:_resetBeamCooldownVisual()
 	ContextActionService:UnbindAction(ACTION_BASIC_ATTACK)
 	ContextActionService:UnbindAction(ACTION_CHARGE)
 	ContextActionService:UnbindAction(ACTION_BEAM)
+	ContextActionService:UnbindAction(ACTION_HUMAN_FIRE)
 	if self._touchLayoutConnection then
 		self._touchLayoutConnection:Disconnect()
 		self._touchLayoutConnection = nil
@@ -577,10 +731,43 @@ function CombatController:_unbindActions()
 end
 
 function CombatController:_bindActions()
-	if self._actionsBound or not PlayerRole.IsKaiju(player) then
+	local role = PlayerRole.Get(player)
+	if self._actionsBound or not role then
 		return
 	end
 	self._actionsBound = true
+	if role == PlayerRole.Human then
+		self:_createHumanReticle()
+		ContextActionService:BindAction(ACTION_HUMAN_FIRE, function(_actionName, inputState)
+			if inputState == Enum.UserInputState.Begin then
+				self:_requestHumanFire()
+			end
+			return Enum.ContextActionResult.Sink
+		end, true, Enum.UserInputType.MouseButton1, Enum.KeyCode.F, Enum.KeyCode.ButtonR2)
+		ContextActionService:SetTitle(ACTION_HUMAN_FIRE, "FIRE")
+		ContextActionService:SetDescription(ACTION_HUMAN_FIRE, "Fire at Brontide")
+		task.defer(function()
+			if not self._actionsBound or not PlayerRole.IsHuman(player) then
+				return
+			end
+			self:_layoutRoleTouchButtons()
+			local button = ContextActionService:GetButton(ACTION_HUMAN_FIRE)
+			local buttonFrame = button and button.Parent
+			if buttonFrame and buttonFrame:IsA("GuiObject") then
+				self._touchLayoutConnection = buttonFrame
+					:GetPropertyChangedSignal("AbsoluteSize")
+					:Connect(function()
+						self:_layoutRoleTouchButtons()
+					end)
+				self._touchLayoutPositionConnection = buttonFrame
+					:GetPropertyChangedSignal("AbsolutePosition")
+					:Connect(function()
+						self:_layoutRoleTouchButtons()
+					end)
+			end
+		end)
+		return
+	end
 
 	ContextActionService:BindAction(ACTION_BASIC_ATTACK, function(_actionName, inputState)
 		if inputState == Enum.UserInputState.Begin then
@@ -616,30 +803,27 @@ function CombatController:_bindActions()
 		if not self._actionsBound then
 			return
 		end
-		self:_layoutTouchButtons()
+		self:_layoutRoleTouchButtons()
 		local button = ContextActionService:GetButton(ACTION_BASIC_ATTACK)
 		local buttonFrame = button and button.Parent
 		if buttonFrame and buttonFrame:IsA("GuiObject") then
 			self._touchLayoutConnection = buttonFrame
 				:GetPropertyChangedSignal("AbsoluteSize")
 				:Connect(function()
-					self:_layoutTouchButtons()
+					self:_layoutRoleTouchButtons()
 				end)
 			self._touchLayoutPositionConnection = buttonFrame
 				:GetPropertyChangedSignal("AbsolutePosition")
 				:Connect(function()
-					self:_layoutTouchButtons()
+					self:_layoutRoleTouchButtons()
 				end)
 		end
 	end)
 end
 
 function CombatController:_updateRoleBindings()
-	if PlayerRole.IsKaiju(player) then
-		self:_bindActions()
-	else
-		self:_unbindActions()
-	end
+	self:_unbindActions()
+	self:_bindActions()
 end
 
 function CombatController:Start()
@@ -678,6 +862,12 @@ function CombatController:Start()
 			elseif result.abilityId == "beam" and result.effectOrigin and result.effectTarget then
 				self:_pulseCamera(if result.hitCount > 0 then 6 else 3, 0.04, 0.22)
 				self:_emitBeam(result.effectOrigin, result.effectTarget, result.hitCount > 0)
+			elseif
+				result.abilityId == "humanFire"
+				and result.effectOrigin
+				and result.effectTarget
+			then
+				self:_emitHumanShot(result.effectOrigin, result.effectTarget, result.hitCount > 0)
 			elseif result.hitCount > 0 then
 				self:_pulseCamera(3, 0.08, 0.18)
 			end

@@ -1,7 +1,7 @@
 --!strict
 
 local StudioTestProtocol = {
-	MultiplayerDestructionTest = "KaijuMultiplayerDestructionV1",
+	MultiplayerDestructionTest = "KaijuMultiplayerCombatV2",
 	RemoteName = "__StudioMultiplayerDestructionTest",
 	TargetStructureId = "north_warehouse",
 	ExistingClientStage = "existing_client",

@@ -41,7 +41,7 @@ Owns the replicated `Human`/`Kaiju` role, loads characters only after role-speci
 
 ### CombatService
 
-Validates cooldowns, range, arc, line of sight, team rules, and target state. Produces authoritative damage events.
+Validates role, living state, cooldowns, range, aim, obstruction and target state. Kaiju spatial queries damage structures and humans; the human blaster starts at the server-known character and raycasts the first eligible obstruction or kaiju. A fixed-rate overlap around the smooth kaiju contact hull owns contact damage and clamps knockback independently of client-owned character physics.
 
 ### DestructionService
 
@@ -80,6 +80,7 @@ Use CollectionService tags and attributes so world building does not depend on f
 - `KaijuCharacters`, `HumanCharacters`, and `HumanScaleGeometry` are registered collision groups. Character-to-character contact is non-colliding, while tagged human-scale geometry can block humans without trapping or flinging the kaiju.
 - Combat remotes reject human characters before cooldown or spatial work. Collision groups improve physical stability but never grant damage authority.
 - The kaiju uses the custom scale-aware camera and action bindings. The human uses the native Roblox camera and receives no kaiju actions during this foundation slice.
+- The human instead receives one cross-device `FIRE` action and centre reticle. Both roles use native Humanoid health/death, have passive regeneration disabled, and respawn through the server's manual role-preserving lifecycle.
 - `KaijuSpawn`, `HumanSpawn`, and the tagged doorway reference are a feasibility lab, not final production level design.
 
 ### `Destructible`

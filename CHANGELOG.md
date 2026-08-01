@@ -10,6 +10,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 - Initial mixed-scale player foundation with one server-assigned giant Brontide, human-sized later players, role-specific spawns/cameras/metrics, non-flinging collision groups, and a human-scale doorway reference.
 - Native multiplayer regression coverage for measured role scale, human combat rejection, role-specific cameras/actions, late-join destruction reconstruction, and automatic kaiju promotion after disconnect.
+- Asymmetric mixed-scale combat foundation with a cross-device human energy blaster, damage and death for both roles, role-preserving respawns, kaiju attacks against humans, and controlled physical kaiju contact.
 - Research-backed Phase 2D roadmap for a sustained, server-authoritative demolition Beam and tiered, pooled destruction spectacle with mobile and Reduced Effects gates.
 - Research specification for genuinely mixed-scale human and kaiju players, including role architecture, truthful level metrics, collision/security rules, mobile constraints, and a two-client feasibility lab.
 - Research-led game design, technical architecture, roadmap, art direction, and validation ledger.

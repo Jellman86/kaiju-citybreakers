@@ -6,6 +6,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local DestructibleContract = require(ReplicatedStorage.Shared.DestructibleContract)
 local PlayerRole = require(ReplicatedStorage.Shared.PlayerRole)
 
 type ControlGrantedCallback = (player: Player) -> ()
@@ -445,6 +446,36 @@ local function createBrontideShell(character: Model)
 	highlight.Parent = shell
 end
 
+local function createKaijuContactHull(character: Model, rootPart: BasePart)
+	local previousHull = character:FindFirstChild("KaijuContactHull")
+	if previousHull then
+		previousHull:Destroy()
+	end
+
+	local hull = Instance.new("Part")
+	hull.Name = "KaijuContactHull"
+	hull.Shape = Enum.PartType.Cylinder
+	hull.Size = Config.MixedScale.ContactHullSize
+	hull.CFrame = rootPart.CFrame
+		* CFrame.new(Config.MixedScale.ContactHullOffset)
+		* CFrame.Angles(0, 0, math.rad(90))
+	hull.Transparency = 1
+	hull.Anchored = false
+	hull.CanCollide = true
+	hull.CanQuery = false
+	hull.CanTouch = false
+	hull.Massless = true
+	hull.CastShadow = false
+	hull.Parent = character
+	hull.CollisionGroup = PlayerRole.CollisionGroup.KaijuContact
+
+	local weld = Instance.new("WeldConstraint")
+	weld.Name = "KaijuContactWeld"
+	weld.Part0 = rootPart
+	weld.Part1 = hull
+	weld.Parent = hull
+end
+
 local KaijuService = {}
 KaijuService.__index = KaijuService
 
@@ -507,11 +538,34 @@ function KaijuService:_configureCollisionGroups()
 	local groups = PlayerRole.CollisionGroup
 	ensureCollisionGroup(groups.Kaiju)
 	ensureCollisionGroup(groups.Human)
+	ensureCollisionGroup(groups.KaijuContact)
+	ensureCollisionGroup(groups.KaijuDamageQuery)
+	ensureCollisionGroup(groups.HumanWeaponQuery)
 	ensureCollisionGroup(groups.HumanScaleGeometry)
 
 	PhysicsService:CollisionGroupSetCollidable(groups.Kaiju, groups.Human, false)
 	PhysicsService:CollisionGroupSetCollidable(groups.Kaiju, groups.Kaiju, false)
 	PhysicsService:CollisionGroupSetCollidable(groups.Human, groups.Human, false)
+	PhysicsService:CollisionGroupSetCollidable(groups.KaijuContact, groups.Human, true)
+	PhysicsService:CollisionGroupSetCollidable(groups.KaijuContact, groups.Kaiju, false)
+	PhysicsService:CollisionGroupSetCollidable(groups.KaijuContact, groups.KaijuContact, false)
+	PhysicsService:CollisionGroupSetCollidable(groups.KaijuContact, "Default", false)
+	PhysicsService:CollisionGroupSetCollidable(
+		groups.KaijuContact,
+		groups.HumanScaleGeometry,
+		false
+	)
+	PhysicsService:CollisionGroupSetCollidable(groups.KaijuDamageQuery, groups.Human, true)
+	PhysicsService:CollisionGroupSetCollidable(groups.KaijuDamageQuery, groups.Kaiju, false)
+	PhysicsService:CollisionGroupSetCollidable(groups.KaijuDamageQuery, "Default", false)
+	PhysicsService:CollisionGroupSetCollidable(groups.HumanWeaponQuery, groups.Kaiju, true)
+	PhysicsService:CollisionGroupSetCollidable(groups.HumanWeaponQuery, groups.Human, true)
+	PhysicsService:CollisionGroupSetCollidable(groups.HumanWeaponQuery, "Default", true)
+	PhysicsService:CollisionGroupSetCollidable(
+		groups.HumanWeaponQuery,
+		DestructibleContract.DamageHitboxCollisionGroup,
+		true
+	)
 	PhysicsService:CollisionGroupSetCollidable(groups.Kaiju, groups.HumanScaleGeometry, false)
 	PhysicsService:CollisionGroupSetCollidable(groups.Human, groups.HumanScaleGeometry, true)
 
@@ -608,18 +662,26 @@ function KaijuService:_configureCharacter(player: Player, character: Model)
 	local role = self._roles[player] or self:_assignInitialRole(player)
 	character:SetAttribute(PlayerRole.Attribute, role)
 	self:_assignCharacterCollisionGroup(character, role)
+	local passiveHealthScript = character:FindFirstChild("Health")
+	if passiveHealthScript and passiveHealthScript:IsA("BaseScript") then
+		passiveHealthScript.Enabled = false
+	end
 
 	if role == PlayerRole.Kaiju then
 		character:ScaleTo(Config.StarterKaiju.PrototypeScale)
 		character:SetAttribute("KaijuId", Config.StarterKaiju.Id)
 		createBrontideShell(character)
+		createKaijuContactHull(character, rootPart)
 		if not placeCharacterAtSpawn(character, rootPart, "KaijuSpawn") then
 			return
 		end
 		humanoid.MaxHealth = Config.StarterKaiju.MaxHealth
 		humanoid.WalkSpeed = Config.StarterKaiju.WalkSpeed
 		humanoid.CameraOffset = Vector3.new(0, Config.StarterKaiju.CameraFocusHeight, 0)
-		humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+		humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.Subject
+		humanoid.NameDisplayDistance = 0
+		humanoid.HealthDisplayDistance = Config.Combat.HumanFireRange
+		humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.DisplayWhenDamaged
 		player.CameraMinZoomDistance = Config.StarterKaiju.CameraMinZoom
 		player.CameraMaxZoomDistance = Config.StarterKaiju.CameraMaxZoom
 	else
@@ -631,6 +693,9 @@ function KaijuService:_configureCharacter(player: Player, character: Model)
 		humanoid.WalkSpeed = Config.Human.WalkSpeed
 		humanoid.CameraOffset = Vector3.new(0, Config.Human.CameraFocusHeight, 0)
 		humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.Viewer
+		humanoid.NameDisplayDistance = 80
+		humanoid.HealthDisplayDistance = 100
+		humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.DisplayWhenDamaged
 		player.CameraMinZoomDistance = Config.Human.CameraMinZoom
 		player.CameraMaxZoomDistance = Config.Human.CameraMaxZoom
 	end
