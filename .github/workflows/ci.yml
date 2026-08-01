@@ -8,7 +8,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Rokit
         run: |
@@ -16,7 +16,9 @@ jobs:
           echo "${HOME}/.rokit/bin" >> "${GITHUB_PATH}"
 
       - name: Install pinned tools
-        run: rokit install
+        run: |
+          rokit trust rojo-rbx/rojo JohnnyMorganz/StyLua Kampfkarren/selene
+          rokit install
 
       - name: Validate project
         run: ./scripts/check.sh
