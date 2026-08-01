@@ -10,7 +10,9 @@ if RunService:IsStudio() then
 	StudioTestService = game:GetService("StudioTestService")
 end
 
+local Config = require(ReplicatedStorage.Shared.Config)
 local DestructibleContract = require(ReplicatedStorage.Shared.DestructibleContract)
+local PlayerRole = require(ReplicatedStorage.Shared.PlayerRole)
 local StudioTestProtocol = require(ReplicatedStorage.Shared.StudioTestProtocol)
 
 type RoundService = {
@@ -26,6 +28,11 @@ type ClientReport = {
 	damagedVisible: number,
 	collapsedVisible: number,
 	debrisCount: number,
+	role: string,
+	cameraMin: number,
+	cameraMax: number,
+	cameraType: string,
+	hasSmashButton: boolean,
 }
 
 local MultiplayerDestructionRegression = {}
@@ -52,12 +59,11 @@ local function waitUntil(predicate: () -> boolean, timeoutSeconds: number): bool
 	return predicate()
 end
 
-local function findTarget(): Model?
+local function findTargetById(structureId: string): Model?
 	for _, tagged in CollectionService:GetTagged(DestructibleContract.Tag) do
 		if
 			tagged:IsA("Model")
-			and tagged:GetAttribute(DestructibleContract.Attribute.StructureId)
-				== StudioTestProtocol.TargetStructureId
+			and tagged:GetAttribute(DestructibleContract.Attribute.StructureId) == structureId
 		then
 			return tagged
 		end
@@ -74,6 +80,11 @@ local function parseReport(player: Player, payload: any): ClientReport?
 		or type(payload.damagedVisible) ~= "number"
 		or type(payload.collapsedVisible) ~= "number"
 		or type(payload.debrisCount) ~= "number"
+		or type(payload.role) ~= "string"
+		or type(payload.cameraMin) ~= "number"
+		or type(payload.cameraMax) ~= "number"
+		or type(payload.cameraType) ~= "string"
+		or type(payload.hasSmashButton) ~= "boolean"
 	then
 		return nil
 	end
@@ -87,6 +98,11 @@ local function parseReport(player: Player, payload: any): ClientReport?
 		damagedVisible = payload.damagedVisible,
 		collapsedVisible = payload.collapsedVisible,
 		debrisCount = payload.debrisCount,
+		role = payload.role,
+		cameraMin = payload.cameraMin,
+		cameraMax = payload.cameraMax,
+		cameraType = payload.cameraType,
+		hasSmashButton = payload.hasSmashButton,
 	}
 end
 
@@ -168,7 +184,7 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 			return
 		end
 
-		local target = findTarget()
+		local target = findTargetById(StudioTestProtocol.TargetStructureId)
 		if not target then
 			fail("target destructible was not registered")
 			return
@@ -248,9 +264,65 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 		if
 			not waitUntil(function()
 				return readyPlayers[resolvedLatePlayer] == true
+					and firstPlayer.Character ~= nil
+					and resolvedLatePlayer.Character ~= nil
 			end, 20)
 		then
 			fail("late client harness did not become ready")
+			return
+		end
+
+		if
+			firstPlayer:GetAttribute(PlayerRole.Attribute) ~= PlayerRole.Kaiju
+			or resolvedLatePlayer:GetAttribute(PlayerRole.Attribute) ~= PlayerRole.Human
+		then
+			fail("server role assignment did not produce one kaiju and one human")
+			return
+		end
+		local kaijuCharacter = firstPlayer.Character :: Model
+		local humanCharacter = resolvedLatePlayer.Character :: Model
+		local kaijuHeight = kaijuCharacter:GetExtentsSize().Y
+		local humanHeight = humanCharacter:GetExtentsSize().Y
+		local heightRatio = kaijuHeight / math.max(humanHeight, 0.001)
+		if heightRatio < Config.MixedScale.ProvisionalMinimumHeightRatio then
+			fail(`actual character height ratio was only {heightRatio}`)
+			return
+		end
+		local kaijuRoot = kaijuCharacter:FindFirstChild("HumanoidRootPart")
+		local humanRoot = humanCharacter:FindFirstChild("HumanoidRootPart")
+		if
+			not kaijuRoot
+			or not kaijuRoot:IsA("BasePart")
+			or not humanRoot
+			or not humanRoot:IsA("BasePart")
+			or kaijuRoot.CollisionGroup ~= PlayerRole.CollisionGroup.Kaiju
+			or humanRoot.CollisionGroup ~= PlayerRole.CollisionGroup.Human
+		then
+			fail("role character collision groups were not applied")
+			return
+		end
+
+		local humanSecurityTarget = findTargetById("north_tower")
+		if not humanSecurityTarget then
+			fail("human security target was unavailable")
+			return
+		end
+		local healthBeforeHumanAttack =
+			humanSecurityTarget:GetAttribute(DestructibleContract.Attribute.CurrentHealth)
+		if type(healthBeforeHumanAttack) ~= "number" then
+			fail("human security target health was invalid")
+			return
+		end
+		local securityTargetPosition = humanSecurityTarget.DamageHitbox.Position
+		humanRoot.CFrame =
+			CFrame.lookAt(securityTargetPosition + Vector3.new(0, 3, 18), securityTargetPosition)
+		testRemote:FireClient(resolvedLatePlayer, { command = "attack", hits = 1 })
+		task.wait(1.25)
+		if
+			humanSecurityTarget:GetAttribute(DestructibleContract.Attribute.CurrentHealth)
+			~= healthBeforeHumanAttack
+		then
+			fail("human client damaged a kaiju-only destructible")
 			return
 		end
 
@@ -290,6 +362,24 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 			fail("late client replayed historical collapse debris")
 			return
 		end
+		if
+			existingReport.role ~= PlayerRole.Kaiju
+			or existingReport.cameraMin ~= Config.StarterKaiju.CameraMinZoom
+			or existingReport.cameraMax ~= Config.StarterKaiju.CameraMaxZoom
+		then
+			fail("kaiju client did not apply its role camera metrics")
+			return
+		end
+		if
+			lateReport.role ~= PlayerRole.Human
+			or lateReport.cameraMin ~= Config.Human.CameraMinZoom
+			or lateReport.cameraMax ~= Config.Human.CameraMaxZoom
+			or lateReport.cameraType ~= tostring(Enum.CameraType.Custom)
+			or lateReport.hasSmashButton
+		then
+			fail("human client retained kaiju camera or touch-action state")
+			return
+		end
 
 		local collision = target:FindFirstChild("Collision")
 		local intactProxy = if collision then collision:FindFirstChild("IntactProxy") else nil
@@ -301,21 +391,51 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 			or not collapsedProxy:IsA("BasePart")
 			or intactProxy.CanCollide
 			or not collapsedProxy.CanCollide
-			or not target.DamageHitbox.CanQuery
+			or target.DamageHitbox.CanQuery
 		then
 			fail("server collision or query proxies disagreed with collapsed state")
 			return
 		end
 
+		testRemote:FireClient(firstPlayer, { command = "leave" })
+		if
+			not waitUntil(function()
+				local promotedCharacter = resolvedLatePlayer.Character
+				return #Players:GetPlayers() == 1
+					and resolvedLatePlayer:GetAttribute(PlayerRole.Attribute) == PlayerRole.Kaiju
+					and promotedCharacter ~= nil
+					and promotedCharacter:GetAttribute(PlayerRole.Attribute) == PlayerRole.Kaiju
+			end, 20)
+		then
+			fail("remaining human was not promoted after the kaiju left")
+			return
+		end
+		local promotedHeight = (resolvedLatePlayer.Character :: Model):GetExtentsSize().Y
+		if promotedHeight < kaijuHeight * 0.9 then
+			fail("promoted human did not respawn at kaiju scale")
+			return
+		end
+
 		finish({
 			passed = true,
-			players = #Players:GetPlayers(),
+			playersBeforePromotion = 2,
+			playersAfterPromotion = #Players:GetPlayers(),
 			structureId = StudioTestProtocol.TargetStructureId,
 			state = target:GetAttribute(DestructibleContract.Attribute.State),
 			sequence = target:GetAttribute(DestructibleContract.Attribute.StateSequence),
 			health = target:GetAttribute(DestructibleContract.Attribute.CurrentHealth),
 			existingClientDebris = existingReport.debrisCount,
 			lateClientDebris = lateReport.debrisCount,
+			kaijuHeight = kaijuHeight,
+			humanHeight = humanHeight,
+			heightRatio = heightRatio,
+			kaijuRole = firstPlayer:GetAttribute(PlayerRole.Attribute),
+			initialHumanRole = PlayerRole.Human,
+			promotedRole = resolvedLatePlayer:GetAttribute(PlayerRole.Attribute),
+			promotedHeight = promotedHeight,
+			humanCamera = `{lateReport.cameraMin}-{lateReport.cameraMax}`,
+			humanCameraType = lateReport.cameraType,
+			humanHadSmashButton = lateReport.hasSmashButton,
 		})
 	end)
 end

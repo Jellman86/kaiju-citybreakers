@@ -7,6 +7,7 @@ local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local DestructibleContract = require(ReplicatedStorage.Shared.DestructibleContract)
+local PlayerRole = require(ReplicatedStorage.Shared.PlayerRole)
 local Types = require(ReplicatedStorage.Shared.Types)
 
 type AbilityResult = Types.AbilityResult
@@ -88,6 +89,9 @@ function CombatService:_consumeRateToken(player: Player): boolean
 end
 
 function CombatService:_getLivingCharacter(player: Player): (Model?, BasePart?)
+	if not PlayerRole.IsKaiju(player) then
+		return nil, nil
+	end
 	local character = player.Character
 	local humanoid = if character then character:FindFirstChildOfClass("Humanoid") else nil
 	local rootPart = if character then character:FindFirstChild("HumanoidRootPart") else nil
@@ -368,7 +372,9 @@ function CombatService:_performBeam(player: Player, sequence: number, requestedD
 	local aimDirection = getValidatedBeamDirection(rootPart, requestedDirection)
 	local head = character:FindFirstChild("Head")
 	local mouthPosition = if head and head:IsA("BasePart")
-		then head.Position + Vector3.new(0, -1.1, 0) + aimDirection * 6.5
+		then head.Position
+			+ Vector3.new(0, Config.Combat.BeamMouthVerticalOffset, 0)
+			+ aimDirection * Config.Combat.BeamMouthForwardOffset
 		else rootPart.Position + Vector3.new(0, Config.Combat.BeamOriginHeight, 0)
 	local origin = mouthPosition
 	local direction = aimDirection * Config.Combat.BeamRange

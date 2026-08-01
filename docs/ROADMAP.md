@@ -88,6 +88,29 @@ Compare bounded repeated `Spherecast` traversal with a native swept-volume overl
 
 The Beam visibly traces a controllable path through multiple buildings, each confirmed impact feels substantially stronger than the current prototype, all transient effects return to rest, and the representative phone remains at or above the provisional `30 FPS` destruction threshold without unbounded instance, memory, or remote growth.
 
+### Phase 2E — Genuine mixed-scale players
+
+Prove one human-scale player and one physically giant Brontide in the same server before rebuilding the full city or producing human-versus-kaiju progression. See [MIXED_SCALE_PLAYERS.md](MIXED_SCALE_PLAYERS.md).
+
+#### Deliverables
+
+- Server-owned `Human` and `Kaiju` roles with solo-safe assignment, role-specific spawning and automatic human promotion if the kaiju leaves.
+- One provisional `60–75` stud Brontide beside an ordinary `5–6.5` stud R15 human, with actual model bounds maintaining at least a provisional `10:1` standing-height ratio.
+- Separate role metrics for movement, camera, spawn clearance, collision and combat reach.
+- Non-colliding human/kaiju character groups so the giant cannot fling a human; explicit server spatial queries remain the only source of combat and destruction outcomes.
+- A small human-scale doorway/approach reference inside the greybox and one useful mixed-role interaction before any production-scale human content.
+
+#### Validation
+
+- Run the native two-client Studio regression with one kaiju and one human, including role replication, actual bounds, respawn/promotion, collision filtering and human rejection from kaiju-only remotes.
+- Verify both cameras, touch controls, human-scale navigation and kaiju-scale traversal on a physical phone.
+- Measure client/server frame time, memory, moving character parts and streaming behaviour with both roles present.
+- Conduct an uncoached two-player test in which both roles complete a useful task and can explain their contribution.
+
+#### Exit gate
+
+The size difference exists in replicated model bounds rather than camera presentation alone; both roles remain controllable and useful; contact cannot fling either player; server authority and solo play remain intact; and the representative phone passes the provisional performance gate.
+
 ## Phase 3 — Complete round loop (weeks 6–7)
 
 ### Deliverables
@@ -213,9 +236,10 @@ Ordered only after the vertical-slice gate:
 
 ## Immediate implementation sequence
 
-1. Record the current physical-device baseline for Beam aim, zone recognition, frame rate, and the least satisfying destruction moments.
-2. Implement Phase 2D first in one five-to-eight-building Central City street: bounded Beam sessions, fixed-rate server hits, and the first tiered collapse presentation.
-3. Tune on a physical phone, then run the twenty-building destruction/performance and full-round reset gates before rolling the presentation across all structures.
-4. Run an uncoached navigation/destruction session in all five zones and revise scale or routes before adding more scenery.
-5. Prototype exactly one scout drone only after the sustained Beam and destruction spectacle pass their mobile and readability gates; do not populate the whole map yet.
-6. Add energy collection and mutation choice only after Beam, Charge, Smash, and the scout are readable together on phone.
+1. Implement Phase 2E's two-client role, spawn, real-bounds, collision and camera foundation without rebuilding the five-zone city.
+2. Validate the provisional `60–75` stud Brontide beside a human on Studio clients and a physical phone; retain, reduce or reject the scale from evidence.
+3. Implement Phase 2D's sustained Beam and tiered collapse presentation against the retained physical scale in one five-to-eight-building Central City street.
+4. Tune on a physical phone, then run the twenty-building destruction/performance and full-round reset gates before rolling the presentation across all structures.
+5. Run an uncoached mixed-scale navigation/destruction session and revise routes before adding scenery or human content.
+6. Prototype exactly one scout drone only after mixed scale, Beam and destruction spectacle pass their mobile and readability gates; do not populate the whole map yet.
+7. Add energy collection and mutation choice only after both roles, Beam, Charge, Smash and the scout are readable together on phone.

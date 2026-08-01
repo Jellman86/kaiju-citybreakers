@@ -1,17 +1,25 @@
 --!strict
 
+local CollectionService = game:GetService("CollectionService")
+local PhysicsService = game:GetService("PhysicsService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local PlayerRole = require(ReplicatedStorage.Shared.PlayerRole)
 
 type ControlGrantedCallback = (player: Player) -> ()
+type Role = PlayerRole.Value
 
 local BODY_COLOR = Color3.fromRGB(31, 48, 55)
 local ARMOR_COLOR = Color3.fromRGB(22, 33, 42)
 local ENERGY_COLOR = Color3.fromRGB(53, 225, 211)
 local EYE_COLOR = Color3.fromRGB(255, 190, 64)
 local SPAWN_CLEARANCE_STUDS = 1
+
+local function scaledOffset(offset: CFrame, scale: number): CFrame
+	return CFrame.new(offset.Position * scale) * offset.Rotation
+end
 
 local function getBodyPart(character: Model, name: string): BasePart?
 	local bodyPart = character:FindFirstChild(name, true)
@@ -95,7 +103,18 @@ local function attachShellPart(
 )
 	local target = getBodyPart(character, targetName)
 	if target then
-		createShellPart(parent, target, name, size, offset, color, material, shape)
+		local shellScale = Config.StarterKaiju.PrototypeScale
+			/ Config.StarterKaiju.ShellReferenceScale
+		createShellPart(
+			parent,
+			target,
+			name,
+			size * shellScale,
+			scaledOffset(offset, shellScale),
+			color,
+			material,
+			shape
+		)
 	end
 end
 
@@ -429,11 +448,15 @@ end
 local KaijuService = {}
 KaijuService.__index = KaijuService
 
-local function placeCharacterAtSpawn(character: Model, rootPart: BasePart): boolean
+local function placeCharacterAtSpawn(
+	character: Model,
+	rootPart: BasePart,
+	spawnName: string
+): boolean
 	local world = workspace:FindFirstChild(Config.Prototype.WorldName)
-	local spawn = world and world:FindFirstChild("KaijuSpawn")
+	local spawn = world and world:FindFirstChild(spawnName)
 	if not spawn or not spawn:IsA("SpawnLocation") then
-		warn("[KaijuService] Generated KaijuSpawn is unavailable")
+		warn(`[KaijuService] Generated {spawnName} is unavailable`)
 		return false
 	end
 
@@ -465,10 +488,108 @@ function KaijuService.new(onControlGranted: ControlGrantedCallback)
 
 	self._onControlGranted = onControlGranted
 	self._connections = {} :: { RBXScriptConnection }
+	self._characterConnections = {} :: { [Model]: { RBXScriptConnection } }
 	self._loadingPlayers = {} :: { [Player]: boolean }
+	self._roles = {} :: { [Player]: Role }
+	self._kaijuPlayer = nil :: Player?
 	self._stopped = false
 
 	return self
+end
+
+local function ensureCollisionGroup(name: string)
+	if not PhysicsService:IsCollisionGroupRegistered(name) then
+		PhysicsService:RegisterCollisionGroup(name)
+	end
+end
+
+function KaijuService:_configureCollisionGroups()
+	local groups = PlayerRole.CollisionGroup
+	ensureCollisionGroup(groups.Kaiju)
+	ensureCollisionGroup(groups.Human)
+	ensureCollisionGroup(groups.HumanScaleGeometry)
+
+	PhysicsService:CollisionGroupSetCollidable(groups.Kaiju, groups.Human, false)
+	PhysicsService:CollisionGroupSetCollidable(groups.Kaiju, groups.Kaiju, false)
+	PhysicsService:CollisionGroupSetCollidable(groups.Human, groups.Human, false)
+	PhysicsService:CollisionGroupSetCollidable(groups.Kaiju, groups.HumanScaleGeometry, false)
+	PhysicsService:CollisionGroupSetCollidable(groups.Human, groups.HumanScaleGeometry, true)
+
+	for _, tagged in CollectionService:GetTagged(PlayerRole.HumanScaleGeometryTag) do
+		if tagged:IsA("BasePart") then
+			tagged.CollisionGroup = groups.HumanScaleGeometry
+		end
+	end
+end
+
+function KaijuService:_cleanupCharacterConnections(character: Model)
+	local connections = self._characterConnections[character]
+	if not connections then
+		return
+	end
+	for _, connection in connections do
+		connection:Disconnect()
+	end
+	self._characterConnections[character] = nil
+end
+
+function KaijuService:_assignCharacterCollisionGroup(character: Model, role: Role)
+	self:_cleanupCharacterConnections(character)
+	local collisionGroup = if role == PlayerRole.Kaiju
+		then PlayerRole.CollisionGroup.Kaiju
+		else PlayerRole.CollisionGroup.Human
+
+	local function assign(instance: Instance)
+		if instance:IsA("BasePart") then
+			instance.CollisionGroup = collisionGroup
+		end
+	end
+	for _, descendant in character:GetDescendants() do
+		assign(descendant)
+	end
+
+	local connections = {} :: { RBXScriptConnection }
+	table.insert(connections, character.DescendantAdded:Connect(assign))
+	table.insert(
+		connections,
+		character.Destroying:Once(function()
+			self:_cleanupCharacterConnections(character)
+		end)
+	)
+	self._characterConnections[character] = connections
+end
+
+function KaijuService:_setRole(player: Player, role: Role)
+	self._roles[player] = role
+	player:SetAttribute(PlayerRole.Attribute, role)
+	if role == PlayerRole.Kaiju then
+		self._kaijuPlayer = player
+	end
+end
+
+function KaijuService:_assignInitialRole(player: Player): Role
+	if not Config.MixedScale.Enabled then
+		self:_setRole(player, PlayerRole.Kaiju)
+		return PlayerRole.Kaiju
+	end
+	local role = if not self._kaijuPlayer or self._kaijuPlayer.Parent ~= Players
+		then PlayerRole.Kaiju
+		else PlayerRole.Human
+	self:_setRole(player, role)
+	return role
+end
+
+function KaijuService:_promoteHumanIfNeeded()
+	if self._stopped or (self._kaijuPlayer and self._kaijuPlayer.Parent == Players) then
+		return
+	end
+	for _, player in Players:GetPlayers() do
+		if self._roles[player] == PlayerRole.Human then
+			self:_setRole(player, PlayerRole.Kaiju)
+			self:_loadCharacter(player)
+			return
+		end
+	end
 end
 
 function KaijuService:_configureCharacter(player: Player, character: Model)
@@ -484,19 +605,36 @@ function KaijuService:_configureCharacter(player: Player, character: Model)
 		return
 	end
 
-	character:ScaleTo(Config.StarterKaiju.PrototypeScale)
-	character:SetAttribute("KaijuId", Config.StarterKaiju.Id)
-	createBrontideShell(character)
-	if not placeCharacterAtSpawn(character, rootPart) then
-		return
+	local role = self._roles[player] or self:_assignInitialRole(player)
+	character:SetAttribute(PlayerRole.Attribute, role)
+	self:_assignCharacterCollisionGroup(character, role)
+
+	if role == PlayerRole.Kaiju then
+		character:ScaleTo(Config.StarterKaiju.PrototypeScale)
+		character:SetAttribute("KaijuId", Config.StarterKaiju.Id)
+		createBrontideShell(character)
+		if not placeCharacterAtSpawn(character, rootPart, "KaijuSpawn") then
+			return
+		end
+		humanoid.MaxHealth = Config.StarterKaiju.MaxHealth
+		humanoid.WalkSpeed = Config.StarterKaiju.WalkSpeed
+		humanoid.CameraOffset = Vector3.new(0, Config.StarterKaiju.CameraFocusHeight, 0)
+		humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+		player.CameraMinZoomDistance = Config.StarterKaiju.CameraMinZoom
+		player.CameraMaxZoomDistance = Config.StarterKaiju.CameraMaxZoom
+	else
+		character:SetAttribute("KaijuId", nil)
+		if not placeCharacterAtSpawn(character, rootPart, "HumanSpawn") then
+			return
+		end
+		humanoid.MaxHealth = Config.Human.MaxHealth
+		humanoid.WalkSpeed = Config.Human.WalkSpeed
+		humanoid.CameraOffset = Vector3.new(0, Config.Human.CameraFocusHeight, 0)
+		humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.Viewer
+		player.CameraMinZoomDistance = Config.Human.CameraMinZoom
+		player.CameraMaxZoomDistance = Config.Human.CameraMaxZoom
 	end
-	humanoid.MaxHealth = Config.StarterKaiju.MaxHealth
 	humanoid.Health = humanoid.MaxHealth
-	humanoid.WalkSpeed = Config.StarterKaiju.WalkSpeed
-	humanoid.CameraOffset = Vector3.new(0, 5, 0)
-	humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-	player.CameraMinZoomDistance = Config.StarterKaiju.CameraMinZoom
-	player.CameraMaxZoomDistance = Config.StarterKaiju.CameraMaxZoom
 
 	table.insert(
 		self._connections,
@@ -529,10 +667,19 @@ function KaijuService:_loadCharacter(player: Player)
 end
 
 function KaijuService:_watchPlayer(player: Player)
+	self:_assignInitialRole(player)
 	table.insert(
 		self._connections,
 		player.CharacterAppearanceLoaded:Connect(function(character)
-			hideAvatarAppearance(character)
+			if self._roles[player] == PlayerRole.Kaiju then
+				hideAvatarAppearance(character)
+			end
+		end)
+	)
+	table.insert(
+		self._connections,
+		player.CharacterRemoving:Connect(function(character)
+			self:_cleanupCharacterConnections(character)
 		end)
 	)
 
@@ -558,10 +705,24 @@ end
 
 function KaijuService:Start()
 	self._stopped = false
+	self:_configureCollisionGroups()
 	table.insert(
 		self._connections,
 		Players.PlayerAdded:Connect(function(player)
 			self:_watchPlayer(player)
+		end)
+	)
+	table.insert(
+		self._connections,
+		Players.PlayerRemoving:Connect(function(player)
+			self._loadingPlayers[player] = nil
+			self._roles[player] = nil
+			if self._kaijuPlayer == player then
+				self._kaijuPlayer = nil
+				task.defer(function()
+					self:_promoteHumanIfNeeded()
+				end)
+			end
 		end)
 	)
 
@@ -576,7 +737,12 @@ function KaijuService:Stop()
 		connection:Disconnect()
 	end
 	table.clear(self._connections)
+	for character in self._characterConnections do
+		self:_cleanupCharacterConnections(character)
+	end
 	table.clear(self._loadingPlayers)
+	table.clear(self._roles)
+	self._kaijuPlayer = nil
 end
 
 return KaijuService

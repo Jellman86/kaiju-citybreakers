@@ -1,6 +1,8 @@
 --!strict
 
 local CollectionService = game:GetService("CollectionService")
+local ContextActionService = game:GetService("ContextActionService")
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
@@ -99,6 +101,12 @@ function MultiplayerDestructionRegression.TryStart(
 				end
 				return
 			end
+			if payload.command == "leave" then
+				if StudioTestService:CanLeaveTest() then
+					StudioTestService:LeaveTest()
+				end
+				return
+			end
 
 			if payload.command ~= "report" or type(payload.stage) ~= "string" then
 				return
@@ -173,6 +181,13 @@ function MultiplayerDestructionRegression.TryStart(
 				damagedVisible = countVisibleParts(damaged),
 				collapsedVisible = countVisibleParts(collapsed),
 				debrisCount = countActiveDebris(),
+				role = Players.LocalPlayer:GetAttribute("CharacterRole"),
+				cameraMin = Players.LocalPlayer.CameraMinZoomDistance,
+				cameraMax = Players.LocalPlayer.CameraMaxZoomDistance,
+				cameraType = if workspace.CurrentCamera
+					then tostring(workspace.CurrentCamera.CameraType)
+					else "Unavailable",
+				hasSmashButton = ContextActionService:GetButton("KaijuBasicAttack") ~= nil,
 			})
 		end)
 

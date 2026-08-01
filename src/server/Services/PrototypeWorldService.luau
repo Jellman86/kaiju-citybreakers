@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local DestructibleContract = require(ReplicatedStorage.Shared.DestructibleContract)
+local PlayerRole = require(ReplicatedStorage.Shared.PlayerRole)
 local DestructibleStructureBuilder =
 	require(script.Parent.Parent.Builders.DestructibleStructureBuilder)
 local DistrictDressingBuilder = require(script.Parent.Parent.Builders.DistrictDressingBuilder)
@@ -1160,6 +1161,61 @@ function PrototypeWorldService:Start()
 	spawn.Duration = 0
 	spawn.Anchored = true
 	spawn.Parent = world
+
+	local humanSpawn = Instance.new("SpawnLocation")
+	humanSpawn.Name = "HumanSpawn"
+	humanSpawn.Size = Vector3.new(6, 1, 6)
+	humanSpawn.CFrame = CFrame.lookAt(Vector3.new(-65, 1, 69), Vector3.new(-65, 1, 52))
+	humanSpawn.Transparency = 1
+	humanSpawn.CanCollide = false
+	humanSpawn.Neutral = true
+	humanSpawn.Enabled = true
+	humanSpawn.Duration = 0
+	humanSpawn.Anchored = true
+	humanSpawn.Parent = world
+
+	local mixedScaleReference = Instance.new("Model")
+	mixedScaleReference.Name = "MixedScaleReference"
+	mixedScaleReference.Parent = world
+	createSurfacePart(
+		"HumanApproachPad",
+		Vector3.new(18, 0.4, 30),
+		CFrame.new(-65, 0.2, 62),
+		CURB,
+		Enum.Material.Concrete,
+		mixedScaleReference
+	)
+	for _, definition in
+		{
+			{
+				name = "DoorPostLeft",
+				size = Vector3.new(1.2, 8, 1.2),
+				position = Vector3.new(-68.6, 4, 50),
+			},
+			{
+				name = "DoorPostRight",
+				size = Vector3.new(1.2, 8, 1.2),
+				position = Vector3.new(-61.4, 4, 50),
+			},
+			{
+				name = "DoorLintel",
+				size = Vector3.new(8.4, 1.2, 1.2),
+				position = Vector3.new(-65, 8.6, 50),
+			},
+		}
+	do
+		local referencePart = createPart(
+			definition.name,
+			definition.size,
+			CFrame.new(definition.position),
+			Color3.fromRGB(232, 177, 72),
+			Enum.Material.Metal,
+			mixedScaleReference
+		)
+		referencePart.CanTouch = false
+		referencePart.CanQuery = false
+		CollectionService:AddTag(referencePart, PlayerRole.HumanScaleGeometryTag)
+	end
 
 	createBuilding(
 		world,

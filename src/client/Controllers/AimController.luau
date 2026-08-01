@@ -5,6 +5,9 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local PlayerRole = require(ReplicatedStorage.Shared.PlayerRole)
+
 local AimController = {}
 AimController.__index = AimController
 
@@ -17,7 +20,8 @@ local player = Players.LocalPlayer
 type AimJoint = Motor6D | AnimationConstraint
 
 local function usesCameraFacing(): boolean
-	return UserInputService.PreferredInput == Enum.PreferredInput.KeyboardAndMouse
+	return PlayerRole.IsKaiju(player)
+		and UserInputService.PreferredInput == Enum.PreferredInput.KeyboardAndMouse
 end
 
 local function getCharacterParts(): (Humanoid?, BasePart?)
@@ -83,6 +87,7 @@ function AimController.new()
 
 	self._characterAddedConnection = nil :: RBXScriptConnection?
 	self._preferredInputConnection = nil :: RBXScriptConnection?
+	self._roleConnection = nil :: RBXScriptConnection?
 	self._smoothedAimDirection = nil :: Vector3?
 
 	return self
@@ -123,6 +128,12 @@ function AimController:_updateFacing(deltaTime: number)
 	local humanoid, rootPart = getCharacterParts()
 	local camera = Workspace.CurrentCamera
 	if not humanoid or not rootPart or not camera or humanoid.Health <= 0 then
+		return
+	end
+	if not PlayerRole.IsKaiju(player) then
+		if not humanoid.AutoRotate then
+			humanoid.AutoRotate = true
+		end
 		return
 	end
 
@@ -177,6 +188,11 @@ function AimController:Start()
 				self:_configureCharacter(player.Character)
 			end
 		end)
+	self._roleConnection = player:GetAttributeChangedSignal(PlayerRole.Attribute):Connect(function()
+		if player.Character then
+			self:_configureCharacter(player.Character)
+		end
+	end)
 
 	RunService:BindToRenderStep(
 		RENDER_STEP_NAME,
@@ -196,6 +212,10 @@ function AimController:Destroy()
 	if self._preferredInputConnection then
 		self._preferredInputConnection:Disconnect()
 		self._preferredInputConnection = nil
+	end
+	if self._roleConnection then
+		self._roleConnection:Disconnect()
+		self._roleConnection = nil
 	end
 
 	local humanoid = getCharacterParts()

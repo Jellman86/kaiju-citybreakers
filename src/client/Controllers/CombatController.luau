@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local PlayerRole = require(ReplicatedStorage.Shared.PlayerRole)
 local Types = require(ReplicatedStorage.Shared.Types)
 
 type AbilityResult = Types.AbilityResult
@@ -44,11 +45,16 @@ function CombatController.new(
 	self._resultConnection = nil :: RBXScriptConnection?
 	self._touchLayoutConnection = nil :: RBXScriptConnection?
 	self._touchLayoutPositionConnection = nil :: RBXScriptConnection?
+	self._roleConnection = nil :: RBXScriptConnection?
+	self._actionsBound = false
 
 	return self
 end
 
 function CombatController:_requestBeam()
+	if not PlayerRole.IsKaiju(player) then
+		return
+	end
 	local now = os.clock()
 	if now - self._lastBeamRequestedAt < Config.Combat.BeamCooldownSeconds then
 		return
@@ -67,6 +73,9 @@ function CombatController:_requestBeam()
 end
 
 function CombatController:_requestBasicAttack()
+	if not PlayerRole.IsKaiju(player) then
+		return
+	end
 	local now = os.clock()
 	if now - self._lastRequestedAt < Config.Combat.BasicAttackCooldownSeconds then
 		return
@@ -116,6 +125,9 @@ function CombatController:_startBeamCooldownVisual()
 end
 
 function CombatController:_requestCharge()
+	if not PlayerRole.IsKaiju(player) then
+		return
+	end
 	local now = os.clock()
 	if now - self._lastChargeRequestedAt < Config.Combat.ChargeCooldownSeconds then
 		return
@@ -544,17 +556,31 @@ function CombatController:_watchJumpButton(instance: Instance)
 	relayout()
 end
 
-function CombatController:Start()
-	local playerGui = player:WaitForChild("PlayerGui")
-	self._playerGuiDescendantAddedConnection = playerGui.DescendantAdded:Connect(function(instance)
-		if instance.Name == "JumpButton" then
-			self:_watchJumpButton(instance)
-		end
-	end)
-	local existingJumpButton = playerGui:FindFirstChild("JumpButton", true)
-	if existingJumpButton then
-		self:_watchJumpButton(existingJumpButton)
+function CombatController:_unbindActions()
+	if not self._actionsBound then
+		return
 	end
+	self._actionsBound = false
+	self:_resetChargeCooldownVisual()
+	self:_resetBeamCooldownVisual()
+	ContextActionService:UnbindAction(ACTION_BASIC_ATTACK)
+	ContextActionService:UnbindAction(ACTION_CHARGE)
+	ContextActionService:UnbindAction(ACTION_BEAM)
+	if self._touchLayoutConnection then
+		self._touchLayoutConnection:Disconnect()
+		self._touchLayoutConnection = nil
+	end
+	if self._touchLayoutPositionConnection then
+		self._touchLayoutPositionConnection:Disconnect()
+		self._touchLayoutPositionConnection = nil
+	end
+end
+
+function CombatController:_bindActions()
+	if self._actionsBound or not PlayerRole.IsKaiju(player) then
+		return
+	end
+	self._actionsBound = true
 
 	ContextActionService:BindAction(ACTION_BASIC_ATTACK, function(_actionName, inputState)
 		if inputState == Enum.UserInputState.Begin then
@@ -587,6 +613,9 @@ function CombatController:Start()
 	ContextActionService:SetTitle(ACTION_BEAM, "BEAM")
 	ContextActionService:SetDescription(ACTION_BEAM, "Fire Brontide's energy beam")
 	task.defer(function()
+		if not self._actionsBound then
+			return
+		end
 		self:_layoutTouchButtons()
 		local button = ContextActionService:GetButton(ACTION_BASIC_ATTACK)
 		local buttonFrame = button and button.Parent
@@ -603,6 +632,32 @@ function CombatController:Start()
 				end)
 		end
 	end)
+end
+
+function CombatController:_updateRoleBindings()
+	if PlayerRole.IsKaiju(player) then
+		self:_bindActions()
+	else
+		self:_unbindActions()
+	end
+end
+
+function CombatController:Start()
+	local playerGui = player:WaitForChild("PlayerGui")
+	self._playerGuiDescendantAddedConnection = playerGui.DescendantAdded:Connect(function(instance)
+		if instance.Name == "JumpButton" then
+			self:_watchJumpButton(instance)
+		end
+	end)
+	local existingJumpButton = playerGui:FindFirstChild("JumpButton", true)
+	if existingJumpButton then
+		self:_watchJumpButton(existingJumpButton)
+	end
+
+	self._roleConnection = player:GetAttributeChangedSignal(PlayerRole.Attribute):Connect(function()
+		self:_updateRoleBindings()
+	end)
+	self:_updateRoleBindings()
 
 	self._resultConnection = self._abilityResultRemote.OnClientEvent:Connect(
 		function(result: AbilityResult)
@@ -631,11 +686,7 @@ function CombatController:Start()
 end
 
 function CombatController:Destroy()
-	self:_resetChargeCooldownVisual()
-	self:_resetBeamCooldownVisual()
-	ContextActionService:UnbindAction(ACTION_BASIC_ATTACK)
-	ContextActionService:UnbindAction(ACTION_CHARGE)
-	ContextActionService:UnbindAction(ACTION_BEAM)
+	self:_unbindActions()
 	self:_disconnectJumpLayoutConnections()
 	if self._resultConnection then
 		self._resultConnection:Disconnect()
@@ -652,6 +703,10 @@ function CombatController:Destroy()
 	if self._touchLayoutPositionConnection then
 		self._touchLayoutPositionConnection:Disconnect()
 		self._touchLayoutPositionConnection = nil
+	end
+	if self._roleConnection then
+		self._roleConnection:Disconnect()
+		self._roleConnection = nil
 	end
 end
 

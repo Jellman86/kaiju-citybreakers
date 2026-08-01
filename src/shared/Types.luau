@@ -2,6 +2,7 @@
 
 export type RoundPhase = "Waiting" | "Countdown" | "Active" | "Results"
 export type DestructionState = "Intact" | "Damaged" | "Collapsed"
+export type PlayerRole = "Kaiju" | "Human"
 
 export type RoundSnapshot = {
 	phase: RoundPhase,

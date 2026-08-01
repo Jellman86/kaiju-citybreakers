@@ -108,3 +108,14 @@ No dependency or external asset is adopted. Replacement plan: preserve structure
 | Blender park assets | Original meshes | **Defer** | Replace the approved blockout kit only after route comprehension and target-device evidence justify production art. |
 
 No dependency, external asset, texture, or paid service is added. Replacement plan: keep the layout coordinates and gameplay surfaces stable while later replacing only decorative descendants with original optimized assets.
+
+## 2026-08-01 — Mixed-scale player audit
+
+| Need | Candidate | Decision | Reason |
+| --- | --- | --- | --- |
+| Two physical character scales | Existing R15 `Humanoid`, `Model:ScaleTo()`, manual character loading and Brontide shell | **Use for feasibility** | Preserves native cross-device locomotion and tests actual replicated bounds without importing a rig or framework. |
+| Per-role camera | Existing camera controller plus Roblox's local `Camera` and player zoom properties | **Extend** | The client already owns camera presentation; selecting metrics by replicated server role is smaller than introducing another controller package. |
+| Contact filtering | Native `PhysicsService` collision groups | **Use** | Prevents human/kaiju flinging while leaving server spatial queries responsible for combat. |
+| Human/kaiju framework or marketplace character | Creator Store and general character frameworks | **Do not use** | The feasibility question needs two roles, native characters and one original shell. External models add provenance, IP, scripts and performance risk without answering it better. |
+
+No dependency, external asset, paid service or new production art is adopted. Replace the enlarged R15 proxy with an original Blender custom humanoid only after actual bounds, role fun, camera comfort and mobile performance pass.

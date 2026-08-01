@@ -8,12 +8,21 @@ local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local PlayerRole = require(ReplicatedStorage.Shared.PlayerRole)
 
 local CameraController = {}
 CameraController.__index = CameraController
 
 local RENDER_STEP_NAME = "KaijuThirdPersonCamera"
 local player = Players.LocalPlayer
+
+local function isKaiju(): boolean
+	return PlayerRole.IsKaiju(player)
+end
+
+local function getCameraMetrics()
+	return if isKaiju() then Config.StarterKaiju else Config.Human
+end
 
 local function usesMouseCamera(): boolean
 	return UserInputService.PreferredInput == Enum.PreferredInput.KeyboardAndMouse
@@ -39,6 +48,7 @@ function CameraController.new()
 	self._characterAddedConnection = nil :: RBXScriptConnection?
 	self._inputChangedConnection = nil :: RBXScriptConnection?
 	self._preferredInputConnection = nil :: RBXScriptConnection?
+	self._roleConnection = nil :: RBXScriptConnection?
 	self._mouseCameraEnabled = false
 	self._yaw = 0
 	self._pitch = 0
@@ -48,15 +58,19 @@ function CameraController.new()
 end
 
 function CameraController:_configureCharacter(character: Model)
+	local metrics = getCameraMetrics()
 	local humanoid = character:WaitForChild("Humanoid", 10)
 	if humanoid and humanoid:IsA("Humanoid") then
-		humanoid.CameraOffset = Vector3.new(0, Config.StarterKaiju.CameraFocusHeight, 0)
+		humanoid.CameraOffset = Vector3.new(0, metrics.CameraFocusHeight, 0)
 	end
 
 	local camera = Workspace.CurrentCamera
 	if camera then
-		camera.FieldOfView = Config.StarterKaiju.CameraFieldOfView
+		camera.FieldOfView = metrics.CameraFieldOfView
 	end
+	player.CameraMinZoomDistance = metrics.CameraMinZoom
+	player.CameraMaxZoomDistance = metrics.CameraMaxZoom
+	self._distance = math.clamp(self._distance, metrics.CameraMinZoom, metrics.CameraMaxZoom)
 end
 
 function CameraController:_setMouseCaptured(isCaptured: boolean)
@@ -67,7 +81,7 @@ function CameraController:_setMouseCaptured(isCaptured: boolean)
 end
 
 function CameraController:_enableMouseCamera()
-	if self._mouseCameraEnabled then
+	if self._mouseCameraEnabled or not isKaiju() then
 		return
 	end
 
@@ -85,12 +99,12 @@ function CameraController:_enableMouseCamera()
 		math.rad(Config.StarterKaiju.CameraPitchMaxDegrees)
 	)
 
-	local focusPosition = rootPart.Position
-		+ Vector3.new(0, Config.StarterKaiju.CameraFocusHeight, 0)
+	local metrics = getCameraMetrics()
+	local focusPosition = rootPart.Position + Vector3.new(0, metrics.CameraFocusHeight, 0)
 	self._distance = math.clamp(
 		(camera.CFrame.Position - focusPosition).Magnitude,
-		Config.StarterKaiju.CameraMinZoom,
-		Config.StarterKaiju.CameraMaxZoom
+		metrics.CameraMinZoom,
+		metrics.CameraMaxZoom
 	)
 
 	camera.CameraType = Enum.CameraType.Scriptable
@@ -118,7 +132,7 @@ function CameraController:_disableMouseCamera()
 end
 
 function CameraController:_updateInputMode()
-	if usesMouseCamera() then
+	if isKaiju() and usesMouseCamera() then
 		self:_enableMouseCamera()
 	else
 		self:_disableMouseCamera()
@@ -126,7 +140,7 @@ function CameraController:_updateInputMode()
 end
 
 function CameraController:_updateCamera()
-	if not usesMouseCamera() then
+	if not isKaiju() or not usesMouseCamera() then
 		return
 	end
 	if not self._mouseCameraEnabled then
@@ -151,8 +165,8 @@ function CameraController:_updateCamera()
 		)
 	end
 
-	local focusPosition = rootPart.Position
-		+ Vector3.new(0, Config.StarterKaiju.CameraFocusHeight, 0)
+	local metrics = getCameraMetrics()
+	local focusPosition = rootPart.Position + Vector3.new(0, metrics.CameraFocusHeight, 0)
 	local cameraRotation = CFrame.fromOrientation(self._pitch, self._yaw, 0)
 	local desiredPosition = focusPosition - cameraRotation.LookVector * self._distance
 
@@ -163,7 +177,7 @@ function CameraController:_updateCamera()
 	local collision =
 		Workspace:Raycast(focusPosition, desiredPosition - focusPosition, raycastParams)
 	local cameraPosition = if collision
-		then collision.Position + collision.Normal * Config.StarterKaiju.CameraCollisionPadding
+		then collision.Position + collision.Normal * metrics.CameraCollisionPadding
 		else desiredPosition
 
 	camera.CameraType = Enum.CameraType.Scriptable
@@ -172,8 +186,9 @@ function CameraController:_updateCamera()
 end
 
 function CameraController:Start()
-	player.CameraMinZoomDistance = Config.StarterKaiju.CameraMinZoom
-	player.CameraMaxZoomDistance = Config.StarterKaiju.CameraMaxZoom
+	local metrics = getCameraMetrics()
+	player.CameraMinZoomDistance = metrics.CameraMinZoom
+	player.CameraMaxZoomDistance = metrics.CameraMaxZoom
 
 	self._characterAddedConnection = player.CharacterAdded:Connect(function(character)
 		self:_configureCharacter(character)
@@ -185,6 +200,14 @@ function CameraController:Start()
 		:Connect(function()
 			self:_updateInputMode()
 		end)
+	self._roleConnection = player:GetAttributeChangedSignal(PlayerRole.Attribute):Connect(function()
+		self:_disableMouseCamera()
+		if player.Character then
+			self:_configureCharacter(player.Character)
+		end
+		self._distance = getCameraMetrics().CameraMaxZoom
+		self:_updateInputMode()
+	end)
 
 	self._inputChangedConnection = UserInputService.InputChanged:Connect(
 		function(input, gameProcessedEvent)
@@ -192,10 +215,11 @@ function CameraController:Start()
 				return
 			end
 			if input.UserInputType == Enum.UserInputType.MouseWheel then
+				local currentMetrics = getCameraMetrics()
 				self._distance = math.clamp(
-					self._distance - input.Position.Z * Config.StarterKaiju.CameraZoomStep,
-					Config.StarterKaiju.CameraMinZoom,
-					Config.StarterKaiju.CameraMaxZoom
+					self._distance - input.Position.Z * currentMetrics.CameraZoomStep,
+					currentMetrics.CameraMinZoom,
+					currentMetrics.CameraMaxZoom
 				)
 			end
 		end
@@ -220,6 +244,10 @@ function CameraController:Destroy()
 	if self._preferredInputConnection then
 		self._preferredInputConnection:Disconnect()
 		self._preferredInputConnection = nil
+	end
+	if self._roleConnection then
+		self._roleConnection:Disconnect()
+		self._roleConnection = nil
 	end
 	if self._inputChangedConnection then
 		self._inputChangedConnection:Disconnect()
