@@ -426,3 +426,27 @@ Retain the map scale, structure count, lean visual variants, server Beam correct
 ### Decision
 
 Retain scale `10` as the feasibility baseline: it produced a measured ratio above the provisional `10:1` gate while preserving the existing server-authoritative destruction path. This is not evidence that either role is fun, that touch controls are comfortable on hardware, or that two differently scaled moving characters meet the phone performance budget. Do not rebuild the city around this scale until a fresh physical-phone check and an uncoached two-person test validate scale readability, contact stability, navigation, and one useful human contribution.
+
+## 2026-08-01 — Asymmetric mixed-scale combat regression
+
+- Implementation commit: `7073cbc10f137afd7ec0c6f238f6ba95f388595c`
+- Environment: existing Roblox Studio editor with native `StudioTestService`, one server, one initial client and one late client; **zero human testers**.
+- Systems: human blaster, role-specific combat actions, Humanoid health/death, disabled passive regeneration, role-preserving respawn, kaiju-to-human damage, smooth contact hull, capped contact knockback, late-join destruction reconstruction and disconnect promotion.
+
+### Exact-commit results
+
+- The measured Brontide/human standing heights were `61.37` and `5.51` studs, an actual `11.15:1` ratio.
+- The human client had `FIRE`, the centre aim reticle and native `6–18` camera, but no Smash action. The kaiju client had no human Fire action or reticle.
+- A normal human request originated at the server-known character, raycast Brontide and reduced kaiju health `1000 → 960`. Continued cooldown-respecting fire defeated Brontide; the same player respawned at `1000` health with the `Kaiju` role and rebuilt contact hull.
+- The full character groups remained non-colliding while the smooth contact hull was physically collidable with humans. The authoritative proximity check damaged the human, and the sampled post-contact velocity remained below the configured `28` stud/second cap.
+- A human request for the kaiju-only basic attack left the structure unchanged. A normal kaiju Smash defeated the human; the same player respawned at `100` health with the `Human` role.
+- The initial client retained `10` live collapse fragments while the late client reconstructed the collapsed warehouse with `0` historical fragments.
+- After the original kaiju client left, the remaining human was promoted and rebuilt as a `61.59`-stud kaiju. The structured result returned `passed = true` with one player remaining.
+
+### Harness discovery
+
+One exact-commit attempt stalled inside Studio before adding its late client and returned `null` only after the editor's native **End Session** command. No project-script error appeared, and the temporary test processes were closed. A clean retry from the same single editor completed with the pass above. Treat a `null` native result as no evidence and always confirm that only the editor process remains after an interrupted run.
+
+### Decision
+
+Retain the asymmetric combat foundation for a physical two-device test. The engineering path proves authoritative damage, death, respawn, actions and configured contact filtering; it does not prove that `40` blaster damage, `25` contact damage, instant Smash/Charge/Beam human damage, the collision feel or either role's balance is enjoyable. Do not expand the weapon roster or rebuild the city around combat until two people test natural aiming, collision stability, deaths, rematches and role preference on representative hardware.
