@@ -17,6 +17,7 @@ ReplicatedStorage
 
 ServerScriptService
 └── Server                 <- src/server/init.server.luau
+    ├── Builders
     └── Services
 
 StarterPlayer
@@ -136,6 +137,8 @@ Building
 ```
 
 The server switches authoritative health and simple collision proxies. Each client selects the visible authored variant and emits non-authoritative effects. Cosmetic fragments have no gameplay collision, no shadows, and a short lifetime. A client-only pool prewarms one collapse, grows to a hard 100-part cap, and recycles the oldest active fragment on overflow. Per-entry generations prevent an earlier delayed cleanup from deactivating a reused fragment. Inactive fragments are unparented, and controller destruction destroys the complete pool.
+
+`DestructibleStructureBuilder` owns the repeated hierarchy, authoring attributes, atomic streaming mode, damage hitbox, effect origin, proxies, tag, and build-time visual safety assertions. Archetype functions supply only aligned visual variants and dimensions. The gate remains the legacy reference package until its objective label is separated from its variant visuals.
 
 Concrete, metal, and lightweight material profiles vary fragment material, colour, size, and speed without changing gameplay. Dust particles, camera impulses, and sound remain separate evidence-gated layers; Roblox warns that particles add draw calls and that emitter property changes can be expensive.
 

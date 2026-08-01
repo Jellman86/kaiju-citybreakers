@@ -95,3 +95,9 @@ Replace per-collapse `Part` creation and `Debris` destruction with a client-only
 Basis: Roblox recommends pooling frequently respawned instances and creating non-authoritative visuals on clients. This is an engineering inference to be retained only if the Phase 2B stress run reduces actual created instances while holding active fragments and cleanup within the configured caps. A generic package is not adopted because this lifecycle is small, local, and game-specific.
 
 Result: automated Studio testing of commit `d21eaae` issued 200 overlapping spawn requests and created exactly 100 parts, recycled 100, peaked at 100 active, returned all 100 to the pool, and left no world instances after teardown. Fifty ten-fragment trials averaged `0.101 ms` on the prewarmed path versus `0.113 ms` for fresh creation plus timed cleanup in the same Studio session. Retain the pool for bounded allocation and lifecycle control. These editor microbenchmarks are not representative-mobile frame-time evidence, so particle dust remains deferred and H6 remains open.
+
+## 2026-08-01 — Derive the first archetypes from Brontide metrics
+
+Build a low broad warehouse, a two-kaiju-height signal tower, and a compact energy substation on a 2-stud grid through one strict destructible builder. Place the north pair beside the spawn-to-gate teaching route and the substation beyond the gate as a future energy landmark. Replace three similarly positioned static shells instead of expanding the world bounds.
+
+Basis: live Brontide extents, movement, charge, camera, and attack dimensions; Roblox's modular-pivot, built-in-material, streaming, reuse, and simple-collision guidance; and the level-design introduce/develop/test/release pattern. Exact scale, health, visibility, and fun remain provisional until automated routing plus uncoached human and representative-device tests are recorded.

@@ -51,6 +51,23 @@ local Config = {
 		WorldName = "KaijuFeelLab",
 		WallStructureId = "feel_lab_wall",
 		WallMaxHealth = 2,
+		Structures = {
+			Warehouse = {
+				Id = "north_warehouse",
+				MaxHealth = 3,
+				EnergyValue = 15,
+			},
+			Tower = {
+				Id = "north_tower",
+				MaxHealth = 4,
+				EnergyValue = 25,
+			},
+			Substation = {
+				Id = "harbour_substation",
+				MaxHealth = 3,
+				EnergyValue = 20,
+			},
+		},
 	},
 }
 

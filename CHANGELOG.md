@@ -22,6 +22,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 - Research-backed destruction specification with explicit evidence labels, reusable structure hierarchy, feature tiers, reuse decisions, and provisional Phase 2 test gates.
 - Strict shared destructible contract with validated unique IDs, server-owned health and sequenced state, atomic streaming, dedicated damage hitboxes, and separate intact/collapsed collision proxies.
 - Fixed-cap client debris pool with one-collapse prewarming, oldest-active recycling, generation-safe delayed cleanup, observable statistics, and concrete, metal, and lightweight fragment presets.
+- Reusable source-controlled destructible builder plus warehouse, signal-tower, and electrical-substation greyboxes with aligned state variants, stable pivots, simple proxies, and distinct silhouettes.
 
 ### Changed
 

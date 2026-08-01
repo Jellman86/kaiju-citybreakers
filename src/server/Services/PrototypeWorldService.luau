@@ -6,6 +6,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local DestructibleContract = require(ReplicatedStorage.Shared.DestructibleContract)
+local DestructibleStructureBuilder =
+	require(script.Parent.Parent.Builders.DestructibleStructureBuilder)
 
 local PrototypeWorldService = {}
 PrototypeWorldService.__index = PrototypeWorldService
@@ -15,6 +17,8 @@ local CONCRETE = Color3.fromRGB(111, 120, 126)
 local CURB = Color3.fromRGB(177, 183, 181)
 local WINDOW = Color3.fromRGB(255, 187, 77)
 local CYAN = Color3.fromRGB(62, 221, 211)
+
+type VisualModels = DestructibleStructureBuilder.VisualModels
 
 local function createPart(
 	name: string,
@@ -383,6 +387,399 @@ local function createWall(parent: Instance): Model
 	return wall
 end
 
+local function createCollapsedChunks(
+	parent: Model,
+	origin: CFrame,
+	footprint: Vector2,
+	count: number,
+	color: Color3,
+	material: Enum.Material
+)
+	local columns = 4
+	local rows = math.ceil(count / columns)
+	local chunkWidth = footprint.X / 5
+	local chunkDepth = footprint.Y / (rows + 1)
+	for index = 1, count do
+		local column = (index - 1) % columns
+		local row = math.floor((index - 1) / columns)
+		local x = (column - (columns - 1) / 2) * (footprint.X / columns)
+		local z = (row - (rows - 1) / 2) * (footprint.Y / math.max(rows, 1))
+		local height = 2 + (index % 3)
+		createVisualPart(
+			`Chunk{index}`,
+			Vector3.new(chunkWidth, height, chunkDepth),
+			origin
+				* CFrame.new(x, height / 2, z)
+				* CFrame.Angles(math.rad(index * 3), math.rad(index * 19), math.rad(index * 5)),
+			color,
+			material,
+			parent
+		)
+	end
+end
+
+local function buildWarehouseVisuals(visuals: VisualModels, origin: CFrame)
+	local shellColor = Color3.fromRGB(66, 92, 101)
+	local roofColor = Color3.fromRGB(45, 60, 66)
+	local damagedColor = Color3.fromRGB(78, 72, 68)
+	local warningColor = Color3.fromRGB(255, 157, 64)
+
+	createVisualPart(
+		"Shell",
+		Vector3.new(48, 14, 28),
+		origin * CFrame.new(0, 7, 0),
+		shellColor,
+		Enum.Material.Metal,
+		visuals.intact
+	)
+	createVisualPart(
+		"Roof",
+		Vector3.new(50, 2, 30),
+		origin * CFrame.new(0, 15, 0),
+		roofColor,
+		Enum.Material.Metal,
+		visuals.intact
+	)
+	for index = -2, 2 do
+		createTrimPart(
+			`FrontRib{index + 3}`,
+			Vector3.new(1, 13, 0.5),
+			origin * CFrame.new(index * 8, 7, -14.25),
+			warningColor,
+			Enum.Material.Metal,
+			visuals.intact
+		)
+	end
+	for index = -1, 1, 2 do
+		createTrimPart(
+			`LoadingDoor{index}`,
+			Vector3.new(12, 8, 0.55),
+			origin * CFrame.new(index * 13, 4.2, -14.3),
+			Color3.fromRGB(35, 43, 47),
+			Enum.Material.DiamondPlate,
+			visuals.intact
+		)
+	end
+
+	createVisualPart(
+		"BuckledShell",
+		Vector3.new(48, 14, 28),
+		origin * CFrame.new(0, 7, 0) * CFrame.Angles(0, 0, math.rad(-1.5)),
+		damagedColor,
+		Enum.Material.Metal,
+		visuals.damaged
+	)
+	for side = -1, 1, 2 do
+		createVisualPart(
+			`RoofHalf{side}`,
+			Vector3.new(23, 2, 30),
+			origin
+				* CFrame.new(side * 12.5, 15 - math.abs(side), 0)
+				* CFrame.Angles(0, 0, math.rad(side * 5)),
+			roofColor,
+			Enum.Material.Metal,
+			visuals.damaged
+		)
+	end
+	for index = -1, 1 do
+		createTrimPart(
+			`TornSeam{index + 2}`,
+			Vector3.new(0.5, 9, 0.6),
+			origin
+				* CFrame.new(index * 10, 8 + index, -14.35)
+				* CFrame.Angles(0, 0, math.rad(index * 16 + 8)),
+			warningColor,
+			Enum.Material.Neon,
+			visuals.damaged
+		)
+	end
+
+	createCollapsedChunks(
+		visuals.collapsed,
+		origin,
+		Vector2.new(48, 28),
+		8,
+		damagedColor,
+		Enum.Material.Metal
+	)
+	for side = -1, 1, 2 do
+		createVisualPart(
+			`RoofSlab{side}`,
+			Vector3.new(18, 1.2, 12),
+			origin
+				* CFrame.new(side * 10, 3.3, side * 3)
+				* CFrame.Angles(math.rad(side * 8), math.rad(side * 17), math.rad(side * 5)),
+			roofColor,
+			Enum.Material.Metal,
+			visuals.collapsed
+		)
+	end
+end
+
+local function createWarehouse(parent: Instance): Model
+	local origin = CFrame.new(-58, 0, 55)
+	local definition = Config.Prototype.Structures.Warehouse
+	return DestructibleStructureBuilder.Build(parent, {
+		name = "NorthWarehouse",
+		structureId = definition.Id,
+		maxHealth = definition.MaxHealth,
+		energyValue = definition.EnergyValue,
+		materialProfile = "Metal",
+		intactCollisionCFrame = origin * CFrame.new(0, 8, 0),
+		intactCollisionSize = Vector3.new(48, 16, 30),
+		collapsedCollisionCFrame = origin * CFrame.new(0, 0.75, 0),
+		collapsedCollisionSize = Vector3.new(48, 1.5, 30),
+		damageHitboxCFrame = origin * CFrame.new(0, 8, 0),
+		damageHitboxSize = Vector3.new(50, 18, 32),
+	}, function(visuals)
+		buildWarehouseVisuals(visuals, origin)
+	end)
+end
+
+local function buildTowerVisuals(visuals: VisualModels, origin: CFrame)
+	local concreteColor = Color3.fromRGB(75, 91, 103)
+	local damagedColor = Color3.fromRGB(91, 78, 76)
+	local crownColor = Color3.fromRGB(46, 59, 69)
+	local windowColor = Color3.fromRGB(255, 190, 84)
+
+	createVisualPart(
+		"Core",
+		Vector3.new(26, 48, 26),
+		origin * CFrame.new(0, 24, 0),
+		concreteColor,
+		Enum.Material.Concrete,
+		visuals.intact
+	)
+	createVisualPart(
+		"Roof",
+		Vector3.new(28, 2, 28),
+		origin * CFrame.new(0, 49, 0),
+		crownColor,
+		Enum.Material.Metal,
+		visuals.intact
+	)
+	createVisualPart(
+		"Crown",
+		Vector3.new(12, 5, 12),
+		origin * CFrame.new(0, 52.5, 0),
+		crownColor,
+		Enum.Material.Metal,
+		visuals.intact
+	)
+	for level = 1, 5 do
+		local y = 6 + (level - 1) * 8
+		createTrimPart(
+			`FrontWindows{level}`,
+			Vector3.new(21, 1.5, 0.35),
+			origin * CFrame.new(0, y, -13.18),
+			windowColor,
+			Enum.Material.Neon,
+			visuals.intact
+		)
+		createTrimPart(
+			`SideWindows{level}`,
+			Vector3.new(0.35, 1.5, 21),
+			origin * CFrame.new(13.18, y, 0),
+			windowColor,
+			Enum.Material.Neon,
+			visuals.intact
+		)
+	end
+
+	createVisualPart(
+		"LowerCore",
+		Vector3.new(26, 30, 26),
+		origin * CFrame.new(0, 15, 0),
+		damagedColor,
+		Enum.Material.Concrete,
+		visuals.damaged
+	)
+	createVisualPart(
+		"LeaningUpper",
+		Vector3.new(24, 18, 24),
+		origin * CFrame.new(1.2, 39, 0) * CFrame.Angles(0, 0, math.rad(-4)),
+		damagedColor,
+		Enum.Material.Concrete,
+		visuals.damaged
+	)
+	createVisualPart(
+		"DamagedCrown",
+		Vector3.new(11, 4, 11),
+		origin * CFrame.new(2.6, 50, 0) * CFrame.Angles(0, 0, math.rad(-8)),
+		crownColor,
+		Enum.Material.Metal,
+		visuals.damaged
+	)
+	for index = -1, 1 do
+		createTrimPart(
+			`EnergyCrack{index + 2}`,
+			Vector3.new(0.45, 11, 0.45),
+			origin
+				* CFrame.new(index * 6, 22 + index * 3, -13.25)
+				* CFrame.Angles(0, 0, math.rad(index * 20 + 9)),
+			Color3.fromRGB(255, 132, 62),
+			Enum.Material.Neon,
+			visuals.damaged
+		)
+	end
+
+	createCollapsedChunks(
+		visuals.collapsed,
+		origin,
+		Vector2.new(26, 26),
+		8,
+		damagedColor,
+		Enum.Material.Concrete
+	)
+	createVisualPart(
+		"CoreStump",
+		Vector3.new(11, 7, 11),
+		origin * CFrame.new(0, 3.5, 0) * CFrame.Angles(0, math.rad(12), math.rad(-5)),
+		concreteColor,
+		Enum.Material.Concrete,
+		visuals.collapsed
+	)
+end
+
+local function createTower(parent: Instance): Model
+	local origin = CFrame.new(57, 0, 55)
+	local definition = Config.Prototype.Structures.Tower
+	return DestructibleStructureBuilder.Build(parent, {
+		name = "NorthSignalTower",
+		structureId = definition.Id,
+		maxHealth = definition.MaxHealth,
+		energyValue = definition.EnergyValue,
+		materialProfile = "Concrete",
+		intactCollisionCFrame = origin * CFrame.new(0, 26.5, 0),
+		intactCollisionSize = Vector3.new(28, 53, 28),
+		collapsedCollisionCFrame = origin * CFrame.new(0, 0.75, 0),
+		collapsedCollisionSize = Vector3.new(28, 1.5, 28),
+		damageHitboxCFrame = origin * CFrame.new(0, 27, 0),
+		damageHitboxSize = Vector3.new(30, 56, 30),
+	}, function(visuals)
+		buildTowerVisuals(visuals, origin)
+	end)
+end
+
+local function buildSubstationVisuals(visuals: VisualModels, origin: CFrame)
+	local metalColor = Color3.fromRGB(67, 83, 88)
+	local darkMetal = Color3.fromRGB(43, 53, 58)
+	local damagedColor = Color3.fromRGB(83, 70, 66)
+
+	createVisualPart(
+		"EquipmentSlab",
+		Vector3.new(40, 1, 32),
+		origin * CFrame.new(0, 0.5, 0),
+		Color3.fromRGB(96, 102, 101),
+		Enum.Material.Concrete,
+		visuals.intact
+	)
+	createVisualPart(
+		"ControlHouse",
+		Vector3.new(15, 12, 14),
+		origin * CFrame.new(-10, 6.5, 0),
+		metalColor,
+		Enum.Material.Metal,
+		visuals.intact
+	)
+	for side = -1, 1, 2 do
+		createVisualPart(
+			`Transformer{side}`,
+			Vector3.new(8, 8, 10),
+			origin * CFrame.new(10, 5, side * 8),
+			darkMetal,
+			Enum.Material.Metal,
+			visuals.intact
+		)
+		createTrimPart(
+			`EnergyCore{side}`,
+			Vector3.new(2, 10, 2),
+			origin * CFrame.new(10, 10, side * 8),
+			CYAN,
+			Enum.Material.Neon,
+			visuals.intact
+		)
+	end
+	for x = -1, 1, 2 do
+		for z = -1, 1, 2 do
+			createVisualPart(
+				`Pylon{x}_{z}`,
+				Vector3.new(1, 13, 1),
+				origin * CFrame.new(x * 18, 7, z * 13),
+				darkMetal,
+				Enum.Material.Metal,
+				visuals.intact
+			)
+		end
+	end
+
+	createVisualPart(
+		"CrackedSlab",
+		Vector3.new(40, 1, 32),
+		origin * CFrame.new(0, 0.5, 0),
+		Color3.fromRGB(86, 84, 80),
+		Enum.Material.Concrete,
+		visuals.damaged
+	)
+	createVisualPart(
+		"DamagedControlHouse",
+		Vector3.new(15, 12, 14),
+		origin * CFrame.new(-10, 6.5, 0) * CFrame.Angles(0, 0, math.rad(4)),
+		damagedColor,
+		Enum.Material.Metal,
+		visuals.damaged
+	)
+	for side = -1, 1, 2 do
+		createVisualPart(
+			`FallenTransformer{side}`,
+			Vector3.new(8, 8, 10),
+			origin
+				* CFrame.new(10, 4, side * 8)
+				* CFrame.Angles(math.rad(side * 8), 0, math.rad(side * 12)),
+			damagedColor,
+			Enum.Material.Metal,
+			visuals.damaged
+		)
+		createTrimPart(
+			`ArcSeam{side}`,
+			Vector3.new(1, 7, 1),
+			origin * CFrame.new(10 + side * 2, 9, side * 8),
+			Color3.fromRGB(255, 145, 61),
+			Enum.Material.Neon,
+			visuals.damaged
+		)
+	end
+
+	createCollapsedChunks(
+		visuals.collapsed,
+		origin,
+		Vector2.new(40, 32),
+		8,
+		damagedColor,
+		Enum.Material.Metal
+	)
+end
+
+local function createSubstation(parent: Instance): Model
+	local origin = CFrame.new(57, 0, -68)
+	local definition = Config.Prototype.Structures.Substation
+	return DestructibleStructureBuilder.Build(parent, {
+		name = "HarbourSubstation",
+		structureId = definition.Id,
+		maxHealth = definition.MaxHealth,
+		energyValue = definition.EnergyValue,
+		materialProfile = "Metal",
+		intactCollisionCFrame = origin * CFrame.new(0, 8, 0),
+		intactCollisionSize = Vector3.new(40, 16, 32),
+		collapsedCollisionCFrame = origin * CFrame.new(0, 0.75, 0),
+		collapsedCollisionSize = Vector3.new(40, 1.5, 32),
+		damageHitboxCFrame = origin * CFrame.new(0, 8, 0),
+		damageHitboxSize = Vector3.new(42, 18, 34),
+	}, function(visuals)
+		buildSubstationVisuals(visuals, origin)
+	end)
+end
+
 local function configureLighting()
 	Lighting.ClockTime = 17.25
 	Lighting.Brightness = 2
@@ -510,22 +907,8 @@ function PrototypeWorldService:Start()
 	)
 	createWall(world)
 
-	createBuilding(
-		world,
-		"CivicWest",
-		Vector3.new(-47, 0, 48),
-		Vector3.new(32, 25, 28),
-		Color3.fromRGB(91, 105, 112),
-		Color3.fromRGB(63, 73, 80)
-	)
-	createBuilding(
-		world,
-		"CivicEast",
-		Vector3.new(49, 0, 51),
-		Vector3.new(35, 33, 26),
-		Color3.fromRGB(68, 92, 105),
-		Color3.fromRGB(45, 59, 69)
-	)
+	createWarehouse(world)
+	createTower(world)
 	createBuilding(
 		world,
 		"MarketWest",
@@ -550,14 +933,7 @@ function PrototypeWorldService:Start()
 		Color3.fromRGB(72, 93, 97),
 		Color3.fromRGB(46, 63, 67)
 	)
-	createBuilding(
-		world,
-		"HarbourEast",
-		Vector3.new(51, 0, -68),
-		Vector3.new(34, 44, 32),
-		Color3.fromRGB(65, 78, 94),
-		Color3.fromRGB(40, 50, 64)
-	)
+	createSubstation(world)
 
 	for _, z in { 57, 34, 4, -14, -49 } do
 		createStreetlight(world, Vector3.new(-15, 0, z), 1)

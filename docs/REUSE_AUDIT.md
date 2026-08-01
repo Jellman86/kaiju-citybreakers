@@ -85,3 +85,14 @@ No dependency or external asset was added by Phase 2A. Replacement plan: the sha
 | Dust burst | Native `ParticleEmitter:Emit()` | **Defer pending archetype profiling** | Native manual bursts are the preferred candidate, but Roblox warns that particles add draw calls and emitter property changes can have a dramatic performance impact. Establish Phase 2C render headroom before adding them. |
 
 No dependency, external asset, texture, or paid service is added. Replacement plan: keep the pool only if the recorded stress run reduces created instances and respects cleanup/cap invariants; otherwise return to the simpler native cleanup path.
+
+## 2026-08-01 — Phase 2C archetype audit
+
+| Need | Candidate | Decision | Reason |
+| --- | --- | --- | --- |
+| Modular greybox archetypes | Roblox primitives, built-in materials, and one contract builder | **Use** | Directly tests footprint, silhouette, routing, state alignment, and budgets with reviewable source and no import pipeline. |
+| Production city modules | Roblox Modern City kit `13168370735` | **Reference only** | Its consistent-pivot and modular-composition workflow informs the builder, but importing thousands of mesh parts and scripts cannot answer the current blockout questions more safely or cheaply. |
+| Community warehouse, tower, or substation models | Creator Store results | **Do not use** | Unknown scripts, provenance, collision, pivots, and state variants would require more audit and conversion than the small metric-driven placeholders. |
+| Original Blender buildings | Custom low-poly meshes | **Defer to art replacement** | Blender becomes valuable after footprints and state readability pass. The builder fixes pivots and gameplay proxies so visuals can later be replaced without rewriting systems. |
+
+No dependency or external asset is adopted. Replacement plan: preserve structure IDs, pivots, attributes, hierarchy, proxies, and profiles while replacing only visual descendants with original optimized meshes after the blockout gate.
