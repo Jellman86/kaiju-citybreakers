@@ -177,3 +177,24 @@ The engineering and feedback paths pass, but a physical-device player must confi
 ### Unverified
 
 This one-client regression does not prove late-join or stream-out/stream-in reconciliation. Those require a two-client streaming test before the city contains enough destructible structures for ordering failures to become difficult to isolate. Performance budgets also need re-measurement after the first representative warehouse, tower, and utility structure set is added.
+
+## 2026-08-01 — Bounded client debris integration
+
+- Build commit: `d21eaae`
+- Environment: Roblox Studio desktop, macOS, one local client and server.
+- Operator: Studio MCP synthetic stress, lifecycle inspection, microbenchmark, and direct client ability requests; **zero human testers**.
+- Systems: prewarmed fixed-cap fragment pool, oldest-active overflow, generation-safe delayed release, material profiles, authoritative collapse, and effect cleanup.
+
+### Results
+
+- A 200-spawn overlapping stress run created exactly `100` parts, peaked at `100` active, recycled `100`, then settled to `0` active and `100` available. Pool destruction left zero test parts in the world.
+- The 200-request scheduling block took approximately `3.71 ms` in this Studio session. This is an editor observation, not a target-device frame-time result.
+- Across 50 ten-fragment trials, the prewarmed path averaged approximately `0.101 ms`; fresh part creation plus native timed cleanup averaged `0.113 ms`. The observed hot-path reduction was `10.8%` in this session.
+- A one-slot adversarial test immediately recycled a part, then allowed the old timer to fire. The newer generation remained active and parented until its own lifetime expired.
+- Two real basic attacks left the server gate at health `0`, state `Collapsed`, sequence `2`, with the collapsed collision proxy active.
+- The client displayed exactly `10` concrete fragments. Every fragment had collision, touch, query, and shadows disabled; all were unparented after the configured five-second lifetime.
+- No gameplay runtime errors appeared in client or server output.
+
+### Decision
+
+Retain the pool because it reduces the representative collapse hot path in this Studio test and, more importantly, makes allocation, active count, overflow, and cleanup explicitly bounded. Do not generalize the microbenchmark to physical mobile performance. Dust particles remain deferred until the Phase 2C archetype scene can be profiled for draw calls and frame time on a representative lower-end device.
