@@ -30,6 +30,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 - Disabled the template spawn and removed the overlapping runtime baseplate in the Kaiju Feel Lab.
 - Made repository standards validation portable to the minimal GitHub Actions runner environment.
+- Prevented `CHARGE` and `SMASH` touch controls from overlapping or escaping the screen by sizing and arranging them within Roblox's live action-frame bounds, including a stacked narrow-screen fallback.
 
 ### Security
 

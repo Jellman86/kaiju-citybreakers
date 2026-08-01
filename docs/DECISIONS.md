@@ -67,3 +67,9 @@ Basis: Roblox platform documentation plus the project's mobile-first requirement
 On keyboard/mouse, lock the pointer, orbit a third-person camera from mouse delta, and align Brontide's yaw with the camera's horizontal forward direction so the creature's back remains toward the player. Keep movement camera-relative, use scroll-wheel zoom and camera collision, and restore Roblox's native camera and auto-rotation whenever touch or gamepad becomes the preferred input.
 
 Basis: stakeholder feedback clarified that the intended reference is a classic behind-the-character action camera rather than independent cursor-to-world aiming. Roblox documents locked-center mouse delta for relative camera input, `CameraType.Scriptable` for experience-owned camera CFrames, and per-frame `Camera.Focus` updates. Character rotation is yaw-only and attacks remain server-authoritative.
+
+## 2026-08-01 — Lay out touch actions within the live action-frame bounds
+
+Compute `SMASH` and `CHARGE` size and position from the live viewport and Roblox `ContextButtonFrame`, rather than fixed screen percentages. Keep targets between 72 and 96 pixels, inset them from the frame edge, maintain a proportional gap, arrange them side-by-side when the frame is wide enough, and stack them when it is not.
+
+Basis: an iPad A16 reproduction showed the former percentage positions resolving inside Roblox's lower-right action frame, not the full screen, leaving a three-pixel overlap. Frame-relative anchors and a narrow-layout fallback keep both actions separated and on-screen across resolution and orientation changes.
