@@ -352,3 +352,13 @@ Retain automated `StudioTestService` coverage, but keep it outside the live depe
 ### Decision
 
 Retain the staged city expansion, three-action layout, Charge impact, and Beam for a physical-device playtest. The structural, input-spacing, and authoritative-damage regressions pass in Studio. This does not prove physical-phone comfort, representative-device frame time/memory, Beam balance, or that the larger layout is fun and understandable; those remain human/hardware gates before publication.
+
+### Production publication
+
+- Published source commit: `01b48abbe3ea42f72732f4d874122e866626baaf`
+- Artifact: `KaijuCitybreakers-01b48abbe3ea.rbxlx`
+- SHA-256: `a9973d8b53571d807a1b1f769829441bf15a46bb8fa0a4bd026002b5023d75ad`
+- The exact commit-labelled artifact was opened without Rojo and smoke-tested in Studio's iPhone 16 landscape profile. Brontide, the expanded city, objective HUD, Beam, Charge, Smash, and native Jump rendered together with no action-button overlap.
+- The runtime audit found `17` unique tagged destructibles and `0` invalid contracts. Server and client startup markers appeared without a project script error.
+- Studio entered `PublishSuccessful` and logged `Published "Kaiju Citybreakers" to Roblox.` for existing place `137103245194702` in universe `10609698937` at 3:03 PM.
+- A fresh production-client visual smoke test remains pending because this Mac has Roblox Studio but no Roblox player, and the available browser session is not signed in. Creator Hub Error Report review is also pending authenticated access. Neither pending gate is represented as passed.
