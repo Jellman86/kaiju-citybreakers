@@ -18,6 +18,10 @@ Versions are pinned in `rokit.toml` for reproducible setup.
 - Blender and BlenderMCP.
 - Git and GitHub Free.
 
+The source repository is public. [Standard GitHub-hosted Actions runners are free for public repositories](https://docs.github.com/en/billing/concepts/product-billing/github-actions) and therefore do not consume the private-repository minutes allowance. Do not select paid larger runners. The current workflow does not upload build artifacts or use a dependency cache.
+
+[Git LFS has its own GitHub Free allowance](https://docs.github.com/en/billing/reference/product-usage-included) (currently 10 GB storage and 10 GB monthly bandwidth), including for this public repository. Keep `.blend`, model, and audio history deliberate; do not commit generated Roblox place files or renders.
+
 ## Optional free tools
 
 - Krita or GIMP for textures and icons.

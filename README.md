@@ -1,5 +1,7 @@
 # Kaiju Citybreakers
 
+[![CI](https://github.com/Jellman86/kaiju-citybreakers/actions/workflows/ci.yml/badge.svg)](https://github.com/Jellman86/kaiju-citybreakers/actions/workflows/ci.yml)
+
 Working title for a free-to-build, cooperative Roblox kaiju roguelite.
 
 One to four players become original kaiju, break through a modular city, absorb unstable energy, choose mutations, and survive an escalating robotic defence force. The first release target is a short, replayable vertical slice rather than a large open world.
@@ -36,6 +38,7 @@ The first gate is simple: moving and breaking buildings must feel good before pr
 - Krita/GIMP and Audacity if texture or audio editing is needed.
 
 No paid assets, premium APIs, licensed character IP, or paid development dependencies are required.
+The repository is public so its standard GitHub-hosted CI runs do not consume the private-repository minutes allowance.
 
 ## Local setup
 
