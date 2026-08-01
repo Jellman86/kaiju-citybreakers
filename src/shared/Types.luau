@@ -13,6 +13,7 @@ export type RoundSnapshot = {
 export type AbilityRequest = {
 	abilityId: string,
 	sequence: number,
+	aimDirection: Vector3?,
 }
 
 export type AbilityResult = {

@@ -23,11 +23,16 @@ local player = Players.LocalPlayer
 local CombatController = {}
 CombatController.__index = CombatController
 
-function CombatController.new(abilityRequestRemote: RemoteEvent, abilityResultRemote: RemoteEvent)
+function CombatController.new(
+	abilityRequestRemote: RemoteEvent,
+	abilityResultRemote: RemoteEvent,
+	aimController: any
+)
 	local self = setmetatable({}, CombatController)
 
 	self._abilityRequestRemote = abilityRequestRemote
 	self._abilityResultRemote = abilityResultRemote
+	self._aimController = aimController
 	self._chargeCooldownVisualToken = 0
 	self._beamCooldownVisualToken = 0
 	self._sequence = 0
@@ -51,10 +56,13 @@ function CombatController:_requestBeam()
 
 	self._lastBeamRequestedAt = now
 	self._sequence += 1
+	local aimDirection = self._aimController:GetAimDirection()
 	self._abilityRequestRemote:FireServer({
 		abilityId = "beam",
 		sequence = self._sequence,
+		aimDirection = aimDirection,
 	})
+	self:_emitBeamMuzzleFeedback(aimDirection)
 	self:_startBeamCooldownVisual()
 end
 
@@ -261,6 +269,63 @@ function CombatController:_emitImpactFeedback(position: Vector3, color: Color3, 
 	Debris:AddItem(flash, 0.25)
 end
 
+function CombatController:_emitBeamMuzzleFeedback(aimDirection: Vector3)
+	local character = player.Character
+	local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+	if not rootPart or not rootPart:IsA("BasePart") then
+		return
+	end
+
+	local shell = character:FindFirstChild("BrontideVisual")
+	local muzzle = shell and shell:FindFirstChild("Muzzle")
+	local origin = if muzzle and muzzle:IsA("BasePart")
+		then muzzle.Position + aimDirection * (muzzle.Size.Z * 0.5)
+		else rootPart.Position
+			+ Vector3.new(0, Config.Combat.BeamOriginHeight, 0)
+			+ aimDirection * 5
+
+	local flash = Instance.new("Part")
+	flash.Name = "BrontideBeamMuzzle"
+	flash.Shape = Enum.PartType.Ball
+	flash.Size = Vector3.new(5, 5, 5)
+	flash.CFrame = CFrame.new(origin)
+	flash.Color = Color3.fromRGB(224, 255, 251)
+	flash.Material = Enum.Material.Neon
+	flash.Transparency = 0.04
+	flash.Anchored = true
+	flash.CanCollide = false
+	flash.CanTouch = false
+	flash.CanQuery = false
+	flash.CastShadow = false
+	flash.Parent = workspace
+
+	local emitter = Instance.new("ParticleEmitter")
+	emitter.Name = "BeamChargeSparks"
+	emitter.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(224, 255, 251)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(19, 168, 219)),
+	})
+	emitter.LightEmission = 1
+	emitter.Lifetime = NumberRange.new(0.12, 0.22)
+	emitter.Speed = NumberRange.new(10, 18)
+	emitter.SpreadAngle = Vector2.new(180, 180)
+	emitter.Rate = 0
+	emitter.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 1.2),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	emitter.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	emitter.Parent = flash
+	emitter:Emit(18)
+
+	TweenService:Create(
+		flash,
+		TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+		{ Size = Vector3.new(12, 12, 12), Transparency = 1 }
+	):Play()
+	Debris:AddItem(flash, 0.28)
+end
+
 function CombatController:_emitBeam(origin: Vector3, target: Vector3, hit: boolean)
 	local delta = target - origin
 	local length = delta.Magnitude
@@ -272,8 +337,8 @@ function CombatController:_emitBeam(origin: Vector3, target: Vector3, hit: boole
 	local beamCFrame = CFrame.lookAt(midpoint, target)
 	for index, definition in
 		{
-			{ thickness = 3.8, color = Color3.fromRGB(19, 168, 219), transparency = 0.12 },
-			{ thickness = 1.7, color = Color3.fromRGB(224, 255, 251), transparency = 0 },
+			{ thickness = 6.5, color = Color3.fromRGB(19, 168, 219), transparency = 0.08 },
+			{ thickness = 2.6, color = Color3.fromRGB(224, 255, 251), transparency = 0 },
 		}
 	do
 		local segment = Instance.new("Part")
@@ -291,16 +356,21 @@ function CombatController:_emitBeam(origin: Vector3, target: Vector3, hit: boole
 		segment.Parent = workspace
 		TweenService:Create(
 			segment,
-			TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+			TweenInfo.new(
+				Config.Combat.BeamVisualSeconds,
+				Enum.EasingStyle.Quad,
+				Enum.EasingDirection.Out
+			),
 			{ Size = Vector3.new(0.15, 0.15, length), Transparency = 1 }
 		):Play()
-		Debris:AddItem(segment, 0.25)
+		Debris:AddItem(segment, Config.Combat.BeamVisualSeconds + 0.08)
 	end
 
+	self:_emitImpactFeedback(origin, Color3.fromRGB(224, 255, 251), 3.5)
 	self:_emitImpactFeedback(
 		target,
 		if hit then Color3.fromRGB(255, 174, 74) else Color3.fromRGB(53, 225, 211),
-		if hit then 4.5 else 2.5
+		if hit then 7 else 3.5
 	)
 end
 

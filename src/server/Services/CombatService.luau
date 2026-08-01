@@ -295,7 +295,37 @@ function CombatService:_performCharge(player: Player, sequence: number)
 	)
 end
 
-function CombatService:_performBeam(player: Player, sequence: number)
+local function getValidatedBeamDirection(rootPart: BasePart, requestedDirection: any): Vector3
+	local fallback = rootPart.CFrame.LookVector
+	if typeof(requestedDirection) ~= "Vector3" then
+		return fallback
+	end
+	if
+		requestedDirection.X ~= requestedDirection.X
+		or requestedDirection.Y ~= requestedDirection.Y
+		or requestedDirection.Z ~= requestedDirection.Z
+		or requestedDirection.Magnitude < 0.5
+	then
+		return fallback
+	end
+
+	local direction = requestedDirection.Unit
+	local horizontalDirection = Vector3.new(direction.X, 0, direction.Z)
+	local horizontalForward = Vector3.new(fallback.X, 0, fallback.Z)
+	if
+		horizontalDirection.Magnitude < 0.1
+		or horizontalForward.Magnitude < 0.1
+		or horizontalDirection.Unit:Dot(horizontalForward.Unit) < math.cos(math.rad(75))
+	then
+		return fallback
+	end
+
+	local clampedY = math.clamp(direction.Y, -0.7, 0.7)
+	local horizontalScale = math.sqrt(math.max(0, 1 - clampedY * clampedY))
+	return horizontalDirection.Unit * horizontalScale + Vector3.new(0, clampedY, 0)
+end
+
+function CombatService:_performBeam(player: Player, sequence: number, requestedDirection: any)
 	local state = self._rateStates[player]
 	assert(state, "Rate state must exist before performing a beam")
 
@@ -335,14 +365,21 @@ function CombatService:_performBeam(player: Player, sequence: number)
 	end
 
 	state.lastBeam = now
-	local origin = rootPart.Position + Vector3.new(0, Config.Combat.BeamOriginHeight, 0)
-	local direction = rootPart.CFrame.LookVector * Config.Combat.BeamRange
+	local aimDirection = getValidatedBeamDirection(rootPart, requestedDirection)
+	local head = character:FindFirstChild("Head")
+	local mouthPosition = if head and head:IsA("BasePart")
+		then head.Position + Vector3.new(0, -1.1, 0) + aimDirection * 6.5
+		else rootPart.Position + Vector3.new(0, Config.Combat.BeamOriginHeight, 0)
+	local origin = mouthPosition
+	local direction = aimDirection * Config.Combat.BeamRange
 	local raycastParams = RaycastParams.new()
 	raycastParams.CollisionGroup = DestructibleContract.AttackQueryCollisionGroup
 	raycastParams.FilterType = Enum.RaycastFilterType.Exclude
 	raycastParams.FilterDescendantsInstances = { character }
+	raycastParams.IgnoreWater = true
 
-	local raycastResult = workspace:Raycast(origin, direction, raycastParams)
+	local raycastResult =
+		workspace:Spherecast(origin, Config.Combat.BeamCastRadius, direction, raycastParams)
 	local target = origin + direction
 	local hitCount = 0
 	if raycastResult then
@@ -391,7 +428,7 @@ function CombatService:_onAbilityRequest(player: Player, payload: any)
 	elseif abilityId == "charge" then
 		self:_performCharge(player, sequence)
 	else
-		self:_performBeam(player, sequence)
+		self:_performBeam(player, sequence, payload.aimDirection)
 	end
 end
 

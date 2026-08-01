@@ -25,8 +25,10 @@ local Config = {
 		MaximumChargeStructures = 4,
 		BeamCooldownSeconds = 4,
 		BeamDamage = 2,
-		BeamRange = 180,
+		BeamRange = 240,
 		BeamOriginHeight = 7,
+		BeamCastRadius = 9,
+		BeamVisualSeconds = 0.45,
 	},
 
 	Destruction = {
