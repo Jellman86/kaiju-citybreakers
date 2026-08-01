@@ -74,3 +74,14 @@ The adopted skills are development guidance, not proof. Numerical recommendation
 | City content | Roblox Modern City kit `13168370735` | **Reference; do not import wholesale** | Roblox publishes it and its pivot workflow is reusable, but the listing reports 3,025 MeshParts, 796,055 triangles, and eight scripts. Inspect selected pieces only after the contract and blockout pass. |
 
 No dependency or external asset was added by Phase 2A. Replacement plan: the shared contract is intentionally small; remove it if a future measured native or vetted package solves the same requirement with less code and equivalent security.
+
+## 2026-08-01 — Phase 2B bounded-effects audit
+
+| Need | Candidate | Decision | Reason |
+| --- | --- | --- | --- |
+| Repeated cosmetic fragments | Purpose-built client pool using native `Part` and `task.delay` | **Use** | The requirement is one small fixed-shape lifecycle: prewarm, acquire, deactivate, recycle oldest at the cap, and destroy with the controller. It remains local, inspectable, and dependency-free. |
+| Generic pool or PartCache copy | Public Creator Store and open-source variants | **Reject for current scope** | No canonical candidate is needed for one effect type; importing a package would add licence, update, API, and security surface without reducing this game-specific code. |
+| Timed destruction through native `Debris` | Existing Phase 2A path | **Replace for fragments** | It guarantees cleanup but still creates and destroys every fragment. The fixed pool measures created instances directly and keeps a hard live-object ceiling. |
+| Dust burst | Native `ParticleEmitter:Emit()` | **Defer pending archetype profiling** | Native manual bursts are the preferred candidate, but Roblox warns that particles add draw calls and emitter property changes can have a dramatic performance impact. Establish Phase 2C render headroom before adding them. |
+
+No dependency, external asset, texture, or paid service is added. Replacement plan: keep the pool only if the recorded stress run reduces created instances and respects cleanup/cap invariants; otherwise return to the simpler native cleanup path.

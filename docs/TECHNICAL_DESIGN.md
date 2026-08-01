@@ -22,7 +22,8 @@ ServerScriptService
 StarterPlayer
 └── StarterPlayerScripts
     └── Client             <- src/client/init.client.luau
-        └── Controllers
+        ├── Controllers
+        └── Effects
 ```
 
 ## Planned server services
@@ -134,7 +135,9 @@ Building
     └── FxOrigin
 ```
 
-The server switches authoritative health and simple collision proxies. Each client selects the visible authored variant and emits cosmetic fragments, dust, camera impulses, and sound. Cosmetic debris has no gameplay collision and a short lifetime. A fixed-cap pool remains Phase 2B work; Phase 2A retains native timed cleanup.
+The server switches authoritative health and simple collision proxies. Each client selects the visible authored variant and emits non-authoritative effects. Cosmetic fragments have no gameplay collision, no shadows, and a short lifetime. A client-only pool prewarms one collapse, grows to a hard 100-part cap, and recycles the oldest active fragment on overflow. Per-entry generations prevent an earlier delayed cleanup from deactivating a reused fragment. Inactive fragments are unparented, and controller destruction destroys the complete pool.
+
+Concrete, metal, and lightweight material profiles vary fragment material, colour, size, and speed without changing gameplay. Dust particles, camera impulses, and sound remain separate evidence-gated layers; Roblox warns that particles add draw calls and that emitter property changes can be expensive.
 
 ## Performance budgets
 

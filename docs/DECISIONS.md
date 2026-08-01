@@ -87,3 +87,9 @@ Use one strict shared contract for full and objective structures: three authored
 Basis: Roblox platform documentation supports tags and attributes, collision filtering and bounded spatial queries, atomic logical groups, server-authoritative outcomes, state-change replication, and client-local effects. The approach retains the already proven native overlap and remote path while eliminating hierarchy-specific variant assumptions and streamed Instance arguments. The claim that three states create enough spectacle remains H6, not a proven result.
 
 The Phase 2A reuse audit adopts no runtime dependency or external asset. The official Modern City kit remains a modular-workflow reference because a wholesale import would introduce thousands of mesh parts and scripts before layout or destruction performance is validated.
+
+## 2026-08-01 — Bound client debris with a purpose-built pool
+
+Replace per-collapse `Part` creation and `Debris` destruction with a client-only pool that prewarms ten fragments, grows only to 100, recycles the oldest active fragment at saturation, and unparents inactive entries. Guard every delayed release with an entry generation so a timer from an earlier use cannot hide a recycled fragment. Keep concrete, metal, and lightweight presentation in data profiles and defer dust particles until the representative district is profiled.
+
+Basis: Roblox recommends pooling frequently respawned instances and creating non-authoritative visuals on clients. This is an engineering inference to be retained only if the Phase 2B stress run reduces actual created instances while holding active fragments and cleanup within the configured caps. A generic package is not adopted because this lifecycle is small, local, and game-specific.

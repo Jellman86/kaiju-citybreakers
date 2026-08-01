@@ -1,13 +1,14 @@
 --!strict
 
 local CollectionService = game:GetService("CollectionService")
-local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local DestructibleContract = require(ReplicatedStorage.Shared.DestructibleContract)
 local Types = require(ReplicatedStorage.Shared.Types)
+local CosmeticDebrisPool = require(script.Parent.Parent.Effects.CosmeticDebrisPool)
+local DestructionEffectProfiles = require(script.Parent.Parent.Effects.DestructionEffectProfiles)
 
 type Components = DestructibleContract.Components
 type DestructionEvent = Types.DestructionEvent
@@ -19,12 +20,6 @@ type StructureView = {
 	connections: { RBXScriptConnection },
 	lastSequence: number,
 }
-
-local MATERIAL_COLORS = table.freeze({
-	Concrete = Color3.fromRGB(84, 89, 94),
-	Metal = Color3.fromRGB(74, 87, 94),
-	Lightweight = Color3.fromRGB(120, 105, 86),
-})
 
 local DestructionController = {}
 DestructionController.__index = DestructionController
@@ -58,6 +53,10 @@ function DestructionController.new(destructionStateRemote: RemoteEvent)
 	self._views = {} :: { [Model]: StructureView }
 	self._viewsById = {} :: { [string]: StructureView }
 	self._lastEffectSequence = {} :: { [string]: number }
+	self._debrisPool = CosmeticDebrisPool.new(
+		Config.Destruction.MaximumCosmeticDebris,
+		Config.Destruction.CosmeticDebrisPrewarmCount
+	)
 
 	return self
 end
@@ -158,23 +157,18 @@ function DestructionController:_emitCollapseDebris(event: DestructionEvent)
 		end
 	end
 
-	local fragmentColor = MATERIAL_COLORS[event.materialProfile] or MATERIAL_COLORS.Concrete
+	local profile = DestructionEffectProfiles.Get(event.materialProfile)
 	for index = 1, Config.Destruction.FragmentsPerCollapse do
-		local fragment = Instance.new("Part")
-		fragment.Name = "CosmeticDebris"
-		fragment.Size = Vector3.new(1.5 + (index % 3), 1 + (index % 2), 1.5)
-		fragment.CFrame = CFrame.new(event.position)
-			* CFrame.new((index - 5) * 1.2, 6 + (index % 4), 0)
-		fragment.Color = fragmentColor
-		fragment.Material = Enum.Material.Concrete
-		fragment.CanCollide = false
-		fragment.CanTouch = false
-		fragment.CanQuery = false
-		fragment.AssemblyLinearVelocity =
+		self._debrisPool:Spawn(
+			CFrame.new(event.position) * CFrame.new((index - 5) * 1.2, 6 + (index % 4), 0),
+			Vector3.new(1.5 + (index % 3), 1 + (index % 2), 1.5) * profile.fragmentSizeScale,
+			profile.fragmentColor,
+			profile.fragmentMaterial,
 			Vector3.new((index - 5) * 3, 18 + (index % 3) * 3, (index % 2) * 8 - 4)
-		fragment.AssemblyAngularVelocity = Vector3.new(index, index * 0.5, -index * 0.4)
-		fragment.Parent = workspace
-		Debris:AddItem(fragment, Config.Destruction.CosmeticDebrisLifetimeSeconds)
+				* profile.fragmentSpeedScale,
+			Vector3.new(index, index * 0.5, -index * 0.4),
+			Config.Destruction.CosmeticDebrisLifetimeSeconds
+		)
 	end
 end
 
@@ -250,6 +244,7 @@ function DestructionController:Destroy()
 		self:_unregister(structure)
 	end
 	table.clear(self._lastEffectSequence)
+	self._debrisPool:Destroy()
 end
 
 return DestructionController

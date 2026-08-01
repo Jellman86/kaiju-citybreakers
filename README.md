@@ -8,7 +8,7 @@ One to four players become original kaiju, break through a modular city, absorb 
 
 ## Current status
 
-Phase 2A destruction-contract foundation, following the playable Phase 1 Kaiju Feel Lab. The repository currently contains:
+Phase 2B bounded-destruction foundation, following the playable Phase 1 Kaiju Feel Lab. The repository currently contains:
 
 - A scoped game design and sixteen-week roadmap.
 - A free/open-source Roblox toolchain managed by Rokit.
@@ -17,6 +17,7 @@ Phase 2A destruction-contract foundation, following the playable Phase 1 Kaiju F
 - Art, performance, safety, testing, and original-IP constraints.
 - A research ledger connecting major decisions to evidence or measurable hypotheses.
 - Codified free-only, reuse-first, security, provenance, changelog, contribution, and release standards.
+- A fixed-cap client debris pool with material-specific fragment presets and deterministic cleanup.
 
 ## First playable target
 

@@ -93,7 +93,11 @@ Use Roblox-native tags, attributes, packages, spatial queries, collision groups,
 
 Roblox's free Modern City kit is a modular-workflow reference, not a wholesale Phase 2 import. Its current listing reports 3,025 mesh parts, 796,055 triangles, and eight scripts. Selective pieces may be inspected later in a disposable place, with scripts disabled and performance measured. The system and first three archetypes remain source-controlled primitives until their scale, routes, and state transitions pass. See the [official kit](https://create.roblox.com/store/asset/13168370735) and [modular environment workflow](https://create.roblox.com/docs/tutorials/use-case-tutorials/modeling/assemble-modular-environments).
 
-A general destruction framework or third-party part-cache package would currently add more maintenance and security surface than it removes. The existing native `Debris` cleanup remains temporary. A small fixed-cap client pool is Phase 2B work and must demonstrate a measured improvement or remove an observed allocation spike.
+A general destruction framework or third-party part-cache package would add more maintenance and security surface than it removes. Phase 2B uses a small purpose-built client pool: it prewarms one ten-fragment collapse, grows only as demanded to a hard 100-part maximum, and recycles the oldest active fragment at saturation. Inactive parts are unparented; controller teardown destroys them. Generation tokens make delayed releases harmless after an entry has been reused.
+
+Roblox explicitly recommends pooling frequently respawned instances and creating outcome-independent visuals locally. Applying that advice to fragments is an engineering inference, so the implementation records spawned, created, active, peak-active, and recycled counts. It is retained only if the stress test reduces created instances and respects the configured cap. See [Improve performance](https://create.roblox.com/docs/performance-optimization/improve).
+
+Concrete, metal, and lightweight profiles vary only fragment colour, native material, size, and speed. A separate dust layer is deferred: Roblox notes that particles do not batch well and that emitter property changes can have a dramatic performance impact. Add `ParticleEmitter:Emit()` presets only after the Phase 2C archetype scene establishes render headroom. See [ParticleEmitter](https://create.roblox.com/docs/reference/engine/classes/ParticleEmitter).
 
 ## Provisional Phase 2 gates
 
@@ -103,6 +107,7 @@ These are project thresholds, not Roblox benchmarks:
 - A late-joining client and a structure that streams in late display the authoritative state without replaying old collapse effects.
 - The player can traverse the intended collapsed route without snagging on decorative geometry.
 - The client never displays more than 100 cosmetic debris parts and cleans every effect within its configured lifetime.
+- A 200-spawn overlapping stress run creates at most 100 fragment instances, records at least 100 oldest-active recycles, and returns all entries to the available pool after the final lifetime.
 - A representative lower-end mobile profile maintains at least 30 FPS in the stress scene, with client and server frame-time spikes inspected separately.
 - One local server and two clients agree on state, health, sequence, and collision.
 
@@ -111,7 +116,7 @@ The pre-Phase-2 Studio baseline, captured from one current camera view on 2026-0
 ## Next implementation slices
 
 1. **Phase 2A — contract:** strict validation, registration, state machine, collision/query proxies, compact events, late-stream state selection.
-2. **Phase 2B — bounded spectacle:** fixed-cap debris pool, dust and impact presets, cleanup and distance limits.
+2. **Phase 2B — bounded spectacle:** fixed-cap debris pool, material response presets, cleanup and distance limits. Dust is deliberately gated on Phase 2C profiling.
 3. **Phase 2C — archetypes:** warehouse, small tower, and substation built on the contract.
 4. **Phase 2D — mixed district:** measured Brontide metrics, warehouse lane, park/plaza, objective shortcut, and dense avenue greybox.
 5. **Phase 2E — evidence:** twenty-collapse stress test, two-client and late-join tests, SceneAnalysis/MicroProfiler capture, real-iPad run, and uncoached human playtest.

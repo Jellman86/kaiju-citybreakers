@@ -21,6 +21,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 - Classic third-person mouse camera on desktop: mouse movement orbits behind Brontide, the creature follows the view direction, scroll controls zoom, and camera collision protects visibility; gamepad and touch retain native camera controls.
 - Research-backed destruction specification with explicit evidence labels, reusable structure hierarchy, feature tiers, reuse decisions, and provisional Phase 2 test gates.
 - Strict shared destructible contract with validated unique IDs, server-owned health and sequenced state, atomic streaming, dedicated damage hitboxes, and separate intact/collapsed collision proxies.
+- Fixed-cap client debris pool with one-collapse prewarming, oldest-active recycling, generation-safe delayed cleanup, observable statistics, and concrete, metal, and lightweight fragment presets.
 
 ### Changed
 
@@ -30,6 +31,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 - Charge now travels roughly 48 studs with a stronger speed differential, accepted-action FOV kick, cyan energy burst, and brief body highlight so it reads clearly at kaiju scale.
 - Destruction events now carry compact stable IDs, state sequences, positions, and material profiles; replicated attributes reconstruct visual state for late joiners and streamed-in structures.
 - Destructible visual variants are client-selected and excluded from gameplay collision, touch, and attack queries.
+- Collapse fragments are reused instead of created and destroyed for every event; the pool grows only to 100 parts and inactive parts leave the data model.
 
 ### Fixed
 

@@ -23,6 +23,7 @@ local Config = {
 
 	Destruction = {
 		MaximumCosmeticDebris = 100,
+		CosmeticDebrisPrewarmCount = 10,
 		CosmeticDebrisLifetimeSeconds = 5,
 		FragmentsPerCollapse = 10,
 		MaximumEffectDistance = 300,
