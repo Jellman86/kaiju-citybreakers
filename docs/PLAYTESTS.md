@@ -157,3 +157,23 @@ Simulator geometry validates layout but not thumb comfort. A person using a phys
 ### Unverified
 
 The engineering and feedback paths pass, but a physical-device player must confirm that the revised distance, effect strength, cooldown communication, and repeat-use rhythm feel satisfying rather than excessive. Studio was reset to its default desktop viewport after testing.
+
+## 2026-08-01 — Reusable destruction contract integration
+
+- Build commit: `6704fbc`
+- Environment: Roblox Studio desktop, macOS, one local client and server.
+- Operator: Studio MCP contract inspection and direct client ability requests; **zero human testers**.
+- Systems: tagged structure validation, atomic streaming, state sequencing, dedicated damage queries, collision proxies, client-local variants, and collapse debris.
+
+### Results
+
+- The feel-lab gate registered as exactly one valid destructible with health `2`, state `Intact`, sequence `0`, and atomic model streaming.
+- Every visual part had collision, touch, and query disabled. The dedicated `DamageHitbox` was queryable in `DestructibleQuery`; `KaijuAttackQuery` collided with that group and not `Default`.
+- Two basic attacks followed the real client remote, server cooldown, bounded hitbox, and authoritative damage path. The server ended at health `0`, state `Collapsed`, sequence `2`.
+- Authoritative collision changed from the intact proxy to the collapsed proxy. The client showed `7` collapsed-variant parts and hid every intact and damaged part.
+- The collapse event emitted exactly `10` non-colliding client-local debris fragments.
+- Instrumentation recorded first hit at `26.70s` and first collapse at `28.06s`; no gameplay runtime errors appeared in client or server output.
+
+### Unverified
+
+This one-client regression does not prove late-join or stream-out/stream-in reconciliation. Those require a two-client streaming test before the city contains enough destructible structures for ordering failures to become difficult to isolate. Performance budgets also need re-measurement after the first representative warehouse, tower, and utility structure set is added.
