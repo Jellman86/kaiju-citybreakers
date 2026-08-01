@@ -570,8 +570,15 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 		end
 
 		local humanCharacterBeforeDeath = humanCharacter
-		kaijuRoot.CFrame = CFrame.lookAt(Vector3.new(0, 30, 120), Vector3.new(0, 30, 70))
-		humanRoot.CFrame = CFrame.new(0, 30, 70)
+		kaijuRoot.Anchored = true
+		humanRoot.Anchored = true
+		kaijuRoot.CFrame = CFrame.lookAt(Vector3.new(0, 120, 120), Vector3.new(0, 120, 0))
+		local basicAttackCenter = (kaijuRoot.CFrame * CFrame.new(
+			0,
+			0,
+			-Config.Combat.BasicAttackForwardOffset
+		)).Position
+		humanRoot.CFrame = CFrame.new(basicAttackCenter)
 		kaijuRoot.AssemblyLinearVelocity = Vector3.zero
 		humanRoot.AssemblyLinearVelocity = Vector3.zero
 		task.wait(Config.Combat.BasicAttackCooldownSeconds + 0.1)
