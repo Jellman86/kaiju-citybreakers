@@ -9,8 +9,9 @@ The project has a hard implementation budget of £0. Every required tool and dep
 - StyLua 2.5.2 — formatter.
 - Selene 0.31.0 — linter.
 - Git LFS 3.7.1 — versioning for production Blender, model, and audio binaries.
+- Six optional Apache-2.0 game-development Codex skills — Roblox Luau, game feel, game UI/UX, level design, performance optimisation, and audio design; pinned in `docs/DEPENDENCIES.md`.
 
-Versions are pinned in `rokit.toml` for reproducible setup.
+Core tool versions are pinned in `rokit.toml`; optional guidance versions are pinned in the dependency register.
 
 ## Included platform tools
 

@@ -16,6 +16,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 - Readable low-poly city block with roads, sidewalks, lit buildings, scale-reference vehicles, streetlights, and an integrated breakable gate.
 - Reuse audit for Roblox-native features, open-source packages, and Creator Store assets.
 - Repository standards, contribution and security policies, dependency and asset registers, CODEOWNERS, pull-request checklist, and automated standards checks.
+- Pinned, audited game-development Codex guidance for Roblox Luau, game feel, UI/UX, level design, performance profiling, and audio design.
 
 ### Changed
 

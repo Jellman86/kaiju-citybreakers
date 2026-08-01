@@ -49,3 +49,14 @@ A candidate must pass all applicable checks:
 Roblox warns that unfamiliar packages can contain malicious scripts and recommends saving and inspecting them before use. Accordingly, third-party models are reviewed in a disposable place and never inserted directly into the source place as an experiment.
 
 The 2026-08-01 Creator Store re-check used free, verified-creator-only searches for an original monster rig and a low-poly city. No character result passed the originality, provenance, relevance, and inspection threshold. Community city packs were not adopted because the source-controlled primitive city solves the current readability test with less security and performance risk. The official Roblox modular kit remains the strongest later candidate.
+
+## 2026-08-01 — Game-development skill audit
+
+| Candidate | Decision | Reason |
+| --- | --- | --- |
+| Official OpenAI curated and experimental catalogues | **No game-design skill available** | The curated catalogue contained general development/design tools but no dedicated game-design or Roblox package; the former experimental path was unavailable. |
+| `gamedev-skills/awesome-gamedev-agent-skills` | **Adopt six pinned skills** | Active Apache-2.0 repository with portable Codex support. The selected packages are concise Markdown plus references, contain no executable scripts, and directly cover current gaps: Roblox Luau, feel, UI/UX, levels, performance, and audio. |
+| `brockmartin/roblox-game-skill` | **Reject** | Broad and potentially useful, but no repository licence was declared and the package includes a large amount of monetisation material outside current scope. |
+| `rhino-ty/game-architect` | **Reject** | MIT licensed but strongly Steam/console/marketing oriented, with broad automatic triggering and unsourced persona assumptions that conflict with this project's evidence discipline and Roblox audience focus. |
+
+The adopted skills are development guidance, not proof. Numerical recommendations remain provisional until supported by Roblox documentation, research, profiling, or project playtests. They add no runtime code or player data collection.
