@@ -36,9 +36,12 @@ local Config = {
 		CameraMinZoom = 24,
 		CameraMaxZoom = 42,
 		CameraFieldOfView = 67,
-		AimRayDistance = 1000,
-		AimTurnResponsiveness = 18,
-		AimMinimumDistance = 1,
+		CameraFocusHeight = 5,
+		CameraPitchMinDegrees = -20,
+		CameraPitchMaxDegrees = 35,
+		CameraCollisionPadding = 0.75,
+		CameraZoomStep = 3,
+		MouseCameraSensitivity = 0.003,
 	},
 
 	Prototype = {

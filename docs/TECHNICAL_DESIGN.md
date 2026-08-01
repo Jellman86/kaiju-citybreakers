@@ -58,8 +58,8 @@ Calculates round results on the server. Persistence is not implemented until the
 ## Planned client controllers
 
 - InputController: device-independent actions.
-- AimController: cursor-to-world yaw facing for keyboard/mouse, with native auto-facing retained for gamepad and touch.
-- CameraController: scale, obstruction, shake, and accessibility settings.
+- AimController: camera-forward yaw facing for keyboard/mouse, with native auto-facing retained for gamepad and touch.
+- CameraController: locked-mouse desktop orbit, scale, obstruction, zoom, shake, and accessibility settings.
 - KaijuController: predicted animation and ability feedback.
 - RoundController: local round snapshot and timer.
 - HudController: objective, energy, health, and abilities.

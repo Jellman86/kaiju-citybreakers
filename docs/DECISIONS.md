@@ -62,8 +62,8 @@ Use Roblox `ContextActionService` to bind each gameplay action once across keybo
 
 Basis: Roblox platform documentation plus the project's mobile-first requirement. Native character controls already supply keyboard, thumbstick, touch joystick, and camera behaviour. The game-specific layer adds `Q`/Shift or left trigger/B for charge, mouse/`E` or right trigger for smash, and labelled touch buttons for both. Mixed-input players receive prompts for their most recently preferred input. Actual comfort, reach, and comprehension remain human playtest questions on representative phone/tablet and gamepad hardware.
 
-## 2026-08-01 — Use cursor-facing desktop movement without changing touch or gamepad semantics
+## 2026-08-01 — Use camera-facing desktop movement without changing touch or gamepad semantics
 
-On keyboard/mouse, disable native Humanoid auto-rotation and smoothly turn Brontide's yaw toward the world point under the cursor. Keep movement camera-relative, allowing strafing and backpedalling while attacks continue to use the creature's server-observed facing. Restore native auto-rotation whenever touch or gamepad becomes the preferred input.
+On keyboard/mouse, lock the pointer, orbit a third-person camera from mouse delta, and align Brontide's yaw with the camera's horizontal forward direction so the creature's back remains toward the player. Keep movement camera-relative, use scroll-wheel zoom and camera collision, and restore Roblox's native camera and auto-rotation whenever touch or gamepad becomes the preferred input.
 
-Basis: this matches the familiar third-person action-game relationship between cursor aim, character facing, and camera-relative movement without inventing a virtual cursor for devices that already have natural stick/touch conventions. The raycast excludes the local character, rotation is yaw-only, and damage remains server-authoritative.
+Basis: stakeholder feedback clarified that the intended reference is a classic behind-the-character action camera rather than independent cursor-to-world aiming. Roblox documents locked-center mouse delta for relative camera input, `CameraType.Scriptable` for experience-owned camera CFrames, and per-frame `Camera.Focus` updates. Character rotation is yaw-only and attacks remain server-authoritative.

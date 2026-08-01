@@ -14,7 +14,7 @@ local function getObjectiveText(preferredInput: Enum.PreferredInput): string
 		return "BREAK THE GATE • LEFT STICK TO MOVE\nLT or B: CHARGE • RT: SMASH TWICE"
 	end
 
-	return "BREAK THE GATE • WASD MOVE • AIM WITH MOUSE\nQ/SHIFT: CHARGE • E/CLICK: SMASH TWICE"
+	return "BREAK THE GATE • WASD MOVE • MOUSE LOOK/AIM\nQ/SHIFT: CHARGE • E/CLICK: SMASH TWICE"
 end
 
 local function createLabel(
