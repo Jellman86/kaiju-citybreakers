@@ -55,3 +55,9 @@ Basis: automated Studio integration at commit `3583660` completed the charge-and
 Replace the visible scaled avatar with an original Brontide shell on the native R15 controller, and dress the test lane as a compact city before the first child playtest. Keep both as source-controlled Roblox primitives until their silhouette and layout pass the comprehension test.
 
 Basis: direct stakeholder observation that a human avatar in an abstract arena did not communicate the intended kaiju game. The reuse re-check found no free Creator Store kaiju model that met the originality, provenance, relevance, inspection, and mobile-fit gates. The primitive shell retains proven native locomotion while the city composition supplies scale cues without committing to a production art asset. This is a project hypothesis: an uncoached player should identify the character as a giant monster and the setting as a city within ten seconds.
+
+## 2026-08-01 — One action map across devices
+
+Use Roblox `ContextActionService` to bind each gameplay action once across keyboard/mouse, gamepad, and generated touch buttons. Use `UserInputService.PreferredInput` only to change instructional text, never gameplay authority, and keep interactive HUD content inside `CoreUISafeInsets`.
+
+Basis: Roblox platform documentation plus the project's mobile-first requirement. Native character controls already supply keyboard, thumbstick, touch joystick, and camera behaviour. The game-specific layer adds `Q`/Shift or left trigger/B for charge, mouse/`E` or right trigger for smash, and labelled touch buttons for both. Mixed-input players receive prompts for their most recently preferred input. Actual comfort, reach, and comprehension remain human playtest questions on representative phone/tablet and gamepad hardware.

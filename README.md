@@ -30,6 +30,16 @@ Phase 1 Kaiju Feel Lab and technical foundation. The repository currently contai
 
 The first gate is simple: moving and breaking buildings must feel good before progression, cosmetics, persistence, or extra kaiju are added.
 
+## Prototype controls
+
+| Action | Keyboard and mouse | Gamepad | Touchscreen |
+| --- | --- | --- | --- |
+| Move / camera | `WASD` / mouse | Left stick / right stick | Roblox thumbstick / drag |
+| Charge | `Q` or Shift | Left trigger or `B` | `CHARGE` button |
+| Smash | `E` or click | Right trigger | `SMASH` button |
+
+The HUD follows Roblox's preferred input and changes its prompt when a player switches between keyboard/mouse, gamepad, and touch.
+
 ## Free toolchain
 
 - Roblox Studio and its built-in MCP server.

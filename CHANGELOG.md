@@ -17,6 +17,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 - Reuse audit for Roblox-native features, open-source packages, and Creator Store assets.
 - Repository standards, contribution and security policies, dependency and asset registers, CODEOWNERS, pull-request checklist, and automated standards checks.
 - Pinned, audited game-development Codex guidance for Roblox Luau, game feel, UI/UX, level design, performance profiling, and audio design.
+- Deliberate keyboard/mouse, gamepad, and touchscreen controls with device-aware prompts, labelled touch actions, and safe-area HUD layout.
 
 ### Changed
 

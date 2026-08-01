@@ -2,9 +2,20 @@
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local PrototypeHudController = {}
 PrototypeHudController.__index = PrototypeHudController
+
+local function getObjectiveText(preferredInput: Enum.PreferredInput): string
+	if preferredInput == Enum.PreferredInput.Touch then
+		return "BREAK THE GATE • USE THE LEFT THUMBSTICK\nTAP CHARGE • TAP SMASH TWICE"
+	elseif preferredInput == Enum.PreferredInput.Gamepad then
+		return "BREAK THE GATE • LEFT STICK TO MOVE\nLT or B: CHARGE • RT: SMASH TWICE"
+	end
+
+	return "BREAK THE GATE • WASD TO MOVE\nQ/SHIFT: CHARGE • E/CLICK: SMASH TWICE"
+end
 
 local function createLabel(
 	name: string,
@@ -41,6 +52,7 @@ function PrototypeHudController.new(roundController: any)
 
 	self._roundController = roundController
 	self._heartbeatConnection = nil :: RBXScriptConnection?
+	self._preferredInputConnection = nil :: RBXScriptConnection?
 	self._screenGui = nil :: ScreenGui?
 
 	return self
@@ -50,34 +62,52 @@ function PrototypeHudController:Start()
 	local screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "KaijuFeelLabHud"
 	screenGui.ResetOnSpawn = false
-	screenGui.IgnoreGuiInset = true
+	screenGui.IgnoreGuiInset = false
+	screenGui.ScreenInsets = Enum.ScreenInsets.CoreUISafeInsets
+	screenGui.ClipToDeviceSafeArea = true
 	screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 	self._screenGui = screenGui
 
-	createLabel(
+	local titleLabel = createLabel(
 		"Title",
-		UDim2.fromScale(0.5, 0.035),
-		UDim2.fromOffset(360, 44),
+		UDim2.new(0.5, 0, 0, 8),
+		UDim2.new(0.9, 0, 0, 44),
 		"BRONTIDE: CITYBREAKERS",
 		24,
 		screenGui
 	)
-	createLabel(
+	local titleSizeConstraint = Instance.new("UISizeConstraint")
+	titleSizeConstraint.MaxSize = Vector2.new(420, 44)
+	titleSizeConstraint.Parent = titleLabel
+
+	local objectiveLabel = createLabel(
 		"Objective",
-		UDim2.fromScale(0.5, 0.095),
-		UDim2.fromOffset(560, 54),
-		"BREAK THE GATE  •  CHARGE then SMASH twice",
-		20,
+		UDim2.new(0.5, 0, 0, 60),
+		UDim2.new(0.92, 0, 0, 64),
+		getObjectiveText(UserInputService.PreferredInput),
+		18,
 		screenGui
 	)
+	local objectiveSizeConstraint = Instance.new("UISizeConstraint")
+	objectiveSizeConstraint.MaxSize = Vector2.new(620, 64)
+	objectiveSizeConstraint.Parent = objectiveLabel
+
 	local phaseLabel = createLabel(
 		"Phase",
-		UDim2.fromScale(0.5, 0.16),
-		UDim2.fromOffset(300, 38),
+		UDim2.new(0.5, 0, 0, 132),
+		UDim2.new(0.8, 0, 0, 38),
 		"Preparing...",
 		17,
 		screenGui
 	)
+	local phaseSizeConstraint = Instance.new("UISizeConstraint")
+	phaseSizeConstraint.MaxSize = Vector2.new(360, 38)
+	phaseSizeConstraint.Parent = phaseLabel
+
+	self._preferredInputConnection = UserInputService:GetPropertyChangedSignal("PreferredInput")
+		:Connect(function()
+			objectiveLabel.Text = getObjectiveText(UserInputService.PreferredInput)
+		end)
 
 	self._heartbeatConnection = RunService.Heartbeat:Connect(function()
 		local snapshot = self._roundController:GetSnapshot()
@@ -103,6 +133,10 @@ function PrototypeHudController:Destroy()
 	if self._heartbeatConnection then
 		self._heartbeatConnection:Disconnect()
 		self._heartbeatConnection = nil
+	end
+	if self._preferredInputConnection then
+		self._preferredInputConnection:Disconnect()
+		self._preferredInputConnection = nil
 	end
 	if self._screenGui then
 		self._screenGui:Destroy()

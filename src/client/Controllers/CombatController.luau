@@ -11,6 +11,7 @@ type AbilityResult = Types.AbilityResult
 
 local ACTION_BASIC_ATTACK = "KaijuBasicAttack"
 local ACTION_CHARGE = "KaijuCharge"
+local TOUCH_BUTTON_SIZE = UDim2.fromOffset(96, 96)
 
 local CombatController = {}
 CombatController.__index = CombatController
@@ -74,6 +75,28 @@ function CombatController:_pulseCamera()
 	end)
 end
 
+local function styleTouchButton(actionName: string, color: Color3)
+	task.defer(function()
+		local button = ContextActionService:GetButton(actionName)
+		if not button or not button:IsA("ImageButton") then
+			return
+		end
+
+		button.Size = TOUCH_BUTTON_SIZE
+		button.ImageColor3 = color
+
+		local stroke = button:FindFirstChild("KaijuButtonStroke")
+		if not stroke then
+			stroke = Instance.new("UIStroke")
+			stroke.Name = "KaijuButtonStroke"
+			stroke.Color = Color3.fromRGB(235, 248, 245)
+			stroke.Thickness = 3
+			stroke.Transparency = 0.2
+			stroke.Parent = button
+		end
+	end)
+end
+
 function CombatController:Start()
 	ContextActionService:BindAction(ACTION_BASIC_ATTACK, function(_actionName, inputState)
 		if inputState == Enum.UserInputState.Begin then
@@ -82,15 +105,25 @@ function CombatController:Start()
 		return Enum.ContextActionResult.Sink
 	end, true, Enum.UserInputType.MouseButton1, Enum.KeyCode.E, Enum.KeyCode.ButtonR2)
 	ContextActionService:SetTitle(ACTION_BASIC_ATTACK, "SMASH")
+	ContextActionService:SetDescription(
+		ACTION_BASIC_ATTACK,
+		"Smash structures in front of Brontide"
+	)
 	ContextActionService:SetPosition(ACTION_BASIC_ATTACK, UDim2.fromScale(0.82, 0.72))
 	ContextActionService:BindAction(ACTION_CHARGE, function(_actionName, inputState)
 		if inputState == Enum.UserInputState.Begin then
 			self:_requestCharge()
 		end
 		return Enum.ContextActionResult.Sink
-	end, true, Enum.KeyCode.Q, Enum.KeyCode.LeftShift, Enum.KeyCode.ButtonB)
+	end, true, Enum.KeyCode.Q, Enum.KeyCode.LeftShift, Enum.KeyCode.ButtonL2, Enum.KeyCode.ButtonB)
 	ContextActionService:SetTitle(ACTION_CHARGE, "CHARGE")
+	ContextActionService:SetDescription(
+		ACTION_CHARGE,
+		"Charge quickly in the direction Brontide faces"
+	)
 	ContextActionService:SetPosition(ACTION_CHARGE, UDim2.fromScale(0.68, 0.77))
+	styleTouchButton(ACTION_BASIC_ATTACK, Color3.fromRGB(230, 105, 59))
+	styleTouchButton(ACTION_CHARGE, Color3.fromRGB(35, 190, 178))
 
 	self._resultConnection = self._abilityResultRemote.OnClientEvent:Connect(
 		function(result: AbilityResult)
