@@ -19,6 +19,14 @@ local Config = {
 		ChargeCooldownSeconds = 2.5,
 		ChargeDurationSeconds = 0.6,
 		ChargeVerticalVelocity = 2,
+		ChargeImpactDamage = 2,
+		ChargeImpactHitboxSize = Vector3.new(26, 24, 22),
+		ChargeImpactForwardOffset = 11,
+		MaximumChargeStructures = 4,
+		BeamCooldownSeconds = 4,
+		BeamDamage = 2,
+		BeamRange = 180,
+		BeamOriginHeight = 7,
 	},
 
 	Destruction = {

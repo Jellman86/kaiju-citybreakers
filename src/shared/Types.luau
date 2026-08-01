@@ -21,6 +21,8 @@ export type AbilityResult = {
 	sequence: number,
 	hitCount: number,
 	reason: string?,
+	effectOrigin: Vector3?,
+	effectTarget: Vector3?,
 }
 
 export type DestructionEvent = {

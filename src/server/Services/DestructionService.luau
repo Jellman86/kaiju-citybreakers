@@ -103,6 +103,7 @@ end
 function DestructionService:_applyCollisionState(record: StructureRecord, state: DestructionState)
 	setCollisionProxyActive(record.components.intactCollision, state ~= "Collapsed")
 	setCollisionProxyActive(record.components.collapsedCollision, state == "Collapsed")
+	record.components.damageHitbox.CanQuery = state ~= "Collapsed"
 end
 
 function DestructionService:_setState(

@@ -25,6 +25,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 - Reusable source-controlled destructible builder plus warehouse, signal-tower, and electrical-substation greyboxes with aligned state variants, stable pivots, simple proxies, and distinct silhouettes.
 - Studio-only automated multiplayer regression that collapses a structure through one client, adds a late client, and verifies authoritative state, client visual reconstruction, collision proxies, and non-replayed debris.
 - West park/plaza greybox with a truthful cross-street branch, broad optional movement loop, low-density primitive dressing, a north reconnect, and district cordons that close the legacy city-gate bypass.
+- Eight-building east and south district expansion with a second avenue, southern cross street, longer central route, and staged destruction for every city building.
+- Server-authoritative Brontide energy beam with keyboard, gamepad, and touch input, a four-second cooldown, validated raycast damage, and client-local beam feedback.
 
 ### Changed
 
@@ -36,9 +38,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 - Destruction events now carry compact stable IDs, state sequences, positions, and material profiles; replicated attributes reconstruct visual state for late joiners and streamed-in structures.
 - Destructible visual variants are client-selected and excluded from gameplay collision, touch, and attack queries.
 - Collapse fragments are reused instead of created and destroyed for every event; the pool grows only to 100 parts and inactive parts leave the data model.
+- Charge now damages up to four structures along its server-measured travel path and produces a distinct impact flash and camera response on a confirmed hit.
+- Collapsed structures leave the attack-query collision group until reset, allowing charge, Smash, and Beam to reach intact buildings behind cleared rubble.
+- Touch layout now arranges Beam, Charge, and Smash around Roblox's finalized Jump-button rectangle and recomputes when native control geometry changes.
 
 ### Fixed
 
+- Reflow touch actions after Roblox's native Jump button receives its final phone layout, keeping Smash unobscured on iPhone landscape screens.
 - Kept the Studio-only multiplayer regression out of live server and client startup, preventing published sessions from aborting before the city, Brontide, HUD, and controls load.
 - Disabled the template spawn and removed the overlapping runtime baseplate in the Kaiju Feel Lab.
 - Replaced the live-synced Studio publishing path after it produced a successful-looking upload whose production server contained only the template baseplate.
