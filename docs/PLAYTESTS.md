@@ -299,3 +299,28 @@ Production releases now use the clean, exact-commit artifact workflow in `docs/R
 - The world, server, and client bootstrap markers appeared without a gameplay error.
 
 The artifact-level initial-spawn and respawn regressions pass. A fresh physical-iPad production server remains the required final smoke test after publishing this commit.
+
+## 2026-08-01 — Live bootstrap failure and Studio-only boundary fix
+
+- Implementation commit: `cdf9695`
+- Reported environment: physical phone in landscape, one production client; one guided human report.
+- Reproduction evidence: Creator Hub Error Report for production place `137103245194702`, published versions V6 and V8.
+- Corrective environment: clean Rojo-built `.rbxlx`, Roblox Studio iPad A16 landscape emulation, one local client and server; **zero human testers**.
+
+### Incident evidence
+
+- The phone showed Roblox CoreGui and sky, but no character, city, gameplay HUD, or action controls.
+- Creator Hub recorded four server and two client occurrences of `'StudioTestService' is not a valid Service name` on V6, followed by server and client module-load failures. V8 recorded the resulting server module-load failure at 1:46 PM.
+- Both production entrypoints loaded the Studio-only multiplayer regression at module scope. The server failed before runtime world and character startup; the client failed before HUD and controller startup.
+
+### Corrective verification
+
+- Server and client entrypoints now require the regression only within `RunService:IsStudio()`. The test modules also guard their own service acquisition.
+- Repository checks now reject module-scope test imports from either production entrypoint and unguarded `StudioTestService` acquisition.
+- `./scripts/check.sh` passed with zero Selene or StyLua errors and produced the place artifact.
+- A clean iPad-emulated Play session showed Brontide grounded in the generated city with the objective HUD and touch controls visible together.
+- The Studio log contained both `[Kaiju Citybreakers] Kaiju Feel Lab server started` and `[Kaiju Citybreakers] Kaiju Feel Lab client started`; no gameplay bootstrap error appeared.
+
+### Decision
+
+Retain automated `StudioTestService` coverage, but keep it outside the live dependency graph. Add Creator Hub Error Report inspection to every production smoke test. The fix passes isolated artifact testing; a fresh physical-device session remains the final gate after publishing the exact commit-labelled artifact.
