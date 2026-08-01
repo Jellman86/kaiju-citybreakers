@@ -1,5 +1,7 @@
 # Project guidance
 
+Read and follow `docs/PROJECT_STANDARDS.md`. It is the normative project policy; the rules below are its short operational summary.
+
 ## Product constraints
 
 - Keep the project free to implement. Do not add paid services, paid assets, premium APIs, or dependencies that require commercial licences.
@@ -21,6 +23,8 @@
 - Treat every client request as untrusted and validate ownership, range, cooldown, and state on the server.
 - Prefer small services and controllers with explicit dependencies over global state.
 - Run `./scripts/check.sh` before handing off changes.
+- Keep `CHANGELOG.md` current under `Unreleased` for notable changes and use Conventional Commit subjects.
+- Update `docs/DEPENDENCIES.md` or `assets/ASSET_REGISTER.md` in the same change that adopts a dependency or asset.
 - Do not add persistence until the vertical-slice loop is enjoyable and stable.
 
 ## Evidence discipline

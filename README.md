@@ -8,7 +8,7 @@ One to four players become original kaiju, break through a modular city, absorb 
 
 ## Current status
 
-Pre-production and technical foundation. The repository currently contains:
+Phase 1 Kaiju Feel Lab and technical foundation. The repository currently contains:
 
 - A scoped game design and sixteen-week roadmap.
 - A free/open-source Roblox toolchain managed by Rokit.
@@ -16,6 +16,7 @@ Pre-production and technical foundation. The repository currently contains:
 - A server-authoritative round state machine and client round controller.
 - Art, performance, safety, testing, and original-IP constraints.
 - A research ledger connecting major decisions to evidence or measurable hypotheses.
+- Codified free-only, reuse-first, security, provenance, changelog, contribution, and release standards.
 
 ## First playable target
 
@@ -54,9 +55,15 @@ Then open Roblox Studio, open the Rojo plugin, and connect it to the local serve
 
 ## Documentation
 
+- [Changelog](CHANGELOG.md)
+- [Contributing](CONTRIBUTING.md)
+- [Project standards](docs/PROJECT_STANDARDS.md)
+- [Security policy](SECURITY.md)
 - [Game design](docs/GAME_DESIGN.md)
 - [Research and validation ledger](docs/RESEARCH.md)
 - [Reuse audit](docs/REUSE_AUDIT.md)
+- [Dependency register](docs/DEPENDENCIES.md)
+- [Asset register](assets/ASSET_REGISTER.md)
 - [Playtest log](docs/PLAYTESTS.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Technical design](docs/TECHNICAL_DESIGN.md)
