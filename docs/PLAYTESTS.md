@@ -108,3 +108,27 @@ Studio's mouse-click automation intersected CoreGui rather than the game viewpor
 ### Unverified
 
 Synthetic pointer movement proves camera routing and alignment, not comfort. A human desktop player must still judge sensitivity, pitch limits, zoom range, motion comfort, and whether locked-center smash clicking feels natural. Studio's automation cannot send Escape because Roblox reserves it for CoreGui, so the coded menu-open cursor release also needs a manual check. Gamepad and touchscreen keep Roblox's native camera/facing path and retain the representative-device checks recorded above.
+
+## 2026-08-01 — Responsive iPad action controls
+
+- Build commit: `8a11eb3`
+- Environment: Roblox Studio device simulator, one local client and server.
+- Operator: Studio MCP device configuration, runtime rectangle inspection, and screenshots; **zero human testers**.
+- Systems: ContextActionService touch buttons, resolution-aware sizing, orientation reflow, native Jump avoidance, and screen-bound checks.
+
+### Reproduction
+
+- On iPad A16 landscape (`1179×819` runtime viewport), the former 96 px `CHARGE` rectangle ended at x=`951` while `SMASH` began at x=`948`, producing a three-pixel overlap.
+- After separating the pair, both still intersected the lower edge of Roblox's native 120 px Jump button because that control is created later than `ContextActionGui`.
+
+### Results
+
+- iPad A16 landscape (`1179×819`): 95×95 px action targets, 15 px gaps, no action/action or action/Jump overlap, and both rectangles fully inside the viewport.
+- iPad A16 portrait (`819×1179`): 96×96 px targets stacked left of Jump, 15 px horizontal and vertical separation, no overlaps, and both rectangles fully inside the viewport even though their positions extend beyond the narrower action frame.
+- iPad 6th Generation landscape (`1023×768`): 89×89 px targets, 14 px gaps, no action/action or action/Jump overlap, and both rectangles fully inside the viewport.
+- Screenshots confirmed circular outlines, readable labels, and clear separation from the native movement and Jump controls.
+- No runtime errors appeared in client or server output.
+
+### Unverified
+
+Simulator geometry validates layout but not thumb comfort. A person using a physical iPad should still judge reach, accidental presses, camera-drag coexistence, and whether the vertical action order feels natural. Studio was reset to its default desktop viewport after testing.

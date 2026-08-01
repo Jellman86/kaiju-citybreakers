@@ -70,6 +70,6 @@ Basis: stakeholder feedback clarified that the intended reference is a classic b
 
 ## 2026-08-01 — Lay out touch actions within the live action-frame bounds
 
-Compute `SMASH` and `CHARGE` size and position from the live viewport and Roblox `ContextButtonFrame`, rather than fixed screen percentages. Keep targets between 72 and 96 pixels, inset them from the frame edge, maintain a proportional gap, arrange them side-by-side when the frame is wide enough, and stack them when it is not.
+Compute `SMASH` and `CHARGE` size and position from Roblox's live `ContextButtonFrame`, rather than fixed screen percentages. Keep targets between 72 and 96 pixels, maintain a proportional gap, and stack them in a column immediately left of Roblox's native Jump control whenever the preferred row is obstructed. Clamp the fallback column against the full viewport, not only its narrower parent frame.
 
-Basis: an iPad A16 reproduction showed the former percentage positions resolving inside Roblox's lower-right action frame, not the full screen, leaving a three-pixel overlap. Frame-relative anchors and a narrow-layout fallback keep both actions separated and on-screen across resolution and orientation changes.
+Basis: an iPad A16 reproduction showed the former percentage positions resolving inside Roblox's lower-right action frame, not the full screen, leaving a three-pixel action overlap. The first separated row also intersected Roblox's later-created Jump button. Frame-relative anchors, late native-control detection, and a screen-bounded obstacle fallback keep all three actions separated across resolution and orientation changes.
