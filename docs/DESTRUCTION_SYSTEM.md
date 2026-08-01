@@ -121,4 +121,6 @@ The pre-Phase-2 Studio baseline, captured from one current camera view on 2026-0
 4. **Phase 2D — mixed district:** measured Brontide metrics, warehouse lane, park/plaza, objective shortcut, and dense avenue greybox.
 5. **Phase 2E — evidence:** twenty-collapse stress test, two-client and late-join tests, SceneAnalysis/MicroProfiler capture, real-iPad run, and uncoached human playtest.
 
+The representative two-client late-join reconstruction gate passed at commit `eeaf523`. The twenty-collapse sequence, explicit stream-out/stream-in movement, representative-device profiling, and human readability evidence remain open.
+
 Charge damaging structures and immediate energy absorption are deliberately deferred. Each must be added to [RESEARCH.md](RESEARCH.md) as a testable feature hypothesis before implementation.

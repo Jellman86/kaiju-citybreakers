@@ -103,3 +103,11 @@ Build a low broad warehouse, a two-kaiju-height signal tower, and a compact ener
 Basis: live Brontide extents, movement, charge, camera, and attack dimensions; Roblox's modular-pivot, built-in-material, streaming, reuse, and simple-collision guidance; and the level-design introduce/develop/test/release pattern. Exact scale, health, visibility, and fun remain provisional until automated routing plus uncoached human and representative-device tests are recorded.
 
 Result: the exact-commit Studio regression at `ff95af4` registered all four unique atomic structures without diagnostics. The three new archetypes stayed below their part ceilings, collapsed through the real authoritative hit path at their configured health, selected only the correct client visual and collision proxy, and allowed traversal across the substation rubble slab. Retain this blockout, but require a two-client state/late-stream regression before district multiplication; do not infer human readability or mobile performance from the synthetic run.
+
+## 2026-08-01 — Automate the late-join destruction gate with StudioTestService
+
+Use Roblox's native `StudioTestService` to start one client, collapse a representative structure through the real attack path, then add a second client and compare server state with each client's replicated attributes and local visual selection. Gate the harness on Studio plus an exact versioned test argument so ordinary Play and production sessions remain unaffected.
+
+Basis: separate server and client processes are required to test replication; Roblox now provides a native asynchronous multiplayer-test API, player addition, test arguments, and structured completion. A third-party framework would add dependency and maintenance surface without improving this focused integration test.
+
+Result: exact commit `eeaf523` returned a structured pass with two clients. Both reconstructed warehouse health `0`, state `Collapsed`, and sequence `2`; the initial client saw ten live fragments and the late client saw zero historical fragments. An ordinary Play regression created no test remote and produced no errors. The native harness is retained, and the district-multiplication gate is open.

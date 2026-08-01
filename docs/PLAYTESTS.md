@@ -219,3 +219,27 @@ Retain the pool because it reduces the representative collapse hot path in this 
 ### Decision
 
 Retain the builder and all three footprints for the next test slice. They meet the automated contract, budget, authority, and traversal gates without increasing the world bounds or adding an external asset or dependency. Before multiplying them into the mixed district, run a two-client state/late-stream regression. Human target choice, silhouette readability, route comprehension, and representative-device frame and memory cost remain unproven.
+
+## 2026-08-01 — Destruction late-join reconstruction
+
+- Build commit: `eeaf523`
+- Environment: Roblox Studio native multiplayer test, one server process, one initial client, then one late client.
+- Operator: `StudioTestService` automated orchestration and client observations; **zero human testers**.
+- Systems: normal round activation, server-positioned attack setup, client ability requests, authoritative warehouse destruction, replicated attributes, local variant selection, collision proxies, and collapse debris.
+
+### Discovery
+
+The first working-tree run added the second client successfully, but the client did not report within an assumed `350 ms` after joining. The model and its `CollectionService` tag had not necessarily streamed by that deadline. The harness was corrected to wait for the tagged atomic model and its collapsed attributes with bounded 15-second timeouts, matching the production streaming contract rather than assuming instant replication.
+
+### Exact-commit results
+
+- The initial client issued three cooldown-respecting requests through the normal ability remote and spatial hitbox path.
+- Server state ended at health `0`, `Collapsed`, sequence `2`; the intact proxy was disabled, collapsed proxy enabled, and damage hitbox remained queryable.
+- Both clients independently reported health `0`, `Collapsed`, sequence `2`, no intact or damaged visual parts, and a visible collapsed variant.
+- The initial client observed exactly `10` active collapse fragments. The client added after collapse observed `0`, confirming that durable state reconstructed without replaying the historical cosmetic event.
+- The harness returned `{ passed = true, players = 2, structureId = "north_warehouse" }` and ended both clients automatically.
+- A separate ordinary one-client Play session created no test remote, left the warehouse at its normal health `3`/`Intact` state, and produced no gameplay warnings or runtime errors.
+
+### Decision
+
+The Phase 2 late-join state gate passes for one representative destructible. The corrected bounded wait becomes the regression contract for streamed client observations. District multiplication may proceed, but the later twenty-collapse sequence, stream-out/stream-in movement test, representative-device profiling, and human readability test remain open.

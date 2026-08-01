@@ -70,4 +70,4 @@ If these footprints pass, their ground-centred origins, names, hierarchy, proxy 
 - Every decorative part remains non-colliding, non-touching, and non-queryable.
 - The main avenue remains unobstructed before and after all three structures collapse.
 - The world-instance and 3D-object increase is recorded; render-pass numbers are recorded only when SceneAnalysisService returns valid non-zero data.
-- A later two-client test confirms state agreement and late-stream reconstruction before multiplying these archetypes into a district.
+- Two-client state agreement and late-join reconstruction passed at commit `eeaf523`; see [MULTIPLAYER_TESTING.md](MULTIPLAYER_TESTING.md) and [PLAYTESTS.md](PLAYTESTS.md). District multiplication is unblocked, while stream-out/stream-in movement remains a later stress-scene test.
