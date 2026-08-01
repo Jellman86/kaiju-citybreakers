@@ -8,7 +8,7 @@ One to four players become original kaiju, break through a modular city, absorb 
 
 ## Current status
 
-Phase 2C destructible-archetype blockout, following the playable Phase 1 Kaiju Feel Lab. The repository currently contains:
+Phase 2D mixed-district blockout, following the playable Phase 1 Kaiju Feel Lab. The repository currently contains:
 
 - A scoped game design and sixteen-week roadmap.
 - A free/open-source Roblox toolchain managed by Rokit.
@@ -19,6 +19,7 @@ Phase 2C destructible-archetype blockout, following the playable Phase 1 Kaiju F
 - Codified free-only, reuse-first, security, provenance, changelog, contribution, and release standards.
 - A fixed-cap client debris pool with material-specific fragment presets and deterministic cleanup.
 - Reusable warehouse, signal-tower, and electrical-substation greyboxes derived from live Brontide movement, camera, attack, and scale metrics.
+- A west park/plaza loop with a broad camera-safe movement space, truthful crossing, objective-safe reconnect, and measured primitive budget.
 
 ## First playable target
 

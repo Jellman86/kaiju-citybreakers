@@ -243,3 +243,25 @@ The first working-tree run added the second client successfully, but the client 
 ### Decision
 
 The Phase 2 late-join state gate passes for one representative destructible. The corrected bounded wait becomes the regression contract for streamed client observations. District multiplication may proceed, but the later twenty-collapse sequence, stream-out/stream-in movement test, representative-device profiling, and human readability test remain open.
+
+## 2026-08-01 — West park/plaza layout integration
+
+- Build commit: `ea02de3`
+- Environment: Roblox Studio iPad A16 landscape simulation, one local client and server.
+- Operator: Studio MCP inspection, synthetic navigation, direct client ability requests, camera-clearance probes, SceneAnalysis, and screenshots; **zero human testers**.
+- Systems: expanded foundation/crossing, repositioned market shells, park/plaza primitive kit, north connector, district cordons, existing camera, and authoritative gate destruction.
+
+### Results
+
+- The world changed from `274` to `323` descendants, `213` to `251` parts, and `41` to `52` models. Lights remained at `10`. SceneAnalysis changed from `921` to `970` total instances and `309` to `358` 3D objects.
+- The `88 × 52` stud plaza and `36` stud warehouse-side turn met their provisional metrics. All decorative geometry was anchored with collision, touch, query, and shadows disabled.
+- Synthetic navigation completed crossing → plaza → north connector → spawn and the complete reverse route without jumping or losing health.
+- From the plaza centre, all eight radial probes were clear at both 24 and 42 studs, the configured camera-distance range.
+- Overhead and player-scale captures showed an open paved centre, green perimeter, trees, entry signals, and west amber/cyan landmark. Four initial parallel paving strips read like parking bays and were replaced with three concentric civic rings before the exact-commit run.
+- An explicit working-tree probe found that the old map allowed Brontide to walk around the west gate tower at `x=-90` while the gate remained intact. Two joined district cordons closed both foundation-edge routes. The exact commit stopped the same probe near `z=-23.3` with the gate intact.
+- Two normal client attack requests then passed cooldown, spatial hitbox, and server-authoritative damage validation. The gate ended health `0`, `Collapsed`, sequence `2`, and Brontide traversed the central opening to approximately `z=-58.8`.
+- The final triangle/draw query returned zero passes and is recorded as unavailable, not as a zero-cost result. No gameplay warnings or runtime errors appeared.
+
+### Decision
+
+Retain the park/plaza, market positions, north loop, and gate cordons. The layout passes automated route, objective-integrity, physics, camera-clearance, and instance-budget gates. Do not add the dense avenue yet until an uncoached player tests branch recognition, route return, perceived scale, and whether the plaza is an enjoyable combat space. Representative-device frame time and memory also remain open.

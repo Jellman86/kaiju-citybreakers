@@ -66,3 +66,22 @@ The foundation and road slabs may collide because they define traversal. Small f
 - All added decorative parts satisfy the no-physics/no-shadow contract.
 - The exact world and SceneAnalysis composition delta is recorded; triangle/draw results are reported only when the service returns valid view data.
 - An uncoached player must later notice the branch, identify it as a park/plaza, and return to the objective without verbal guidance.
+
+## Exact-commit result
+
+Studio regression at commit `ea02de3` produced:
+
+| Measure | Before | After | Delta |
+| --- | ---: | ---: | ---: |
+| World descendants | `274` | `323` | `+49` |
+| World `BasePart` instances | `213` | `251` | `+38` |
+| World models | `41` | `52` | `+11` |
+| World lights | `10` | `10` | `0` |
+| SceneAnalysis total instances | `921` | `970` | `+49` |
+| SceneAnalysis 3D objects | `309` | `358` | `+49` |
+
+The plaza measured `88 × 52` studs, the warehouse/plaza turn retained `36` studs, and every decorative part passed the anchored/no-collision/no-touch/no-query/no-shadow contract. Synthetic navigation completed the full loop in both directions. An explicit side-route probe exposed a legacy gate bypass during the working-tree test; the added cordons stopped Brontide at approximately `z=-23.3` with the gate intact. After two real validated smashes, the central route reached approximately `z=-58.8` with the gate collapsed.
+
+Eight radial camera-collision probes from the plaza centre were unobstructed at both the configured 24- and 42-stud distances. The final SceneAnalysis triangle query returned zero passes, so it is treated as unavailable rather than evidence of zero render cost. Overhead and player-scale captures confirmed the green perimeter, civic rings, west landmark, and open centre; the first straight paving pattern was replaced because it read as parking bays.
+
+The automated geometry gates pass. Whether an uncoached player notices the loop, reads it as a park/plaza, enjoys fighting there, and returns to the gate remains unproven.

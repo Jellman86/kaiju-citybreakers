@@ -111,3 +111,11 @@ Use Roblox's native `StudioTestService` to start one client, collapse a represen
 Basis: separate server and client processes are required to test replication; Roblox now provides a native asynchronous multiplayer-test API, player addition, test arguments, and structured completion. A third-party framework would add dependency and maintenance surface without improving this focused integration test.
 
 Result: exact commit `eeaf523` returned a structured pass with two clients. Both reconstructed warehouse health `0`, state `Collapsed`, and sequence `2`; the initial client saw ten live fragments and the late client saw zero historical fragments. An ordinary Play regression created no test remote and produced no errors. The native harness is retained, and the district-multiplication gate is open.
+
+## 2026-08-01 — Add one low-density park loop before dense streets
+
+Extend west from a truthful cross street into one open park/plaza, then reconnect beside the spawn. Preserve the direct avenue as the critical path and keep all branch connections north of the gate. Use a 40-part expansion ceiling, existing built-in materials, no new lights, and no decorative physics.
+
+Basis: Brontide's measured extents, 48-stud charge, and 24–42 stud camera distances; the level-design introduce/build/release/test rhythm; Roblox's greybox playtest questions; and Roblox's guidance on object density, anchored geometry, collision, shadows, and built-in profiling. Production park kits remain deferred because this is a route and density test.
+
+Result: exact commit `ea02de3` added 38 parts and 11 models with no lights, completed the loop in both directions, kept eight camera rays clear at both distance limits, and preserved the authoritative gate path. Testing also found and closed a legacy side bypass with two primitive cordons. Retain this greybox but require an uncoached layout test and representative-device performance evidence before adding the dense avenue.

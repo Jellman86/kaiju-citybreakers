@@ -142,6 +142,8 @@ The server switches authoritative health and simple collision proxies. Each clie
 
 `DestructibleStructureBuilder` owns the repeated hierarchy, authoring attributes, atomic streaming mode, damage hitbox, effect origin, proxies, tag, and build-time visual safety assertions. Archetype functions supply only aligned visual variants and dimensions. The gate remains the legacy reference package until its objective label is separated from its variant visuals.
 
+`DistrictDressingBuilder` owns the west park/plaza's reusable primitive scale cues. Its trees, planters, rings, pylons, and landmark are anchored local scenery with collision, touch, query, and shadows disabled; only the two broad ground surfaces participate in character collision. Road, sidewalk, and gate-cordon surfaces remain owned by `PrototypeWorldService` because they define the district route and objective boundary.
+
 The versioned `StudioTestService` regression starts with one client, drives the real authoritative attack path, then adds a late client and compares server state with both clients' replicated attributes and locally selected variants. Test modules are inert outside Studio and unless their exact test argument is present; see [MULTIPLAYER_TESTING.md](MULTIPLAYER_TESTING.md).
 
 Concrete, metal, and lightweight material profiles vary fragment material, colour, size, and speed without changing gameplay. Dust particles, camera impulses, and sound remain separate evidence-gated layers; Roblox warns that particles add draw calls and that emitter property changes can be expensive.
