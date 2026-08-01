@@ -132,3 +132,28 @@ Synthetic pointer movement proves camera routing and alignment, not comfort. A h
 ### Unverified
 
 Simulator geometry validates layout but not thumb comfort. A person using a physical iPad should still judge reach, accidental presses, camera-drag coexistence, and whether the vertical action order feels natural. Studio was reset to its default desktop viewport after testing.
+
+## 2026-08-01 — Touch charge legibility regression
+
+- Build commit: `00808ff`
+- Environment: Roblox Studio iPad A16 landscape simulation, one local client and server.
+- Operator: Studio MCP touch-button input, remote-result instrumentation, transform measurement, and cosmetic-event observation; **zero human testers**.
+- Systems: touch charge binding, server-authoritative LinearVelocity, charge tuning, cooldown UI, FOV feedback, particles, and highlight.
+
+### Reproduction
+
+- The original touch button sent a valid charge request and received `accepted = true`, so input routing was not broken.
+- It moved Brontide approximately `20.7` studs, matching the former 44 studs/second × 0.45 second budget. At four-times character scale with a distant camera, this read too similarly to ordinary movement.
+- Repeated taps during the 2.5-second cooldown were silently ignored by the local cooldown guard.
+
+### Results
+
+- The updated touch charge received `accepted = true` and moved the root from approximately z=`73.82` to z=`23.89`: `49.93` studs through the real server constraint path.
+- Client observation recorded both `ChargeEnergyBurst` and `ChargeEnergyHighlight` being created after acceptance.
+- Camera FieldOfView peaked at `75`, an 8-degree kick from the configured resting value of `67`, then returned to rest.
+- The touch title progressed from `2.5` through `0.1` while the button was dimmed, then restored `CHARGE` and full opacity at cooldown completion.
+- No gameplay runtime errors appeared in client or server output.
+
+### Unverified
+
+The engineering and feedback paths pass, but a physical-device player must confirm that the revised distance, effect strength, cooldown communication, and repeat-use rhythm feel satisfying rather than excessive. Studio was reset to its default desktop viewport after testing.
