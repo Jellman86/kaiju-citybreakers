@@ -513,7 +513,7 @@ Retain the joint-compatible Smash pose, eight-part rupture, and functional plant
 
 ## 2026-08-01 — Visible Smash and native-terrain city pass
 
-- Implementation commit: pending exact release commit.
+- Implementation commit: `06fd0629ba0b369fafc09c249f40a2fcff982bb8`.
 - Environment: the sole existing Roblox Studio editor in iPhone 16 simulation, plus native `StudioTestService` with one server, one initial client and one late client; **zero human testers**.
 - Systems: dedicated Brontide visual-shell pivots, measured Smash displacement, native smooth terrain, true terrain water, park/mountain relief, separated urban pads, stepped skyline buildings, four additional destructible infill buildings, and the complete asymmetric-combat/lifecycle regression.
 
@@ -529,3 +529,11 @@ Retain the joint-compatible Smash pose, eight-part rupture, and functional plant
 ### Decision
 
 Retain the dedicated shell pivots, terrain profile, skyline hierarchy and four infill buildings for publication. The engineering gate now measures what is displayed rather than merely counting animation phases. Simulator inspection shows stronger height contrast, native ground and perimeter relief, but neither synthetic tests nor the editor simulator prove that the city looks convincing, Smash feels powerful, district routes remain clear, or the published phone stays above the provisional frame-rate floor. Those remain owner-device and uncoached-child tests.
+
+### Production publication
+
+- Published source commit: `06fd0629ba0b369fafc09c249f40a2fcff982bb8`.
+- Generated artifact: `build/KaijuCitybreakers.rbxlx`.
+- SHA-256: `c70a7969e3514c1756ba542b4f5d8a1da5119df6bc5d8e9844ba7e40b883d64e`.
+- The exact artifact was opened in the sole existing Studio editor and used to overwrite the existing `Kaiju Citybreakers` place. Studio displayed `Successfully published!` and logged `Published new changes in "Kaiju Citybreakers" to Roblox.` at 21:26 BST.
+- A fresh owner-phone check of the terrain, skyline, Smash motion, lake, traversal and frame rate remains the release-validation gate; automated Studio evidence does not replace that physical-device judgement.
