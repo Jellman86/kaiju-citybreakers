@@ -1,0 +1,30 @@
+# Generated Roblox files
+/build/
+*.rbxl
+*.rbxlx
+*.rbxm
+*.rbxmx
+
+# Roblox/Studio state
+*.rbxl.lock
+*.rbxlx.lock
+
+# Tool and editor state
+.DS_Store
+.vscode/
+.idea/
+
+# Local exports and renders
+/renders/
+/exports/models/*.fbx
+/exports/models/*.gltf
+/exports/models/*.glb
+/exports/textures/*.png
+/exports/textures/*.jpg
+/exports/textures/*.tga
+
+# Blender recovery files
+*.blend1
+*.blend2
+*.blend@
+
