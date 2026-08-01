@@ -9,12 +9,12 @@ PrototypeHudController.__index = PrototypeHudController
 
 local function getObjectiveText(preferredInput: Enum.PreferredInput): string
 	if preferredInput == Enum.PreferredInput.Touch then
-		return "BREAK THE GATE • USE THE LEFT THUMBSTICK\nTAP CHARGE • TAP SMASH TWICE"
+		return "BREAK THE CITY • USE THE LEFT THUMBSTICK\nTAP CHARGE • SMASH • BEAM"
 	elseif preferredInput == Enum.PreferredInput.Gamepad then
-		return "BREAK THE GATE • LEFT STICK TO MOVE\nLT or B: CHARGE • RT: SMASH TWICE"
+		return "BREAK THE CITY • LEFT STICK TO MOVE\nLT/B: CHARGE • RT: SMASH • X: BEAM"
 	end
 
-	return "BREAK THE GATE • WASD MOVE • MOUSE LOOK/AIM\nQ/SHIFT: CHARGE • E/CLICK: SMASH TWICE"
+	return "BREAK THE CITY • WASD MOVE • MOUSE LOOK/AIM\nQ/SHIFT: CHARGE • E/CLICK: SMASH • R: BEAM"
 end
 
 local function createLabel(

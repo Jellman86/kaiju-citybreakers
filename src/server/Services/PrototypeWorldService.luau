@@ -20,6 +20,14 @@ local WINDOW = Color3.fromRGB(255, 187, 77)
 local CYAN = Color3.fromRGB(62, 221, 211)
 
 type VisualModels = DestructibleStructureBuilder.VisualModels
+local createCollapsedChunks: (
+	parent: Model,
+	origin: CFrame,
+	footprint: Vector2,
+	count: number,
+	color: Color3,
+	material: Enum.Material
+) -> ()
 
 local function createPart(
 	name: string,
@@ -149,43 +157,103 @@ end
 local function createBuilding(
 	parent: Instance,
 	name: string,
+	structureId: string,
 	position: Vector3,
 	size: Vector3,
 	color: Color3,
 	accent: Color3
 ): Model
-	local building = Instance.new("Model")
-	building.Name = name
-	building.Parent = parent
+	local origin = CFrame.new(position.X, 0, position.Z)
+	local maxHealth = math.clamp(math.round(size.Y / 11), 2, 5)
+	local damagedColor = color:Lerp(Color3.fromRGB(91, 70, 65), 0.42)
 
-	local baseHeight = size.Y / 2
-	createPart(
-		"Shell",
-		size,
-		CFrame.new(position.X, baseHeight, position.Z),
-		color,
-		Enum.Material.Concrete,
-		building
-	)
-	createPart(
-		"Roof",
-		Vector3.new(size.X + 1.5, 1.2, size.Z + 1.5),
-		CFrame.new(position.X, size.Y + 0.6, position.Z),
-		accent,
-		Enum.Material.Metal,
-		building
-	)
-	createPart(
-		"RooftopUnit",
-		Vector3.new(math.min(size.X * 0.38, 9), 3, math.min(size.Z * 0.38, 8)),
-		CFrame.new(position.X, size.Y + 2.1, position.Z),
-		Color3.fromRGB(67, 76, 82),
-		Enum.Material.Metal,
-		building
-	)
-	createWindowBands(building, position, size, baseHeight, WINDOW)
+	return DestructibleStructureBuilder.Build(parent, {
+		name = name,
+		structureId = structureId,
+		maxHealth = maxHealth,
+		energyValue = maxHealth * 5,
+		materialProfile = "Concrete",
+		intactCollisionCFrame = origin * CFrame.new(0, size.Y / 2, 0),
+		intactCollisionSize = size,
+		collapsedCollisionCFrame = origin * CFrame.new(0, 0.75, 0),
+		collapsedCollisionSize = Vector3.new(size.X, 1.5, size.Z),
+		damageHitboxCFrame = origin * CFrame.new(0, size.Y / 2, 0),
+		damageHitboxSize = size + Vector3.new(2, 2, 2),
+	}, function(visuals)
+		createVisualPart(
+			"Shell",
+			size,
+			origin * CFrame.new(0, size.Y / 2, 0),
+			color,
+			Enum.Material.Concrete,
+			visuals.intact
+		)
+		createVisualPart(
+			"Roof",
+			Vector3.new(size.X + 1.5, 1.2, size.Z + 1.5),
+			origin * CFrame.new(0, size.Y + 0.6, 0),
+			accent,
+			Enum.Material.Metal,
+			visuals.intact
+		)
+		createVisualPart(
+			"RooftopUnit",
+			Vector3.new(math.min(size.X * 0.38, 9), 3, math.min(size.Z * 0.38, 8)),
+			origin * CFrame.new(0, size.Y + 2.1, 0),
+			Color3.fromRGB(67, 76, 82),
+			Enum.Material.Metal,
+			visuals.intact
+		)
+		createWindowBands(visuals.intact, position, size, size.Y / 2, WINDOW)
 
-	return building
+		createVisualPart(
+			"BuckledShell",
+			size,
+			origin * CFrame.new(0.7, size.Y / 2, 0) * CFrame.Angles(0, 0, math.rad(-3)),
+			damagedColor,
+			Enum.Material.Concrete,
+			visuals.damaged
+		)
+		for side = -1, 1, 2 do
+			createVisualPart(
+				`BrokenRoof{side}`,
+				Vector3.new(size.X / 2 - 1, 1.2, size.Z + 1.5),
+				origin
+					* CFrame.new(side * size.X / 4, size.Y + 0.1, 0)
+					* CFrame.Angles(0, 0, math.rad(side * 7)),
+				accent,
+				Enum.Material.Metal,
+				visuals.damaged
+			)
+			createTrimPart(
+				`EnergyCrack{side}`,
+				Vector3.new(0.5, math.max(7, size.Y * 0.45), 0.45),
+				origin
+					* CFrame.new(side * size.X * 0.2, size.Y * 0.5, -size.Z / 2 - 0.24)
+					* CFrame.Angles(0, 0, math.rad(side * 18)),
+				Color3.fromRGB(255, 137, 60),
+				Enum.Material.Neon,
+				visuals.damaged
+			)
+		end
+
+		createCollapsedChunks(
+			visuals.collapsed,
+			origin,
+			Vector2.new(size.X, size.Z),
+			8,
+			damagedColor,
+			Enum.Material.Concrete
+		)
+		createVisualPart(
+			"RoofSlab",
+			Vector3.new(size.X * 0.55, 1.1, size.Z * 0.55),
+			origin * CFrame.new(0, 3.2, 0) * CFrame.Angles(math.rad(8), math.rad(17), math.rad(5)),
+			accent,
+			Enum.Material.Metal,
+			visuals.collapsed
+		)
+	end)
 end
 
 local function createStreetlight(parent: Instance, position: Vector3, facing: number)
@@ -271,8 +339,8 @@ end
 local function createGateCordons(parent: Instance)
 	for _, definition in
 		{
-			{ name = "GateCordonWest", size = 202, x = -139 },
-			{ name = "GateCordonEast", size = 72, x = 74 },
+			{ name = "GateCordonWest", size = 247, x = -161.5 },
+			{ name = "GateCordonEast", size = 177, x = 126.5 },
 		}
 	do
 		createSurfacePart(
@@ -429,7 +497,7 @@ local function createWall(parent: Instance): Model
 	return wall
 end
 
-local function createCollapsedChunks(
+createCollapsedChunks = function(
 	parent: Model,
 	origin: CFrame,
 	footprint: Vector2,
@@ -872,24 +940,24 @@ function PrototypeWorldService:Start()
 
 	createSurfacePart(
 		"CityFoundation",
-		Vector3.new(350, 2, 260),
-		CFrame.new(-65, -1, -8),
+		Vector3.new(500, 2, 380),
+		CFrame.new(-35, -1, -40),
 		CONCRETE,
 		Enum.Material.Concrete,
 		world
 	)
 	createPart(
 		"MainAvenue",
-		Vector3.new(34, 0.3, 220),
-		CFrame.new(0, 0.08, -18),
+		Vector3.new(34, 0.3, 350),
+		CFrame.new(0, 0.08, -35),
 		ASPHALT,
 		Enum.Material.Asphalt,
 		world
 	)
 	createSurfacePart(
 		"CrossStreet",
-		Vector3.new(350, 0.3, 28),
-		CFrame.new(-65, 0.1, 24),
+		Vector3.new(500, 0.3, 28),
+		CFrame.new(-35, 0.1, 24),
 		ASPHALT,
 		Enum.Material.Asphalt,
 		world
@@ -898,8 +966,8 @@ function PrototypeWorldService:Start()
 	for _, x in { -20, 20 } do
 		createPart(
 			`MainSidewalk{x}`,
-			Vector3.new(6, 0.6, 220),
-			CFrame.new(x, 0.3, -18),
+			Vector3.new(6, 0.6, 350),
+			CFrame.new(x, 0.3, -35),
 			CURB,
 			Enum.Material.Concrete,
 			world
@@ -908,8 +976,45 @@ function PrototypeWorldService:Start()
 	for _, z in { 7, 41 } do
 		createSurfacePart(
 			`CrossSidewalk{z}`,
-			Vector3.new(350, 0.6, 5),
-			CFrame.new(-65, 0.3, z),
+			Vector3.new(500, 0.6, 5),
+			CFrame.new(-35, 0.3, z),
+			CURB,
+			Enum.Material.Concrete,
+			world
+		)
+	end
+
+	createSurfacePart(
+		"EastAvenue",
+		Vector3.new(34, 0.3, 350),
+		CFrame.new(130, 0.09, -35),
+		ASPHALT,
+		Enum.Material.Asphalt,
+		world
+	)
+	for _, x in { 110, 150 } do
+		createSurfacePart(
+			`EastSidewalk{x}`,
+			Vector3.new(6, 0.6, 350),
+			CFrame.new(x, 0.3, -35),
+			CURB,
+			Enum.Material.Concrete,
+			world
+		)
+	end
+	createSurfacePart(
+		"SouthCrossStreet",
+		Vector3.new(500, 0.3, 28),
+		CFrame.new(-35, 0.11, -135),
+		ASPHALT,
+		Enum.Material.Asphalt,
+		world
+	)
+	for _, z in { -152, -118 } do
+		createSurfacePart(
+			`SouthCrossSidewalk{math.abs(z)}`,
+			Vector3.new(500, 0.6, 5),
+			CFrame.new(-35, 0.3, z),
 			CURB,
 			Enum.Material.Concrete,
 			world
@@ -953,6 +1058,7 @@ function PrototypeWorldService:Start()
 	createBuilding(
 		world,
 		"GateTowerWest",
+		"gate_tower_west",
 		Vector3.new(-28, 0, -28),
 		Vector3.new(20, 38, 24),
 		Color3.fromRGB(58, 77, 91),
@@ -961,6 +1067,7 @@ function PrototypeWorldService:Start()
 	createBuilding(
 		world,
 		"GateTowerEast",
+		"gate_tower_east",
 		Vector3.new(28, 0, -28),
 		Vector3.new(20, 38, 24),
 		Color3.fromRGB(58, 77, 91),
@@ -974,6 +1081,7 @@ function PrototypeWorldService:Start()
 	createBuilding(
 		world,
 		"MarketWest",
+		"market_west",
 		Vector3.new(-54, 0, -5),
 		Vector3.new(30, 20, 18),
 		Color3.fromRGB(112, 84, 76),
@@ -982,6 +1090,7 @@ function PrototypeWorldService:Start()
 	createBuilding(
 		world,
 		"MarketEast",
+		"market_east",
 		Vector3.new(53, 0, -5),
 		Vector3.new(32, 25, 18),
 		Color3.fromRGB(79, 94, 112),
@@ -990,12 +1099,85 @@ function PrototypeWorldService:Start()
 	createBuilding(
 		world,
 		"HarbourWest",
+		"harbour_west",
 		Vector3.new(-52, 0, -67),
 		Vector3.new(38, 30, 30),
 		Color3.fromRGB(72, 93, 97),
 		Color3.fromRGB(46, 63, 67)
 	)
 	createSubstation(world)
+	createBuilding(
+		world,
+		"EastCivicTower",
+		"east_civic_tower",
+		Vector3.new(180, 0, 68),
+		Vector3.new(32, 56, 34),
+		Color3.fromRGB(68, 83, 105),
+		Color3.fromRGB(43, 54, 72)
+	)
+	createBuilding(
+		world,
+		"EastArcade",
+		"east_arcade",
+		Vector3.new(180, 0, 2),
+		Vector3.new(42, 24, 28),
+		Color3.fromRGB(103, 79, 88),
+		Color3.fromRGB(67, 48, 61)
+	)
+	createBuilding(
+		world,
+		"EastHarbourBlock",
+		"east_harbour_block",
+		Vector3.new(180, 0, -72),
+		Vector3.new(34, 42, 38),
+		Color3.fromRGB(68, 94, 101),
+		Color3.fromRGB(42, 62, 70)
+	)
+	createBuilding(
+		world,
+		"SouthEastDepot",
+		"south_east_depot",
+		Vector3.new(180, 0, -174),
+		Vector3.new(42, 22, 30),
+		Color3.fromRGB(98, 87, 77),
+		Color3.fromRGB(62, 54, 49)
+	)
+	createBuilding(
+		world,
+		"SouthTower",
+		"south_tower",
+		Vector3.new(62, 0, -178),
+		Vector3.new(34, 52, 34),
+		Color3.fromRGB(78, 82, 105),
+		Color3.fromRGB(49, 51, 69)
+	)
+	createBuilding(
+		world,
+		"SouthWorks",
+		"south_works",
+		Vector3.new(-58, 0, -176),
+		Vector3.new(54, 26, 34),
+		Color3.fromRGB(91, 82, 72),
+		Color3.fromRGB(58, 51, 47)
+	)
+	createBuilding(
+		world,
+		"WestHarbourTower",
+		"west_harbour_tower",
+		Vector3.new(-165, 0, -84),
+		Vector3.new(38, 46, 38),
+		Color3.fromRGB(72, 91, 98),
+		Color3.fromRGB(45, 58, 65)
+	)
+	createBuilding(
+		world,
+		"WestDockWarehouse",
+		"west_dock_warehouse",
+		Vector3.new(-172, 0, -176),
+		Vector3.new(62, 24, 34),
+		Color3.fromRGB(91, 76, 70),
+		Color3.fromRGB(57, 48, 46)
+	)
 	DistrictDressingBuilder.BuildWestParkPlaza(world)
 
 	for _, z in { 57, 34, 4, -14, -49 } do
@@ -1008,8 +1190,16 @@ function PrototypeWorldService:Start()
 
 	createTrimPart(
 		"AvenueCentreLine",
-		Vector3.new(0.45, 0.08, 210),
-		CFrame.new(0, 0.25, -18),
+		Vector3.new(0.45, 0.08, 340),
+		CFrame.new(0, 0.25, -35),
+		Color3.fromRGB(255, 196, 61),
+		Enum.Material.Neon,
+		world
+	)
+	createTrimPart(
+		"EastAvenueCentreLine",
+		Vector3.new(0.45, 0.08, 340),
+		CFrame.new(130, 0.25, -35),
 		Color3.fromRGB(255, 196, 61),
 		Enum.Material.Neon,
 		world

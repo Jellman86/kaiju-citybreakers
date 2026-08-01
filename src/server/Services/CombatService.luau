@@ -3,6 +3,7 @@
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local DestructibleContract = require(ReplicatedStorage.Shared.DestructibleContract)
@@ -15,6 +16,7 @@ type RateState = {
 	lastRefill: number,
 	lastBasicAttack: number,
 	lastCharge: number,
+	lastBeam: number,
 }
 
 local CombatService = {}
@@ -65,6 +67,7 @@ function CombatService:_consumeRateToken(player: Player): boolean
 			lastRefill = now,
 			lastBasicAttack = -math.huge,
 			lastCharge = -math.huge,
+			lastBeam = -math.huge,
 		}
 		self._rateStates[player] = state
 	end
@@ -82,6 +85,23 @@ function CombatService:_consumeRateToken(player: Player): boolean
 
 	state.tokens -= 1
 	return true
+end
+
+function CombatService:_getLivingCharacter(player: Player): (Model?, BasePart?)
+	local character = player.Character
+	local humanoid = if character then character:FindFirstChildOfClass("Humanoid") else nil
+	local rootPart = if character then character:FindFirstChild("HumanoidRootPart") else nil
+	if
+		not character
+		or not humanoid
+		or humanoid.Health <= 0
+		or not rootPart
+		or not rootPart:IsA("BasePart")
+	then
+		return nil, nil
+	end
+
+	return character, rootPart
 end
 
 function CombatService:_performBasicAttack(player: Player, sequence: number)
@@ -111,16 +131,8 @@ function CombatService:_performBasicAttack(player: Player, sequence: number)
 		return
 	end
 
-	local character = player.Character
-	local humanoid = if character then character:FindFirstChildOfClass("Humanoid") else nil
-	local rootPart = if character then character:FindFirstChild("HumanoidRootPart") else nil
-	if
-		not character
-		or not humanoid
-		or humanoid.Health <= 0
-		or not rootPart
-		or not rootPart:IsA("BasePart")
-	then
+	local character, rootPart = self:_getLivingCharacter(player)
+	if not character or not rootPart then
 		self:_sendResult(player, {
 			accepted = false,
 			abilityId = "basic",
@@ -195,16 +207,8 @@ function CombatService:_performCharge(player: Player, sequence: number)
 		return
 	end
 
-	local character = player.Character
-	local humanoid = if character then character:FindFirstChildOfClass("Humanoid") else nil
-	local rootPart = if character then character:FindFirstChild("HumanoidRootPart") else nil
-	if
-		not character
-		or not humanoid
-		or humanoid.Health <= 0
-		or not rootPart
-		or not rootPart:IsA("BasePart")
-	then
+	local character, rootPart = self:_getLivingCharacter(player)
+	if not character or not rootPart then
 		self:_sendResult(player, {
 			accepted = false,
 			abilityId = "charge",
@@ -233,6 +237,54 @@ function CombatService:_performCharge(player: Player, sequence: number)
 	)
 	velocity.Parent = rootPart
 
+	local overlapParams = OverlapParams.new()
+	overlapParams.CollisionGroup = DestructibleContract.AttackQueryCollisionGroup
+	overlapParams.ExcludeInstances = { character }
+	overlapParams.MaxParts = Config.Combat.MaximumChargeStructures * 2
+	local seen = {} :: { [Model]: boolean }
+	local impactCount = 0
+	task.spawn(function()
+		local endsAt = os.clock() + Config.Combat.ChargeDurationSeconds
+		while os.clock() < endsAt and rootPart.Parent and character.Parent do
+			local impactCFrame = rootPart.CFrame
+				* CFrame.new(0, 0, -Config.Combat.ChargeImpactForwardOffset)
+			local parts = workspace:GetPartBoundsInBox(
+				impactCFrame,
+				Config.Combat.ChargeImpactHitboxSize,
+				overlapParams
+			)
+			for _, part in parts do
+				local structure = findDestructible(part)
+				if structure and not seen[structure] then
+					seen[structure] = true
+					if
+						self._destructionService:Damage(
+							player,
+							structure,
+							Config.Combat.ChargeImpactDamage
+						)
+					then
+						impactCount += 1
+						self:_sendResult(player, {
+							accepted = true,
+							abilityId = "chargeImpact",
+							sequence = sequence,
+							hitCount = 1,
+							effectTarget = part.Position,
+						})
+						if impactCount >= Config.Combat.MaximumChargeStructures then
+							break
+						end
+					end
+				end
+			end
+			if impactCount >= Config.Combat.MaximumChargeStructures then
+				break
+			end
+			RunService.Heartbeat:Wait()
+		end
+	end)
+
 	task.delay(Config.Combat.ChargeDurationSeconds, function()
 		velocity:Destroy()
 		attachment:Destroy()
@@ -241,6 +293,77 @@ function CombatService:_performCharge(player: Player, sequence: number)
 		player,
 		{ accepted = true, abilityId = "charge", sequence = sequence, hitCount = 0 }
 	)
+end
+
+function CombatService:_performBeam(player: Player, sequence: number)
+	local state = self._rateStates[player]
+	assert(state, "Rate state must exist before performing a beam")
+
+	local now = os.clock()
+	if now - state.lastBeam < Config.Combat.BeamCooldownSeconds then
+		self:_sendResult(player, {
+			accepted = false,
+			abilityId = "beam",
+			sequence = sequence,
+			hitCount = 0,
+			reason = "cooldown",
+		})
+		return
+	end
+
+	if self._roundService:GetPhase() ~= "Active" then
+		self:_sendResult(player, {
+			accepted = false,
+			abilityId = "beam",
+			sequence = sequence,
+			hitCount = 0,
+			reason = "round_inactive",
+		})
+		return
+	end
+
+	local character, rootPart = self:_getLivingCharacter(player)
+	if not character or not rootPart then
+		self:_sendResult(player, {
+			accepted = false,
+			abilityId = "beam",
+			sequence = sequence,
+			hitCount = 0,
+			reason = "invalid_character",
+		})
+		return
+	end
+
+	state.lastBeam = now
+	local origin = rootPart.Position + Vector3.new(0, Config.Combat.BeamOriginHeight, 0)
+	local direction = rootPart.CFrame.LookVector * Config.Combat.BeamRange
+	local raycastParams = RaycastParams.new()
+	raycastParams.CollisionGroup = DestructibleContract.AttackQueryCollisionGroup
+	raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+	raycastParams.FilterDescendantsInstances = { character }
+
+	local raycastResult = workspace:Raycast(origin, direction, raycastParams)
+	local target = origin + direction
+	local hitCount = 0
+	if raycastResult then
+		target = raycastResult.Position
+		local structure = findDestructible(raycastResult.Instance)
+		if
+			structure
+			and self._destructionService:Damage(player, structure, Config.Combat.BeamDamage)
+		then
+			hitCount = 1
+		end
+	end
+
+	self:_sendResult(player, {
+		accepted = true,
+		abilityId = "beam",
+		sequence = sequence,
+		hitCount = hitCount,
+		effectOrigin = origin,
+		effectTarget = target,
+	})
 end
 
 function CombatService:_onAbilityRequest(player: Player, payload: any)
@@ -255,7 +378,7 @@ function CombatService:_onAbilityRequest(player: Player, payload: any)
 	local abilityId = payload.abilityId
 	local sequence = payload.sequence
 	if
-		(abilityId ~= "basic" and abilityId ~= "charge")
+		(abilityId ~= "basic" and abilityId ~= "charge" and abilityId ~= "beam")
 		or typeof(sequence) ~= "number"
 		or sequence % 1 ~= 0
 		or sequence < 1
@@ -265,8 +388,10 @@ function CombatService:_onAbilityRequest(player: Player, payload: any)
 
 	if abilityId == "basic" then
 		self:_performBasicAttack(player, sequence)
-	else
+	elseif abilityId == "charge" then
 		self:_performCharge(player, sequence)
+	else
+		self:_performBeam(player, sequence)
 	end
 end
 

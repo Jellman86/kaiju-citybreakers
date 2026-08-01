@@ -333,3 +333,22 @@ Retain automated `StudioTestService` coverage, but keep it outside the live depe
 - Studio returned `PublishSuccessful` for existing place `137103245194702` in universe `10609698937` at 2:03 PM.
 - Creator Hub showed one active public V9 server, started at 2:03 PM with one connected player and 60 FPS.
 - The Error Report total remained at 12 historical V6/V8 events and contained no V9 bootstrap error immediately after the fresh server started. Analytics may be delayed, so this does not replace the pending physical-device visual smoke test.
+
+## 2026-08-01 — Expanded smashable city, Charge impact, Beam, and iPhone layout
+
+- Implementation: local working tree; deliberately uncommitted, unpushed, and unpublished at stakeholder request.
+- Environment: clean Rojo-built `.rbxlx`, Roblox Studio iPhone 16 landscape emulation at `852 × 393`, one local client and server; **zero human testers**.
+- Systems: runtime city builder, destructible contract, authoritative CombatService, three touch actions plus native Jump, client-local feedback, and HUD prompts.
+
+### Results
+
+- The city foundation grew from `350 × 260` to `500 × 380` studs, more than doubling its blockout area. The runtime world contained `723` descendants, `565` parts, `72` direct children, zero unanchored world parts, and the existing ten lights.
+- All `17` tagged structures had unique IDs and complete Visuals, Collision, and DamageHitbox packages; the audit found zero invalid structures. This includes the gate, the three earlier archetypes, all five former static shells, and eight new east/south district buildings.
+- The generated iPhone controls measured Beam `(386.1, 228, 72 × 72)`, Charge `(470.1, 228, 72 × 72)`, Smash `(554.1, 228, 72 × 72)`, and Jump `(638, 222, 70 × 70)`. The rectangle check reported zero overlaps and a 12-pixel Smash-to-Jump gap.
+- A normal Beam request passed the server cooldown, character, round, collision-filter, and raycast path, returned one confirmed hit, and reduced NorthSignalTower health from `4` to `2` with state `Damaged`.
+- A normal Charge request returned acceptance followed by a separate confirmed `chargeImpact`, reducing GateTowerEast health from `3` to `1` with state `Damaged`.
+- The fresh artifact printed world, server, and client startup markers. No project script error or stack trace appeared; unrelated Studio asset/chat service warnings were excluded from gameplay evidence.
+
+### Decision
+
+Retain the staged city expansion, three-action layout, Charge impact, and Beam for a physical-device playtest. The structural, input-spacing, and authoritative-damage regressions pass in Studio. This does not prove physical-phone comfort, representative-device frame time/memory, Beam balance, or that the larger layout is fun and understandable; those remain human/hardware gates before publication.
