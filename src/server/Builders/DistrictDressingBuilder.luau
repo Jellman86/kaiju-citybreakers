@@ -10,7 +10,6 @@ local TRUNK = Color3.fromRGB(79, 61, 48)
 local CYAN = Color3.fromRGB(62, 221, 211)
 local AMBER = Color3.fromRGB(255, 176, 68)
 local WATER = Color3.fromRGB(42, 132, 176)
-local SAND = Color3.fromRGB(199, 181, 135)
 local ROCK = Color3.fromRGB(83, 91, 96)
 local INDUSTRIAL = Color3.fromRGB(47, 56, 61)
 
@@ -637,25 +636,6 @@ function DistrictDressingBuilder.BuildAzureLake(parent: Instance): Model
 	local lake = Instance.new("Model")
 	lake.Name = "AzureLakeZone"
 
-	createPart(
-		"LakeShore",
-		Vector3.new(380, 0.7, 330),
-		CFrame.new(-450, 0.35, -395),
-		SAND,
-		Enum.Material.Sand,
-		lake,
-		true
-	)
-	local water = createPart(
-		"AzureWater",
-		Vector3.new(320, 0.35, 270),
-		CFrame.new(-465, 0.78, -400),
-		WATER,
-		Enum.Material.Glass,
-		lake,
-		false
-	)
-	water.Transparency = 0.18
 	createPart(
 		"KaijuIsland",
 		Vector3.new(84, 1.1, 62),

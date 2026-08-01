@@ -1,7 +1,7 @@
 --!strict
 
 local StudioTestProtocol = {
-	MultiplayerDestructionTest = "KaijuSmashRuptureV4",
+	MultiplayerDestructionTest = "KaijuVisibleSmashTerrainV5",
 	RemoteName = "__StudioMultiplayerDestructionTest",
 	TargetStructureId = "north_warehouse",
 	LocalizedTargetStructureId = "arc_cooling_tower_west",

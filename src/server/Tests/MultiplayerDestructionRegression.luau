@@ -38,6 +38,7 @@ type ClientReport = {
 	damagedNeonCount: number,
 	smashAnimationCount: number,
 	smashAnimationPhase: string,
+	smashMaximumShellDisplacement: number,
 	role: string,
 	cameraMin: number,
 	cameraMax: number,
@@ -101,6 +102,7 @@ local function parseReport(player: Player, payload: any): ClientReport?
 		or type(payload.damagedNeonCount) ~= "number"
 		or type(payload.smashAnimationCount) ~= "number"
 		or type(payload.smashAnimationPhase) ~= "string"
+		or type(payload.smashMaximumShellDisplacement) ~= "number"
 		or type(payload.role) ~= "string"
 		or type(payload.cameraMin) ~= "number"
 		or type(payload.cameraMax) ~= "number"
@@ -130,6 +132,7 @@ local function parseReport(player: Player, payload: any): ClientReport?
 		damagedNeonCount = payload.damagedNeonCount,
 		smashAnimationCount = payload.smashAnimationCount,
 		smashAnimationPhase = payload.smashAnimationPhase,
+		smashMaximumShellDisplacement = payload.smashMaximumShellDisplacement,
 		role = payload.role,
 		cameraMin = payload.cameraMin,
 		cameraMax = payload.cameraMax,
@@ -253,6 +256,60 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 		end
 
 		local world = workspace:FindFirstChild(Config.Prototype.WorldName)
+		if
+			not world
+			or world:GetAttribute("TerrainProfile") ~= "BrontideTerrainV1"
+			or (world:GetAttribute("TerrainOperationCount") or 0) < 25
+			or workspace.Terrain:CountCells() <= 0
+		then
+			fail("native terrain composition was unavailable")
+			return
+		end
+		local terrainRaycastParams = RaycastParams.new()
+		terrainRaycastParams.FilterType = Enum.RaycastFilterType.Exclude
+		terrainRaycastParams.FilterDescendantsInstances = { world }
+		terrainRaycastParams.IgnoreWater = false
+		local mountainTerrain = workspace:Raycast(
+			Vector3.new(560, 300, 410),
+			Vector3.new(0, -400, 0),
+			terrainRaycastParams
+		)
+		local parkTerrain = workspace:Raycast(
+			Vector3.new(-595, 60, 72),
+			Vector3.new(0, -100, 0),
+			terrainRaycastParams
+		)
+		local lakeTerrain = workspace:Raycast(
+			Vector3.new(-465, 50, -400),
+			Vector3.new(0, -100, 0),
+			terrainRaycastParams
+		)
+		if
+			not mountainTerrain
+			or mountainTerrain.Instance ~= workspace.Terrain
+			or mountainTerrain.Material ~= Enum.Material.Rock
+			or mountainTerrain.Position.Y < 100
+		then
+			fail("Mount Brontide terrain relief was not tall or rocky enough")
+			return
+		end
+		if
+			not parkTerrain
+			or parkTerrain.Instance ~= workspace.Terrain
+			or parkTerrain.Material ~= Enum.Material.Grass
+			or parkTerrain.Position.Y < 4
+		then
+			fail("Titan Park terrain mound was unavailable")
+			return
+		end
+		if
+			not lakeTerrain
+			or lakeTerrain.Instance ~= workspace.Terrain
+			or lakeTerrain.Material ~= Enum.Material.Water
+		then
+			fail("Azure Lake native water was unavailable")
+			return
+		end
 		local plant = world and world:FindFirstChild("ArcPowerPlantZone")
 		if not plant or not plant:IsA("Model") then
 			fail("Arc Power Plant dressing was unavailable")
@@ -282,6 +339,21 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 		local plantDressingParts = countBaseParts(plant)
 		if plantDressingParts < 30 or plantDressingParts > 36 then
 			fail(`Arc Power Plant dressing part budget was {plantDressingParts}`)
+			return
+		end
+		local worldPartCount = countBaseParts(world)
+		local destructibleCount = 0
+		for _, tagged in CollectionService:GetTagged(DestructibleContract.Tag) do
+			if tagged:IsDescendantOf(world) then
+				destructibleCount += 1
+			end
+		end
+		if destructibleCount < 37 then
+			fail(`expanded city registered only {destructibleCount} destructibles`)
+			return
+		end
+		if worldPartCount > 1250 then
+			fail(`expanded city exceeded its provisional 1,250-part ceiling: {worldPartCount}`)
 			return
 		end
 
@@ -373,6 +445,12 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 		if reports[StudioTestProtocol.LocalizedExistingStage].smashAnimationCount < 1 then
 			fail(
 				`initial client did not play the confirmed Smash animation (phase={reports[StudioTestProtocol.LocalizedExistingStage].smashAnimationPhase})`
+			)
+			return
+		end
+		if reports[StudioTestProtocol.LocalizedExistingStage].smashMaximumShellDisplacement < 6 then
+			fail(
+				`Smash executed but moved Brontide's visible shell only {reports[StudioTestProtocol.LocalizedExistingStage].smashMaximumShellDisplacement} studs`
 			)
 			return
 		end
@@ -833,7 +911,14 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 			localizedDamagedNeon = localizedLateReport.damagedNeonCount,
 			smashAnimationCount = reports[StudioTestProtocol.LocalizedExistingStage].smashAnimationCount,
 			smashAnimationPhase = existingReport.smashAnimationPhase,
+			smashMaximumShellDisplacement = reports[StudioTestProtocol.LocalizedExistingStage].smashMaximumShellDisplacement,
 			plantDressingParts = plantDressingParts,
+			worldPartCount = worldPartCount,
+			destructibleCount = destructibleCount,
+			terrainCells = workspace.Terrain:CountCells(),
+			mountainHeight = mountainTerrain.Position.Y,
+			parkMoundHeight = parkTerrain.Position.Y,
+			lakeMaterial = tostring(lakeTerrain.Material),
 		})
 	end)
 end

@@ -82,11 +82,16 @@ local function createShellPart(
 	part.BottomSurface = Enum.SurfaceType.Smooth
 	part.Parent = parent
 
-	local weld = Instance.new("WeldConstraint")
-	weld.Name = "ShellWeld"
-	weld.Part0 = target
-	weld.Part1 = part
-	weld.Parent = part
+	-- A dedicated shell motor keeps the procedural Brontide skin attached to the
+	-- invisible avatar while giving client-side attack poses a persistent visual
+	-- pivot. Animator-owned body-joint transforms are cleared by the avatar pass;
+	-- this motor's C0 is not.
+	local motor = Instance.new("Motor6D")
+	motor.Name = "ShellMotor"
+	motor.Part0 = target
+	motor.Part1 = part
+	motor.C0 = offset
+	motor.Parent = part
 
 	return part
 end

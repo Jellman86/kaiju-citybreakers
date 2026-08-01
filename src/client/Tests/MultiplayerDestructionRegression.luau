@@ -265,6 +265,11 @@ function MultiplayerDestructionRegression.TryStart(
 					then Players.LocalPlayer.Character:GetAttribute("ClientSmashAnimationPhase")
 						or "Idle"
 					else "Unavailable",
+				smashMaximumShellDisplacement = if Players.LocalPlayer.Character
+					then Players.LocalPlayer.Character:GetAttribute(
+						"ClientSmashMaximumShellDisplacement"
+					) or 0
+					else 0,
 				role = Players.LocalPlayer:GetAttribute("CharacterRole"),
 				cameraMin = Players.LocalPlayer.CameraMinZoomDistance,
 				cameraMax = Players.LocalPlayer.CameraMaxZoomDistance,

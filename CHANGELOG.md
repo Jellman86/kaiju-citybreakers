@@ -8,6 +8,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 ### Added
 
+- Native smooth terrain composition with a rocky Mount Brontide massif, park mounds, irregular sand banks, real terrain water, and perimeter relief around the city.
 - Procedural Brontide Smash animation with an eased wind-up, fast strike, server-authoritative impact moment, and recovery to the original pose.
 - Localized authored building damage with server-derived surface zones, Smash/Charge/Beam-shaped rupture marks, compact late-join reconstruction, and bounded pooled impact chips.
 - Initial mixed-scale player foundation with one server-assigned giant Brontide, human-sized later players, role-specific spawns/cameras/metrics, non-flinging collision groups, and a human-scale doorway reference.
@@ -40,6 +41,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 ### Changed
 
+- Central skyline towers now use materially different heights so Brontide is framed by an urban silhouette instead of a field of similarly low boxes.
+- Smash now drives dedicated Brontide visual-shell pivots that Roblox's avatar animation pass cannot erase and uses a deliberately readable `0.87`-second anticipation-to-recovery sequence.
 - Arc Power Plant now uses functional industrial grouping—cooling basins and pipes, service lanes, a fenced transformer/switchgear yard, busbars and an outgoing grid gantry—instead of decorative Neon floor channels.
 - Localized damage now uses much larger face-clamped irregular breaches with layered dark depth and displaced rims, capped at eight local parts per mark, after the first physical-phone mark read as a small flat bullet hole.
 - Damaged cooling towers and other building archetypes now use dark physical splits and impact-local cavities instead of persistent orange Neon crack plates; every accepted hit emits a sequenced localized-damage event even when the structure remains `Damaged`.
@@ -60,6 +63,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 ### Fixed
 
+- Replaced the internally advancing but visually overwritten Smash tween after a physical-device test showed no visible wind-up or body motion.
 - Reflow touch actions after Roblox's native Jump button receives its final phone layout, keeping Smash unobscured on iPhone landscape screens.
 - Kept the Studio-only multiplayer regression out of live server and client startup, preventing published sessions from aborting before the city, Brontide, HUD, and controls load.
 - Disabled the template spawn and removed the overlapping runtime baseplate in the Kaiju Feel Lab.

@@ -510,3 +510,22 @@ Retain the joint-compatible Smash pose, eight-part rupture, and functional plant
 - SHA-256: `70c945d00038e46e379cf25830131dc6ed442e74391088b48038930076306333`.
 - The sole Studio editor discarded its synchronized in-memory place, reopened the committed build from disk, and overwrote the existing `Kaiju Citybreakers` place at 20:39 BST. Studio displayed `Successfully published!` and logged `Published "Kaiju Citybreakers" to Roblox.`
 - A fresh physical-phone check of Smash feel, rupture readability, and unprompted power-station recognition remains pending.
+
+## 2026-08-01 — Visible Smash and native-terrain city pass
+
+- Implementation commit: pending exact release commit.
+- Environment: the sole existing Roblox Studio editor in iPhone 16 simulation, plus native `StudioTestService` with one server, one initial client and one late client; **zero human testers**.
+- Systems: dedicated Brontide visual-shell pivots, measured Smash displacement, native smooth terrain, true terrain water, park/mountain relief, separated urban pads, stepped skyline buildings, four additional destructible infill buildings, and the complete asymmetric-combat/lifecycle regression.
+
+### Results
+
+- The first run correctly failed because the lake fill competed with the grass base. Carving the lake voxel volume before filling Water made the Azure Lake ray report `Enum.Material.Water`.
+- The next run correctly rejected the previous post-animation body-joint pose: internal phases completed, but visible shell displacement was only `0.85` studs. Dedicated shell motors increased the exact final measurement to `14.01` studs and restored every pivot to `Idle`, above the provisional six-stud gate.
+- Terrain-only rays measured Mount Brontide's Rock surface at `161.98` studs and the Titan Park Grass mound at `12.86` studs. The generated terrain occupied `1,142,194` cells through a bounded operation list and added no Part instances.
+- The expanded blockout registered `37` destructible structures and `1,064` world Parts, below its provisional `1,250`-Part ceiling. Arc Power Plant retained its `33`-Part dressing budget.
+- The same final structured run passed warehouse collapse, localized eight-part rupture, late-join reconstruction, human fire, kaiju and human death/respawn, capped contact damage, role-specific controls, an `11.15:1` character-height ratio, and disconnect promotion.
+- One intervening exact-source run reported `late client did not join` before reaching its two-client assertions. Clearing the native Studio session and retrying the unchanged source produced the complete pass above; the failed harness launch is recorded as no gameplay evidence.
+
+### Decision
+
+Retain the dedicated shell pivots, terrain profile, skyline hierarchy and four infill buildings for publication. The engineering gate now measures what is displayed rather than merely counting animation phases. Simulator inspection shows stronger height contrast, native ground and perimeter relief, but neither synthetic tests nor the editor simulator prove that the city looks convincing, Smash feels powerful, district routes remain clear, or the published phone stays above the provisional frame-rate floor. Those remain owner-device and uncoached-child tests.

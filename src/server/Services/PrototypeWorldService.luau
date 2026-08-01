@@ -10,6 +10,7 @@ local PlayerRole = require(ReplicatedStorage.Shared.PlayerRole)
 local DestructibleStructureBuilder =
 	require(script.Parent.Parent.Builders.DestructibleStructureBuilder)
 local DistrictDressingBuilder = require(script.Parent.Parent.Builders.DistrictDressingBuilder)
+local TerrainBuilder = require(script.Parent.Parent.Builders.TerrainBuilder)
 
 local PrototypeWorldService = {}
 PrototypeWorldService.__index = PrototypeWorldService
@@ -156,17 +157,33 @@ local function createBuilding(
 		damageHitboxCFrame = origin * CFrame.new(0, size.Y / 2, 0),
 		damageHitboxSize = size + Vector3.new(2, 2, 2),
 	}, function(visuals)
+		local hasSetback = size.Y >= 72
+		local lowerHeight = if hasSetback then size.Y * 0.68 else size.Y
+		local upperHeight = size.Y - lowerHeight
+		local upperSize = Vector3.new(size.X * 0.72, upperHeight, size.Z * 0.72)
 		createVisualPart(
 			"Shell",
-			size,
-			origin * CFrame.new(0, size.Y / 2, 0),
+			Vector3.new(size.X, lowerHeight, size.Z),
+			origin * CFrame.new(0, lowerHeight / 2, 0),
 			color,
 			Enum.Material.Concrete,
 			visuals.intact
 		)
+		if hasSetback then
+			createVisualPart(
+				"UpperShell",
+				upperSize,
+				origin * CFrame.new(0, lowerHeight + upperHeight / 2, 0),
+				color:Lerp(accent, 0.08),
+				Enum.Material.Concrete,
+				visuals.intact
+			)
+		end
 		createVisualPart(
 			"Roof",
-			Vector3.new(size.X + 1.5, 1.2, size.Z + 1.5),
+			if hasSetback
+				then Vector3.new(upperSize.X + 1.5, 1.2, upperSize.Z + 1.5)
+				else Vector3.new(size.X + 1.5, 1.2, size.Z + 1.5),
 			origin * CFrame.new(0, size.Y + 0.6, 0),
 			accent,
 			Enum.Material.Metal,
@@ -190,6 +207,20 @@ local function createBuilding(
 				Enum.Material.Neon,
 				visuals.intact
 			)
+			if hasSetback then
+				createTrimPart(
+					"UpperWindowStripe",
+					Vector3.new(math.max(upperSize.X - 5, 5), 1.8, 0.3),
+					CFrame.new(
+						position.X,
+						lowerHeight + upperHeight * 0.56,
+						position.Z - upperSize.Z / 2 - 0.16
+					),
+					WINDOW,
+					Enum.Material.Neon,
+					visuals.intact
+				)
+			end
 			createTrimPart(
 				"SideWindowStripe",
 				Vector3.new(0.3, 1.8, math.max(size.Z - 7, 5)),
@@ -204,12 +235,24 @@ local function createBuilding(
 
 		createVisualPart(
 			"BuckledShell",
-			size,
-			origin * CFrame.new(0.7, size.Y / 2, 0) * CFrame.Angles(0, 0, math.rad(-3)),
+			Vector3.new(size.X, lowerHeight, size.Z),
+			origin * CFrame.new(0.7, lowerHeight / 2, 0) * CFrame.Angles(0, 0, math.rad(-3)),
 			damagedColor,
 			Enum.Material.Concrete,
 			visuals.damaged
 		)
+		if hasSetback then
+			createVisualPart(
+				"BuckledUpperShell",
+				upperSize,
+				origin
+					* CFrame.new(-0.9, lowerHeight + upperHeight / 2 - 0.8, 0.4)
+					* CFrame.Angles(math.rad(2), 0, math.rad(5)),
+				damagedColor:Lerp(accent, 0.06),
+				Enum.Material.Concrete,
+				visuals.damaged
+			)
+		end
 		for side = -1, 1, 2 do
 			createVisualPart(
 				`BrokenRoof{side}`,
@@ -998,15 +1041,31 @@ function PrototypeWorldService:Start()
 	local world = Instance.new("Folder")
 	world.Name = Config.Prototype.WorldName
 	world.Parent = workspace
+	TerrainBuilder.Build(world)
 
-	createSurfacePart(
-		"CityFoundation",
-		Vector3.new(1400, 2, 1100),
-		CFrame.new(0, -1, -100),
-		CONCRETE,
-		Enum.Material.Concrete,
-		world
-	)
+	for index, definition in
+		{
+			{ position = Vector3.new(-88, 0, 104), size = Vector3.new(112, 0.3, 120) },
+			{ position = Vector3.new(88, 0, 104), size = Vector3.new(112, 0.3, 120) },
+			{ position = Vector3.new(-88, 0, -88), size = Vector3.new(112, 0.3, 88) },
+			{ position = Vector3.new(88, 0, -88), size = Vector3.new(112, 0.3, 88) },
+			{ position = Vector3.new(-92, 0, -181), size = Vector3.new(116, 0.3, 86) },
+			{ position = Vector3.new(88, 0, -181), size = Vector3.new(112, 0.3, 86) },
+			{ position = Vector3.new(185, 0, 73), size = Vector3.new(70, 0.3, 116) },
+			{ position = Vector3.new(185, 0, -80), size = Vector3.new(70, 0.3, 118) },
+			{ position = Vector3.new(-177, 0, -79), size = Vector3.new(76, 0.3, 116) },
+			{ position = Vector3.new(-177, 0, -181), size = Vector3.new(76, 0.3, 76) },
+		}
+	do
+		createSurfacePart(
+			`UrbanBlockPad{index}`,
+			definition.size,
+			CFrame.new(definition.position.X, 0.15, definition.position.Z),
+			CONCRETE,
+			Enum.Material.Concrete,
+			world
+		)
+	end
 	createPart(
 		"MainAvenue",
 		Vector3.new(40, 0.3, 900),
@@ -1266,9 +1325,10 @@ function PrototypeWorldService:Start()
 		"EastCivicTower",
 		"east_civic_tower",
 		Vector3.new(180, 0, 68),
-		Vector3.new(32, 56, 34),
+		Vector3.new(32, 88, 34),
 		Color3.fromRGB(68, 83, 105),
-		Color3.fromRGB(43, 54, 72)
+		Color3.fromRGB(43, 54, 72),
+		true
 	)
 	createBuilding(
 		world,
@@ -1284,9 +1344,10 @@ function PrototypeWorldService:Start()
 		"EastHarbourBlock",
 		"east_harbour_block",
 		Vector3.new(180, 0, -72),
-		Vector3.new(34, 42, 38),
+		Vector3.new(34, 76, 38),
 		Color3.fromRGB(68, 94, 101),
-		Color3.fromRGB(42, 62, 70)
+		Color3.fromRGB(42, 62, 70),
+		true
 	)
 	createBuilding(
 		world,
@@ -1302,9 +1363,10 @@ function PrototypeWorldService:Start()
 		"SouthTower",
 		"south_tower",
 		Vector3.new(62, 0, -178),
-		Vector3.new(34, 52, 34),
+		Vector3.new(34, 96, 34),
 		Color3.fromRGB(78, 82, 105),
-		Color3.fromRGB(49, 51, 69)
+		Color3.fromRGB(49, 51, 69),
+		true
 	)
 	createBuilding(
 		world,
@@ -1320,9 +1382,10 @@ function PrototypeWorldService:Start()
 		"WestHarbourTower",
 		"west_harbour_tower",
 		Vector3.new(-165, 0, -84),
-		Vector3.new(38, 46, 38),
+		Vector3.new(38, 78, 38),
 		Color3.fromRGB(72, 91, 98),
-		Color3.fromRGB(45, 58, 65)
+		Color3.fromRGB(45, 58, 65),
+		true
 	)
 	createBuilding(
 		world,
@@ -1338,7 +1401,7 @@ function PrototypeWorldService:Start()
 		"CentralNorthWestTower",
 		"central_north_west_tower",
 		Vector3.new(-145, 0, 120),
-		Vector3.new(44, 62, 42),
+		Vector3.new(44, 118, 42),
 		Color3.fromRGB(75, 84, 106),
 		Color3.fromRGB(45, 54, 72),
 		true
@@ -1348,9 +1411,49 @@ function PrototypeWorldService:Start()
 		"CentralNorthEastTower",
 		"central_north_east_tower",
 		Vector3.new(145, 0, 120),
-		Vector3.new(44, 68, 42),
+		Vector3.new(44, 132, 42),
 		Color3.fromRGB(68, 89, 104),
 		Color3.fromRGB(42, 59, 70),
+		true
+	)
+	createBuilding(
+		world,
+		"MidtownWestSpire",
+		"midtown_west_spire",
+		Vector3.new(-76, 0, 128),
+		Vector3.new(40, 104, 36),
+		Color3.fromRGB(79, 87, 103),
+		Color3.fromRGB(56, 66, 83),
+		true
+	)
+	createBuilding(
+		world,
+		"MidtownEastTower",
+		"midtown_east_tower",
+		Vector3.new(76, 0, 126),
+		Vector3.new(42, 84, 38),
+		Color3.fromRGB(70, 91, 103),
+		Color3.fromRGB(47, 65, 74),
+		true
+	)
+	createBuilding(
+		world,
+		"CanalWestTower",
+		"canal_west_tower",
+		Vector3.new(-108, 0, -100),
+		Vector3.new(44, 76, 38),
+		Color3.fromRGB(86, 79, 94),
+		Color3.fromRGB(61, 52, 70),
+		true
+	)
+	createBuilding(
+		world,
+		"CanalEastBlock",
+		"canal_east_block",
+		Vector3.new(108, 0, -104),
+		Vector3.new(42, 64, 40),
+		Color3.fromRGB(78, 92, 94),
+		Color3.fromRGB(51, 64, 67),
 		true
 	)
 	createBuilding(
@@ -1408,7 +1511,7 @@ function PrototypeWorldService:Start()
 		"ArcControlTower",
 		"arc_control_tower",
 		Vector3.new(520, 0, -60),
-		Vector3.new(32, 64, 32),
+		Vector3.new(32, 92, 32),
 		Color3.fromRGB(67, 82, 98),
 		Color3.fromRGB(38, 190, 182),
 		true
@@ -1444,7 +1547,7 @@ function PrototypeWorldService:Start()
 		"AzureMarinaHotel",
 		"azure_marina_hotel",
 		Vector3.new(-310, 0, -405),
-		Vector3.new(42, 44, 34),
+		Vector3.new(42, 72, 34),
 		Color3.fromRGB(72, 102, 116),
 		Color3.fromRGB(46, 72, 84),
 		true
