@@ -30,3 +30,23 @@ Automated Studio runs validate integration and instrumentation; they do not coun
 ### Decision
 
 The engineering path passes: the full action-to-server-to-destruction-to-client-effect loop works. H1 does **not** pass yet because synthetic input cannot establish usability or enjoyment. The next evidence step is an uncoached human test measuring time to first collapse, confusion points, control comprehension, and voluntary replay.
+
+## 2026-08-01 — Brontide city readability integration
+
+- Build commit: `98ab84f`
+- Environment: Roblox Studio desktop, macOS, one local client and server.
+- Operator: Studio MCP inspection, navigation, and direct client ability requests; **zero human testers**.
+- Systems: original primitive Brontide shell, late-loading avatar concealment, low-poly city dressing, existing charge/smash/destruction loop.
+
+### Results
+
+- Brontide spawned with `32` visible shell parts and `0` visible avatar parts, including after the character appearance load path.
+- The generated city contained `197` descendants; the gate began `Intact` with health `2`.
+- Two client ability requests passed the real server validation and hitbox path, changing the gate to `Collapsed` with health `0`.
+- Charge moved the root from approximately `(0.58, 12.53, -7.26)` to `(-9.70, 16.38, -25.20)` while facing the gate.
+- No runtime errors appeared in server or client output.
+- Studio's synthetic keyboard tool did not activate the `ContextActionService` bindings in this session, despite reporting success. This is a test-harness limitation; keyboard, touch, and gamepad input still require the planned human test.
+
+### Decision
+
+The visual integration and existing server-authoritative loop pass automated regression. The ten-second kaiju/city recognition target remains unproven until an uncoached player sees the build. Do not treat primitive detail or synthetic traversal as evidence of art appeal, control comprehension, or fun.
