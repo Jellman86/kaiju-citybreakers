@@ -392,3 +392,13 @@ Retain the staged city expansion, three-action layout, Charge impact, and Beam f
 ### Decision
 
 Retain the map scale, structure count, lean visual variants, server Beam correction, and dedicated head pivot. The exact-build engineering gate passes. Publish for the requested physical-device iteration while keeping performance, comfort, comprehension, and subjective Beam feel explicitly unverified.
+
+### Production publication
+
+- Published source commit: `252faec2405f399184bc6afb6819e46fa3cc6c12`
+- Artifact: `KaijuCitybreakers-252faec2405f.rbxlx`
+- SHA-256: `30860464a2154f9a159d4a265db65a6eb15c063427c39d5d44b21cb33afacd06`
+- The exact commit-labelled artifact was opened without Rojo and smoke-tested in Studio's iPhone 16 landscape profile. Brontide spawned at y=`12.22`, settled on Asphalt with approximately zero vertical velocity, and rendered with the expanded city and three safe-area action controls but no temporary title, instructions, or timer.
+- Tapping the exact artifact's `BEAM` control returned `accepted=true`, `hits=1`, and collapsed a registered structure. The generated `CHARGE` and `SMASH` controls separately returned accepted `charge` and `basic` results through the normal client/server path.
+- World, server, and client startup markers appeared without a project script error. Studio displayed `Successfully published!` and logged `Published "Kaiju Citybreakers" to Roblox.` for existing place `137103245194702` in universe `10609698937` at 4:41 PM BST.
+- A fresh physical-phone production join and Creator Hub Error Report review remain pending. This Mac has Roblox Studio but no Roblox player, so neither production-side gate is represented as passed.
