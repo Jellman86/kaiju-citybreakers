@@ -37,3 +37,15 @@ Basis: engineering inference. One source of truth prevents synchronization confl
 Prefer Intact, Damaged, and Collapsed variants with client cosmetic debris over unrestricted structural physics.
 
 Basis: Roblox performance and security guidance plus a project hypothesis. Staged states make networking, collision, and server authority predictable; client-local bounded debris provides spectacle without making every fragment authoritative.
+
+## 2026-08-01 — Phase 1 dependency and asset audit
+
+Use Roblox-native character, camera, input, tagging, overlap, constraint, and cleanup systems for the Kaiju Feel Lab. Defer general frameworks and adopt no Creator Store character or destruction model.
+
+Basis: the [reuse audit](REUSE_AUDIT.md). Native systems already cover the small slice across devices. Marketplace kaiju results conflict with original-IP constraints, and generic destructible models do not match the authored-state or performance contract. Roblox's official modular city kit remains a Phase 2 candidate pending isolated inspection and profiling.
+
+## 2026-08-01 — Kaiju Feel Lab engineering gate
+
+Keep the current prototype path and proceed to uncoached human testing.
+
+Basis: automated Studio integration at commit `3583660` completed the charge-and-smash loop without runtime errors, but synthetic input is not human evidence. See [PLAYTESTS.md](PLAYTESTS.md). Do not mark hypothesis H1 passed until people unfamiliar with the controls test it.

@@ -57,6 +57,7 @@ Then open Roblox Studio, open the Rojo plugin, and connect it to the local serve
 - [Game design](docs/GAME_DESIGN.md)
 - [Research and validation ledger](docs/RESEARCH.md)
 - [Reuse audit](docs/REUSE_AUDIT.md)
+- [Playtest log](docs/PLAYTESTS.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Technical design](docs/TECHNICAL_DESIGN.md)
 - [Art direction](docs/ART_DIRECTION.md)
