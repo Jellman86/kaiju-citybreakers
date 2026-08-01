@@ -25,7 +25,7 @@ for required_file in "${required_files[@]}"; do
   fi
 done
 
-if ! rg --quiet '^## \[Unreleased\]$' CHANGELOG.md; then
+if ! grep --quiet '^## \[Unreleased\]$' CHANGELOG.md; then
   echo "CHANGELOG.md must contain an [Unreleased] section." >&2
   exit 1
 fi
@@ -35,7 +35,7 @@ while IFS= read -r source_file; do
     echo "Luau source must begin with --!strict: ${source_file}" >&2
     exit 1
   fi
-done < <(rg --files src -g '*.luau')
+done < <(find src -type f -name '*.luau' -print)
 
 tracked_generated="$(git ls-files -- '*.rbxl' '*.rbxlx' '*.rbxm' '*.rbxmx')"
 if [[ -n "${tracked_generated}" ]]; then
@@ -44,7 +44,7 @@ if [[ -n "${tracked_generated}" ]]; then
   exit 1
 fi
 
-if ! rg --quiet '^\*\.blend filter=lfs ' .gitattributes; then
+if ! grep --quiet '^\*\.blend filter=lfs ' .gitattributes; then
   echo "Blender sources must remain configured for Git LFS." >&2
   exit 1
 fi

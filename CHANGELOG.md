@@ -23,6 +23,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 ### Fixed
 
 - Disabled the template spawn and removed the overlapping runtime baseplate in the Kaiju Feel Lab.
+- Made repository standards validation portable to the minimal GitHub Actions runner environment.
 
 ### Security
 
