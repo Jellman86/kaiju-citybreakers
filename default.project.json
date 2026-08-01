@@ -5,6 +5,11 @@
   "gameId": 10609698937,
   "tree": {
     "$className": "DataModel",
+    "Players": {
+      "$properties": {
+        "CharacterAutoLoads": false
+      }
+    },
     "ReplicatedStorage": {
       "Shared": {
         "$path": "src/shared"

@@ -1,6 +1,12 @@
 --!strict
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- The release artifact has no authored SpawnLocation before this script builds
+-- the runtime city. Keep characters unloaded until KaijuService can place them
+-- on the generated spawn explicitly.
+Players.CharacterAutoLoads = false
 
 local CombatService = require(script.Services.CombatService)
 local DestructionService = require(script.Services.DestructionService)

@@ -41,6 +41,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 - Disabled the template spawn and removed the overlapping runtime baseplate in the Kaiju Feel Lab.
 - Replaced the live-synced Studio publishing path after it produced a successful-looking upload whose production server contained only the template baseplate.
+- Prevented production players from spawning before the runtime city exists by disabling automatic character loading, loading them after world bootstrap, and explicitly placing Brontide on the generated spawn.
 - Made repository standards validation portable to the minimal GitHub Actions runner environment.
 - Prevented `CHARGE` and `SMASH` touch controls from overlapping or escaping the screen by sizing and arranging them within Roblox's live action-frame bounds, including a stacked narrow-screen fallback.
 

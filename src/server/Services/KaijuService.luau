@@ -11,6 +11,7 @@ local BODY_COLOR = Color3.fromRGB(31, 48, 55)
 local ARMOR_COLOR = Color3.fromRGB(22, 33, 42)
 local ENERGY_COLOR = Color3.fromRGB(53, 225, 211)
 local EYE_COLOR = Color3.fromRGB(255, 190, 64)
+local SPAWN_CLEARANCE_STUDS = 1
 
 local function getBodyPart(character: Model, name: string): BasePart?
 	local bodyPart = character:FindFirstChild(name)
@@ -401,11 +402,44 @@ end
 local KaijuService = {}
 KaijuService.__index = KaijuService
 
+local function placeCharacterAtSpawn(character: Model, rootPart: BasePart): boolean
+	local world = workspace:FindFirstChild(Config.Prototype.WorldName)
+	local spawn = world and world:FindFirstChild("KaijuSpawn")
+	if not spawn or not spawn:IsA("SpawnLocation") then
+		warn("[KaijuService] Generated KaijuSpawn is unavailable")
+		return false
+	end
+
+	local boundingCFrame, boundingSize = character:GetBoundingBox()
+	local characterBottom = boundingCFrame.Position.Y - boundingSize.Y / 2
+	local rootToBottom = math.max(rootPart.Position.Y - characterBottom, 0)
+	local spawnTop = spawn.Position.Y + spawn.Size.Y / 2
+	local rootPosition = Vector3.new(
+		spawn.Position.X,
+		spawnTop + rootToBottom + SPAWN_CLEARANCE_STUDS,
+		spawn.Position.Z
+	)
+	local lookVector = spawn.CFrame.LookVector
+	local horizontalLook = Vector3.new(lookVector.X, 0, lookVector.Z)
+	if horizontalLook.Magnitude < 0.001 then
+		horizontalLook = Vector3.new(0, 0, -1)
+	else
+		horizontalLook = horizontalLook.Unit
+	end
+
+	rootPart.CFrame = CFrame.lookAt(rootPosition, rootPosition + horizontalLook)
+	rootPart.AssemblyLinearVelocity = Vector3.zero
+	rootPart.AssemblyAngularVelocity = Vector3.zero
+	return true
+end
+
 function KaijuService.new(onControlGranted: ControlGrantedCallback)
 	local self = setmetatable({}, KaijuService)
 
 	self._onControlGranted = onControlGranted
 	self._connections = {} :: { RBXScriptConnection }
+	self._loadingPlayers = {} :: { [Player]: boolean }
+	self._stopped = false
 
 	return self
 end
@@ -426,6 +460,9 @@ function KaijuService:_configureCharacter(player: Player, character: Model)
 	character:ScaleTo(Config.StarterKaiju.PrototypeScale)
 	character:SetAttribute("KaijuId", Config.StarterKaiju.Id)
 	createBrontideShell(character)
+	if not placeCharacterAtSpawn(character, rootPart) then
+		return
+	end
 	humanoid.MaxHealth = Config.StarterKaiju.MaxHealth
 	humanoid.Health = humanoid.MaxHealth
 	humanoid.WalkSpeed = Config.StarterKaiju.WalkSpeed
@@ -434,7 +471,34 @@ function KaijuService:_configureCharacter(player: Player, character: Model)
 	player.CameraMinZoomDistance = Config.StarterKaiju.CameraMinZoom
 	player.CameraMaxZoomDistance = Config.StarterKaiju.CameraMaxZoom
 
+	table.insert(
+		self._connections,
+		humanoid.Died:Once(function()
+			task.delay(Players.RespawnTime, function()
+				if not self._stopped and player.Parent == Players then
+					self:_loadCharacter(player)
+				end
+			end)
+		end)
+	)
+
 	self._onControlGranted(player)
+end
+
+function KaijuService:_loadCharacter(player: Player)
+	if self._stopped or player.Parent ~= Players or self._loadingPlayers[player] then
+		return
+	end
+
+	self._loadingPlayers[player] = true
+	local succeeded, message = pcall(function()
+		player:LoadCharacterAsync()
+	end)
+	self._loadingPlayers[player] = nil
+
+	if not succeeded and not self._stopped and player.Parent == Players then
+		warn(`[KaijuService] Failed to load {player.Name}: {message}`)
+	end
 end
 
 function KaijuService:_watchPlayer(player: Player)
@@ -458,10 +522,15 @@ function KaijuService:_watchPlayer(player: Player)
 		task.defer(function()
 			self:_configureCharacter(player, player.Character :: Model)
 		end)
+	else
+		task.defer(function()
+			self:_loadCharacter(player)
+		end)
 	end
 end
 
 function KaijuService:Start()
+	self._stopped = false
 	table.insert(
 		self._connections,
 		Players.PlayerAdded:Connect(function(player)
@@ -475,10 +544,12 @@ function KaijuService:Start()
 end
 
 function KaijuService:Stop()
+	self._stopped = true
 	for _, connection in self._connections do
 		connection:Disconnect()
 	end
 	table.clear(self._connections)
+	table.clear(self._loadingPlayers)
 end
 
 return KaijuService
