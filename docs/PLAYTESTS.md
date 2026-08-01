@@ -458,3 +458,21 @@ Retain the asymmetric combat foundation for a physical two-device test. The engi
 - SHA-256: `8950083b7bfc7f4aab1392dd6aa541c50198f0b830dc6bb90d25b7ed9252fea5`
 - The exact generated artifact was opened in the sole Studio editor and used to overwrite the existing `Kaiju Citybreakers` place. Studio displayed `Successfully published!` and logged `Published "Kaiju Citybreakers" to Roblox.` at 18:06 BST.
 - No additional local play session was run after publication because the Mac may be locked. A fresh owner-device join and a physical two-device combat test remain the release validation gates.
+
+## 2026-08-01 — Localized rupture and late-join reconstruction
+
+- Implementation commit: `9e6cf7ebba40fa03d303c7f49c05febd92dd24b4` (localized-damage implementation `defbcb4`).
+- Environment: the sole existing Roblox Studio editor, native `StudioTestService`, one server, one initial client and one late client; **zero human testers**.
+- Systems: server-owned surface zones, attack-specific rupture marks, bounded client-local impact fragments, durable late-join reconstruction, non-emissive damaged variants, and all existing asymmetric combat/lifecycle gates.
+
+### Exact-commit results
+
+- A normal client Smash damaged `arc_cooling_tower_west` to health `4`, advanced its impact sequence to `1`, and persisted exactly one `Smash` surface zone.
+- The original client rendered exactly one dark rupture with four torn-rim pieces (`5` visible localized parts total). The damaged cooling-tower variant contained `0` visible Neon parts.
+- The late human client reconstructed the same single rupture from replicated attributes and observed `0` historical impact fragments.
+- The warehouse collapse, role-specific controls, `11.16:1` kaiju/human height ratio, human fire, kaiju and human death/respawn, contact-damage velocity cap, and disconnect promotion gates all passed.
+- The first run reached and passed both localized-damage observations, then exposed a physics-dependent legacy test placement before the kaiju-to-human Smash. Anchoring both test characters and placing the human at the configured server hitbox centre removed that nondeterminism; the clean rerun returned `passed = true`.
+
+### Decision
+
+Retain the localized rupture system and its two-mark-per-structure budget. This engineering gate proves authoritative placement, bounded rendering, non-emissive state art and late-join durability; it does not yet prove the rupture silhouette or debris spectacle is convincing on a physical phone. Publish for the requested owner-device visual test and keep that human/device judgement explicitly pending.
