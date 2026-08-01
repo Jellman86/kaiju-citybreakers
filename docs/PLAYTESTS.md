@@ -324,3 +324,12 @@ The artifact-level initial-spawn and respawn regressions pass. A fresh physical-
 ### Decision
 
 Retain automated `StudioTestService` coverage, but keep it outside the live dependency graph. Add Creator Hub Error Report inspection to every production smoke test. The fix passes isolated artifact testing; a fresh physical-device session remains the final gate after publishing the exact commit-labelled artifact.
+
+### Production publication
+
+- Published source commit: `7c6a100dc2a1667f7662eecf113dec50518bc346`
+- Artifact: `KaijuCitybreakers-7c6a100dc2a1.rbxlx`
+- SHA-256: `90ac6c5d6cbeb4e9f90f3de2190e8ffde2f0e20ae6d2421f41b5e3307c0e4570`
+- Studio returned `PublishSuccessful` for existing place `137103245194702` in universe `10609698937` at 2:03 PM.
+- Creator Hub showed one active public V9 server, started at 2:03 PM with one connected player and 60 FPS.
+- The Error Report total remained at 12 historical V6/V8 events and contained no V9 bootstrap error immediately after the fresh server started. Analytics may be delayed, so this does not replace the pending physical-device visual smoke test.
