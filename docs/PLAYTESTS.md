@@ -50,3 +50,23 @@ The engineering path passes: the full action-to-server-to-destruction-to-client-
 ### Decision
 
 The visual integration and existing server-authoritative loop pass automated regression. The ten-second kaiju/city recognition target remains unproven until an uncoached player sees the build. Do not treat primitive detail or synthetic traversal as evidence of art appeal, control comprehension, or fun.
+
+## 2026-08-01 — Cross-device input integration
+
+- Build commit: `2080617`
+- Environment: Roblox Studio desktop, macOS, one local client and server.
+- Operator: Studio MCP binding inspection and synthetic gamepad input; **zero human testers**.
+- Systems: shared action bindings, gamepad triggers, generated touch actions, preferred-input prompts, and safe-area HUD.
+
+### Results
+
+- The live charge action exposed `Q`, left Shift, left trigger, and `B`; the smash action exposed mouse click, `E`, and right trigger.
+- Both actions reported `createTouchButton = true` with the expected `CHARGE` and `SMASH` labels and descriptions.
+- A synthetic left-trigger press moved Brontide approximately `20` studs through the real validated charge path.
+- After navigation into range, two synthetic right-trigger presses changed the gate from `Intact` to `Collapsed` through the real server hitbox and destruction path.
+- The HUD reported `CoreUISafeInsets`, clipping to the device safe area, and the keyboard/mouse prompt for the desktop session.
+- No runtime errors appeared in server or client output.
+
+### Unverified
+
+The desktop Studio session reported no touch hardware, so button appearance, thumb reach, camera drag coexistence, and touch prompt switching were not physically tested. These require Studio phone/tablet emulation and then at least one representative touchscreen device. A controller user must also verify comfort and glyph comprehension; synthetic input proves routing, not usability.
