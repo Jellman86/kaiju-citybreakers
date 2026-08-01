@@ -24,6 +24,10 @@ local Config = {
 		BasicAttackHumanDamage = 100,
 		BasicAttackHitboxSize = Vector3.new(30, 24, 26) * KAIJU_METRIC_SCALE,
 		BasicAttackForwardOffset = 13 * KAIJU_METRIC_SCALE,
+		SmashWindupSeconds = 0.14,
+		SmashStrikeSeconds = 0.1,
+		SmashImpactHoldSeconds = 0.045,
+		SmashRecoverySeconds = 0.22,
 		MaximumStructuresPerAttack = 3,
 		ChargeCooldownSeconds = 2.5,
 		ChargeDurationSeconds = 0.6,
@@ -53,9 +57,9 @@ local Config = {
 		FragmentsPerImpact = 5,
 		MaximumEffectDistance = 600,
 		MaximumPersistentMarksPerStructure = 2,
-		SmashMarkDiameter = 12,
-		ChargeMarkDiameter = 18,
-		BeamMarkDiameter = 8,
+		SmashMarkDiameter = 26,
+		ChargeMarkDiameter = 30,
+		BeamMarkDiameter = 20,
 	},
 
 	MixedScale = {

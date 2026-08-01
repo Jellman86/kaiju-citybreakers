@@ -34,7 +34,10 @@ type ClientReport = {
 	impactSequence: number,
 	localizedHoleCount: number,
 	localizedPartCount: number,
+	localizedMaximumSpan: number,
 	damagedNeonCount: number,
+	smashAnimationCount: number,
+	smashAnimationPhase: string,
 	role: string,
 	cameraMin: number,
 	cameraMax: number,
@@ -94,7 +97,10 @@ local function parseReport(player: Player, payload: any): ClientReport?
 		or type(payload.impactSequence) ~= "number"
 		or type(payload.localizedHoleCount) ~= "number"
 		or type(payload.localizedPartCount) ~= "number"
+		or type(payload.localizedMaximumSpan) ~= "number"
 		or type(payload.damagedNeonCount) ~= "number"
+		or type(payload.smashAnimationCount) ~= "number"
+		or type(payload.smashAnimationPhase) ~= "string"
 		or type(payload.role) ~= "string"
 		or type(payload.cameraMin) ~= "number"
 		or type(payload.cameraMax) ~= "number"
@@ -120,7 +126,10 @@ local function parseReport(player: Player, payload: any): ClientReport?
 		impactSequence = payload.impactSequence,
 		localizedHoleCount = payload.localizedHoleCount,
 		localizedPartCount = payload.localizedPartCount,
+		localizedMaximumSpan = payload.localizedMaximumSpan,
 		damagedNeonCount = payload.damagedNeonCount,
+		smashAnimationCount = payload.smashAnimationCount,
+		smashAnimationPhase = payload.smashAnimationPhase,
 		role = payload.role,
 		cameraMin = payload.cameraMin,
 		cameraMax = payload.cameraMax,
@@ -153,8 +162,19 @@ local function reportMatchesLocalizedDamage(report: ClientReport): boolean
 		and report.impactSequence == 1
 		and LocalizedDamage.CountMarks(report.damageZoneState) == 1
 		and report.localizedHoleCount == 1
-		and report.localizedPartCount == 5
+		and report.localizedPartCount == 8
+		and report.localizedMaximumSpan >= 22
 		and report.damagedNeonCount == 0
+end
+
+local function countBaseParts(root: Instance): number
+	local count = 0
+	for _, descendant in root:GetDescendants() do
+		if descendant:IsA("BasePart") then
+			count += 1
+		end
+	end
+	return count
 end
 
 function MultiplayerDestructionRegression.TryStart(roundService: RoundService, remotes: Folder)
@@ -232,6 +252,39 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 			return
 		end
 
+		local world = workspace:FindFirstChild(Config.Prototype.WorldName)
+		local plant = world and world:FindFirstChild("ArcPowerPlantZone")
+		if not plant or not plant:IsA("Model") then
+			fail("Arc Power Plant dressing was unavailable")
+			return
+		end
+		for _, requiredName in
+			{
+				"CoolingWaterHeader",
+				"SteamServiceHeader",
+				"TransmissionSwitchyard",
+				"StepUpTransformer1",
+				"HighVoltageBusbar1",
+				"TransmissionGantryCrossarm",
+			}
+		do
+			if not plant:FindFirstChild(requiredName, true) then
+				fail(`Arc Power Plant was missing {requiredName}`)
+				return
+			end
+		end
+		for _, descendant in plant:GetDescendants() do
+			if string.find(descendant.Name, "EnergyChannel", 1, true) then
+				fail("Arc Power Plant retained decorative EnergyChannel floor lights")
+				return
+			end
+		end
+		local plantDressingParts = countBaseParts(plant)
+		if plantDressingParts < 30 or plantDressingParts > 36 then
+			fail(`Arc Power Plant dressing part budget was {plantDressingParts}`)
+			return
+		end
+
 		if not waitUntil(function()
 			return roundService:GetPhase() == "Active"
 		end, 15) then
@@ -282,6 +335,15 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 			fail("cooling tower did not record the first localized Smash impact")
 			return
 		end
+		-- Ability results and harness commands use separate RemoteEvents, so wait for the
+		-- confirmed client-side pose to finish before asking the client to report it.
+		task.wait(
+			Config.Combat.SmashWindupSeconds
+				+ Config.Combat.SmashStrikeSeconds
+				+ Config.Combat.SmashImpactHoldSeconds
+				+ Config.Combat.SmashRecoverySeconds
+				+ 0.1
+		)
 
 		testRemote:FireClient(firstPlayer, {
 			command = "report",
@@ -308,6 +370,12 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 			fail("initial client localized rupture did not match the server zone")
 			return
 		end
+		if reports[StudioTestProtocol.LocalizedExistingStage].smashAnimationCount < 1 then
+			fail(
+				`initial client did not play the confirmed Smash animation (phase={reports[StudioTestProtocol.LocalizedExistingStage].smashAnimationPhase})`
+			)
+			return
+		end
 
 		local targetPosition = target.DamageHitbox.Position
 		local attackPosition = targetPosition + Vector3.new(0, 4, 18)
@@ -324,6 +392,13 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 			fail("warehouse did not collapse through the client attack path")
 			return
 		end
+		task.wait(
+			Config.Combat.SmashWindupSeconds
+				+ Config.Combat.SmashStrikeSeconds
+				+ Config.Combat.SmashImpactHoldSeconds
+				+ Config.Combat.SmashRecoverySeconds
+				+ 0.1
+		)
 
 		testRemote:FireClient(firstPlayer, {
 			command = "report",
@@ -507,7 +582,10 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 		end
 		local kaijuHealthAfterHumanFire = kaijuHumanoid.Health
 		local kaijuCharacterBeforeDeath = kaijuCharacter
+		-- Include two idempotent safety shots because the mobile-style client cadence
+		-- runs close to the server cooldown and an individual request can be rejected.
 		local remainingShots = math.ceil(kaijuHealthAfterHumanFire / Config.Combat.HumanFireDamage)
+			+ 2
 		testRemote:FireClient(resolvedLatePlayer, {
 			command = "human_fire",
 			shots = remainingShots,
@@ -640,6 +718,13 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 			fail("initial client state or visual selection disagreed with the server")
 			return
 		end
+		if
+			existingReport.smashAnimationCount < 4
+			or existingReport.smashAnimationPhase ~= "Idle"
+		then
+			fail("Smash animation did not complete and restore its procedural pose")
+			return
+		end
 		if not reportMatchesCollapsedState(lateReport) then
 			fail("late client state or visual selection disagreed with the server")
 			return
@@ -743,8 +828,12 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 				DestructibleContract.Attribute.DamageZoneState
 			),
 			localizedExistingHoles = reports[StudioTestProtocol.LocalizedExistingStage].localizedHoleCount,
+			localizedMaximumSpan = localizedLateReport.localizedMaximumSpan,
 			localizedLateHoles = localizedLateReport.localizedHoleCount,
 			localizedDamagedNeon = localizedLateReport.damagedNeonCount,
+			smashAnimationCount = reports[StudioTestProtocol.LocalizedExistingStage].smashAnimationCount,
+			smashAnimationPhase = existingReport.smashAnimationPhase,
+			plantDressingParts = plantDressingParts,
 		})
 	end)
 end

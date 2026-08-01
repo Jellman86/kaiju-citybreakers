@@ -50,10 +50,10 @@ local function findTarget(structureId: string): Model?
 	return nil
 end
 
-local function countLocalizedDamage(target: Model): (number, number)
+local function measureLocalizedDamage(target: Model): (number, number, number)
 	local container = target:FindFirstChild("ClientLocalizedDamage")
 	if not container or not container:IsA("Model") then
-		return 0, 0
+		return 0, 0, 0
 	end
 	local holes = 0
 	local visibleParts = 0
@@ -65,7 +65,12 @@ local function countLocalizedDamage(target: Model): (number, number)
 			end
 		end
 	end
-	return holes, visibleParts
+	local maximumSpan = 0
+	if visibleParts > 0 then
+		local _, bounds = container:GetBoundingBox()
+		maximumSpan = math.max(bounds.X, bounds.Y, bounds.Z)
+	end
+	return holes, visibleParts, maximumSpan
 end
 
 local function countVisibleNeon(variant: Model): number
@@ -229,7 +234,8 @@ function MultiplayerDestructionRegression.TryStart(
 				})
 				return
 			end
-			local localizedHoleCount, localizedPartCount = countLocalizedDamage(resolvedTarget)
+			local localizedHoleCount, localizedPartCount, localizedMaximumSpan =
+				measureLocalizedDamage(resolvedTarget)
 
 			testRemote:FireServer({
 				kind = "report",
@@ -251,7 +257,14 @@ function MultiplayerDestructionRegression.TryStart(
 				),
 				localizedHoleCount = localizedHoleCount,
 				localizedPartCount = localizedPartCount,
+				localizedMaximumSpan = localizedMaximumSpan,
 				damagedNeonCount = countVisibleNeon(damaged),
+				smashAnimationCount = Players.LocalPlayer:GetAttribute("ClientSmashAnimationCount")
+					or 0,
+				smashAnimationPhase = if Players.LocalPlayer.Character
+					then Players.LocalPlayer.Character:GetAttribute("ClientSmashAnimationPhase")
+						or "Idle"
+					else "Unavailable",
 				role = Players.LocalPlayer:GetAttribute("CharacterRole"),
 				cameraMin = Players.LocalPlayer.CameraMinZoomDistance,
 				cameraMax = Players.LocalPlayer.CameraMaxZoomDistance,

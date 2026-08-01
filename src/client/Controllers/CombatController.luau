@@ -9,6 +9,7 @@ local TweenService = game:GetService("TweenService")
 local Config = require(ReplicatedStorage.Shared.Config)
 local PlayerRole = require(ReplicatedStorage.Shared.PlayerRole)
 local Types = require(ReplicatedStorage.Shared.Types)
+local SmashAnimator = require(script.Parent.Parent.Effects.SmashAnimator)
 
 type AbilityResult = Types.AbilityResult
 
@@ -42,6 +43,9 @@ function CombatController.new(
 	self._lastChargeRequestedAt = -math.huge
 	self._lastBeamRequestedAt = -math.huge
 	self._lastHumanFireRequestedAt = -math.huge
+	self._predictedSmashSequence = nil :: number?
+	self._smashAnimationCount = 0
+	self._smashAnimator = SmashAnimator.new()
 	self._jumpLayoutConnections = {} :: { RBXScriptConnection }
 	self._playerGuiDescendantAddedConnection = nil :: RBXScriptConnection?
 	self._resultConnection = nil :: RBXScriptConnection?
@@ -50,6 +54,7 @@ function CombatController.new(
 	self._roleConnection = nil :: RBXScriptConnection?
 	self._humanReticleGui = nil :: ScreenGui?
 	self._actionsBound = false
+	player:SetAttribute("ClientSmashAnimationCount", 0)
 
 	return self
 end
@@ -156,10 +161,38 @@ function CombatController:_requestBasicAttack()
 
 	self._lastRequestedAt = now
 	self._sequence += 1
-	self._abilityRequestRemote:FireServer({
-		abilityId = "basic",
-		sequence = self._sequence,
-	})
+	local sequence = self._sequence
+	local character = player.Character
+	self._predictedSmashSequence = sequence
+	if not character then
+		self._abilityRequestRemote:FireServer({ abilityId = "basic", sequence = sequence })
+		return
+	end
+
+	local played = self._smashAnimator:Play(character, function()
+		if
+			self._predictedSmashSequence == sequence
+			and player.Character == character
+			and PlayerRole.IsKaiju(player)
+		then
+			self._abilityRequestRemote:FireServer({ abilityId = "basic", sequence = sequence })
+		end
+	end)
+	if played then
+		self._smashAnimationCount += 1
+		player:SetAttribute("ClientSmashAnimationCount", self._smashAnimationCount)
+	end
+end
+
+function CombatController:_playConfirmedSmashAnimation()
+	local character = player.Character
+	if not character then
+		return
+	end
+	if self._smashAnimator:Play(character, function() end) then
+		self._smashAnimationCount += 1
+		player:SetAttribute("ClientSmashAnimationCount", self._smashAnimationCount)
+	end
 end
 
 function CombatController:_resetBeamCooldownVisual()
@@ -352,6 +385,30 @@ function CombatController:_emitImpactFeedback(position: Vector3, color: Color3, 
 		{ Size = Vector3.new(size * 2.8, size * 2.8, size * 2.8), Transparency = 1 }
 	):Play()
 	Debris:AddItem(flash, 0.25)
+end
+
+function CombatController:_emitSmashImpactFeedback(position: Vector3, hit: boolean)
+	local dust = Instance.new("Part")
+	dust.Name = "SmashImpactDust"
+	dust.Shape = Enum.PartType.Ball
+	dust.Size = Vector3.new(7, 7, 7)
+	dust.CFrame = CFrame.new(position)
+	dust.Color = if hit then Color3.fromRGB(118, 104, 89) else Color3.fromRGB(76, 82, 84)
+	dust.Material = Enum.Material.SmoothPlastic
+	dust.Transparency = 0.48
+	dust.Anchored = true
+	dust.CanCollide = false
+	dust.CanTouch = false
+	dust.CanQuery = false
+	dust.CastShadow = false
+	dust.Parent = workspace
+
+	TweenService:Create(
+		dust,
+		TweenInfo.new(0.24, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ Size = Vector3.new(26, 19, 26), Transparency = 1 }
+	):Play()
+	Debris:AddItem(dust, 0.3)
 end
 
 function CombatController:_emitBeamMuzzleFeedback(aimDirection: Vector3)
@@ -713,6 +770,8 @@ function CombatController:_unbindActions()
 		return
 	end
 	self._actionsBound = false
+	self._predictedSmashSequence = nil
+	self._smashAnimator:Reset()
 	self:_destroyHumanReticle()
 	self:_resetChargeCooldownVisual()
 	self:_resetBeamCooldownVisual()
@@ -846,6 +905,12 @@ function CombatController:Start()
 	self._resultConnection = self._abilityResultRemote.OnClientEvent:Connect(
 		function(result: AbilityResult)
 			if not result.accepted then
+				if
+					result.abilityId == "basic"
+					and result.sequence == self._predictedSmashSequence
+				then
+					self._predictedSmashSequence = nil
+				end
 				if result.abilityId == "charge" then
 					self:_resetChargeCooldownVisual()
 				elseif result.abilityId == "beam" then
@@ -853,7 +918,20 @@ function CombatController:Start()
 				end
 				return
 			end
-			if result.abilityId == "charge" then
+			if result.abilityId == "basic" then
+				local wasPredicted = result.sequence == self._predictedSmashSequence
+				if wasPredicted then
+					self._predictedSmashSequence = nil
+				else
+					self:_playConfirmedSmashAnimation()
+				end
+				if result.effectTarget then
+					self:_emitSmashImpactFeedback(result.effectTarget, result.hitCount > 0)
+				end
+				if result.hitCount > 0 then
+					self:_pulseCamera(5, 0.055, 0.2)
+				end
+			elseif result.abilityId == "charge" then
 				self:_pulseCamera(8, 0.06, 0.28)
 				self:_emitChargeFeedback()
 			elseif result.abilityId == "chargeImpact" and result.effectTarget then
@@ -877,6 +955,7 @@ end
 
 function CombatController:Destroy()
 	self:_unbindActions()
+	self._smashAnimator:Destroy()
 	self:_disconnectJumpLayoutConnections()
 	if self._resultConnection then
 		self._resultConnection:Disconnect()

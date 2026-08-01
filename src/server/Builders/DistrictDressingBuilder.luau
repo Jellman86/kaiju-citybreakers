@@ -405,17 +405,6 @@ function DistrictDressingBuilder.BuildArcPowerPlant(parent: Instance): Model
 		plant,
 		true
 	)
-	for index, z in { -190, -120, -40, 40 } do
-		createPart(
-			`EnergyChannel{index}`,
-			Vector3.new(310, 0.25, 3),
-			CFrame.new(455, 0.92, z),
-			CYAN,
-			Enum.Material.Neon,
-			plant,
-			false
-		)
-	end
 	for index, x in { 335, 455, 575 } do
 		createPart(
 			`ServiceLane{index}`,
@@ -427,25 +416,158 @@ function DistrictDressingBuilder.BuildArcPowerPlant(parent: Instance): Model
 			true
 		)
 	end
-	for index, position in
-		{
-			Vector3.new(390, 0, -155),
-			Vector3.new(520, 0, -155),
-			Vector3.new(390, 0, 15),
-			Vector3.new(520, 0, 15),
-		}
-	do
+
+	for index, position in { Vector3.new(390, 0, 15), Vector3.new(520, 0, 15) } do
 		local basin = createPart(
 			`CoolingBasin{index}`,
-			Vector3.new(2, 54, 54),
+			Vector3.new(2.4, 58, 58),
 			CFrame.new(position.X, 1.2, position.Z) * CFrame.Angles(0, 0, math.rad(90)),
-			Color3.fromRGB(73, 91, 98),
+			Color3.fromRGB(67, 82, 87),
 			Enum.Material.Metal,
 			plant,
 			false
 		)
 		basin.Shape = Enum.PartType.Cylinder
 	end
+
+	local pipeColor = Color3.fromRGB(91, 129, 134)
+	for index, x in { 390, 520 } do
+		createPart(
+			`CoolingWaterPipe{index}`,
+			Vector3.new(6, 6, 58),
+			CFrame.new(x, 5, -13),
+			pipeColor,
+			Enum.Material.Metal,
+			plant,
+			false
+		)
+	end
+	createPart(
+		"CoolingWaterHeader",
+		Vector3.new(136, 6, 6),
+		CFrame.new(455, 5, -42),
+		pipeColor,
+		Enum.Material.Metal,
+		plant,
+		false
+	)
+	createPart(
+		"SteamServiceHeader",
+		Vector3.new(136, 5, 5),
+		CFrame.new(455, 20, -112),
+		Color3.fromRGB(145, 151, 147),
+		Enum.Material.Metal,
+		plant,
+		false
+	)
+
+	local switchyard = Instance.new("Model")
+	switchyard.Name = "TransmissionSwitchyard"
+	switchyard.Parent = plant
+	createPart(
+		"GravelPad",
+		Vector3.new(72, 0.5, 72),
+		CFrame.new(590, 1.15, -174),
+		Color3.fromRGB(100, 100, 94),
+		Enum.Material.Pebble,
+		switchyard,
+		false
+	)
+
+	for index, position in
+		{
+			Vector3.new(575, 6, -188),
+			Vector3.new(601, 6, -188),
+			Vector3.new(575, 6, -160),
+		}
+	do
+		createPart(
+			`StepUpTransformer{index}`,
+			Vector3.new(14, 10, 10),
+			CFrame.new(position),
+			Color3.fromRGB(68, 91, 79),
+			Enum.Material.Metal,
+			switchyard,
+			false
+		)
+		for bushingIndex, xOffset in { -3.6, 3.6 } do
+			local bushing = createPart(
+				`TransformerBushing{index}_{bushingIndex}`,
+				Vector3.new(5.5, 1.3, 1.3),
+				CFrame.new(position + Vector3.new(xOffset, 7.2, 0))
+					* CFrame.Angles(0, 0, math.rad(90)),
+				Color3.fromRGB(83, 88, 83),
+				Enum.Material.Metal,
+				switchyard,
+				false
+			)
+			bushing.Shape = Enum.PartType.Cylinder
+		end
+	end
+
+	for index, x in { 562, 616 } do
+		createPart(
+			`BusbarPost{index}`,
+			Vector3.new(1.5, 17, 1.5),
+			CFrame.new(x, 9.5, -174),
+			Color3.fromRGB(128, 132, 129),
+			Enum.Material.Metal,
+			switchyard,
+			false
+		)
+	end
+	for index, z in { -180, -168 } do
+		createPart(
+			`HighVoltageBusbar{index}`,
+			Vector3.new(56, 1.2, 1.2),
+			CFrame.new(589, 17, z),
+			Color3.fromRGB(182, 126, 76),
+			Enum.Material.Metal,
+			switchyard,
+			false
+		)
+	end
+
+	for index, definition in
+		{
+			{ size = Vector3.new(72, 4, 0.5), position = Vector3.new(590, 3, -210) },
+			{ size = Vector3.new(72, 4, 0.5), position = Vector3.new(590, 3, -138) },
+			{ size = Vector3.new(0.5, 4, 72), position = Vector3.new(554, 3, -174) },
+			{ size = Vector3.new(0.5, 4, 72), position = Vector3.new(626, 3, -174) },
+		}
+	do
+		local fence = createPart(
+			`SecurityFence{index}`,
+			definition.size,
+			CFrame.new(definition.position),
+			Color3.fromRGB(116, 124, 123),
+			Enum.Material.Metal,
+			switchyard,
+			false
+		)
+		fence.Transparency = 0.42
+	end
+
+	for index, x in { 612, 628 } do
+		createPart(
+			`TransmissionGantryLeg{index}`,
+			Vector3.new(2, 28, 2),
+			CFrame.new(x, 15, -124),
+			Color3.fromRGB(92, 101, 104),
+			Enum.Material.Metal,
+			plant,
+			false
+		)
+	end
+	createPart(
+		"TransmissionGantryCrossarm",
+		Vector3.new(22, 2, 2),
+		CFrame.new(620, 28, -124),
+		Color3.fromRGB(92, 101, 104),
+		Enum.Material.Metal,
+		plant,
+		false
+	)
 	createZoneLabel(plant, "ArcPlantSign", "ARC POWER PLANT", Vector3.new(275, 0, -80), CYAN)
 
 	plant.Parent = parent

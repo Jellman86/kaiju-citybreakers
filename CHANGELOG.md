@@ -8,6 +8,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 ### Added
 
+- Procedural Brontide Smash animation with an eased wind-up, fast strike, server-authoritative impact moment, and recovery to the original pose.
 - Localized authored building damage with server-derived surface zones, Smash/Charge/Beam-shaped rupture marks, compact late-join reconstruction, and bounded pooled impact chips.
 - Initial mixed-scale player foundation with one server-assigned giant Brontide, human-sized later players, role-specific spawns/cameras/metrics, non-flinging collision groups, and a human-scale doorway reference.
 - Native multiplayer regression coverage for measured role scale, human combat rejection, role-specific cameras/actions, late-join destruction reconstruction, and automatic kaiju promotion after disconnect.
@@ -39,6 +40,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 ### Changed
 
+- Arc Power Plant now uses functional industrial grouping—cooling basins and pipes, service lanes, a fenced transformer/switchgear yard, busbars and an outgoing grid gantry—instead of decorative Neon floor channels.
+- Localized damage now uses much larger face-clamped irregular breaches with layered dark depth and displaced rims, capped at eight local parts per mark, after the first physical-phone mark read as a small flat bullet hole.
 - Damaged cooling towers and other building archetypes now use dark physical splits and impact-local cavities instead of persistent orange Neon crack plates; every accepted hit emits a sequenced localized-damage event even when the structure remains `Damaged`.
 - Repository visibility changed from private to public so standard GitHub-hosted CI remains free.
 - Production publishing now uses a clean, commit-labelled Rojo place artifact with a SHA-256 digest and mandatory fresh-server smoke test; Rojo sync is reserved for iteration.

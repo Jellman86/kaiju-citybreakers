@@ -349,10 +349,14 @@ function CombatService:_performBasicAttack(player: Player, sequence: number)
 		Config.Combat.BasicAttackHumanDamage
 	)
 
-	self:_sendResult(
-		player,
-		{ accepted = true, abilityId = "basic", sequence = sequence, hitCount = hitCount }
-	)
+	self:_sendResult(player, {
+		accepted = true,
+		abilityId = "basic",
+		sequence = sequence,
+		hitCount = hitCount,
+		effectOrigin = rootPart.Position,
+		effectTarget = hitboxCFrame.Position,
+	})
 end
 
 function CombatService:_performCharge(player: Player, sequence: number)

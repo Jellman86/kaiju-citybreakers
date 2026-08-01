@@ -14,7 +14,7 @@ With Rojo connected and Studio in Edit mode, execute this through a plugin-secur
 local StudioTestService = game:GetService("StudioTestService")
 local result = StudioTestService:ExecuteMultiplayerTestAsync(
 	1,
-	"KaijuLocalizedDestructionV3"
+	"KaijuSmashRuptureV4"
 )
 print(result)
 ```
@@ -24,7 +24,7 @@ The argument intentionally starts one client. The server harness first damages a
 ## Acceptance contract
 
 - The first client becomes ready and the normal round reaches `Active`.
-- One spatially valid Smash records one server-derived cooling-tower surface zone, shows exactly one five-part localized rupture, and leaves zero visible Neon parts in the damaged variant.
+- One spatially valid Smash records one server-derived cooling-tower surface zone, plays the client Smash pose, shows exactly one eight-part localized rupture spanning at least `22` studs, and leaves zero visible Neon parts in the damaged variant.
 - The late client reconstructs the same rupture from `DamageZoneState` without replaying historical impact debris.
 - Three spatially valid, cooldown-respecting client attack requests collapse `north_warehouse`.
 - Server state ends at health `0`, `Collapsed`, sequence `2`, with the collapsed proxy active and damage hitbox no longer queryable.

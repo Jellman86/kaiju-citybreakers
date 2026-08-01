@@ -157,6 +157,10 @@ The server switches authoritative health and simple collision proxies. Each clie
 
 `DistrictDressingBuilder` owns the west park/plaza's reusable primitive scale cues. Its trees, planters, rings, pylons, and landmark are anchored local scenery with collision, touch, query, and shadows disabled; only the two broad ground surfaces participate in character collision. Road, sidewalk, and gate-cordon surfaces remain owned by `PrototypeWorldService` because they define the district route and objective boundary.
 
+The same builder owns Arc Power Plant's low-cost functional silhouette: paired cooling basins and towers, generation halls, coolant and steam headers, a fenced transformer/switchgear yard, busbars, and an outgoing transmission gantry. These are original anchored primitives rather than a copied facility or imported pack. Decorative floor-light channels are prohibited because they weaken the industrial read without explaining how power leaves the site.
+
+`SmashAnimator` gives the local player immediate windup, strike, impact, and eased recovery feedback while `CombatService` remains authoritative for hit timing and damage. It supports both current `AnimationConstraint` avatar joints and legacy `Motor6D` joints; Brontide's shell contains parts whose names overlap the shoulder joints, so joint lookup always filters by class. Confirmed, non-predicted Smash results can replay the pose for Studio coverage without granting the client damage authority.
+
 The versioned `StudioTestService` regression starts with one client, drives the real authoritative attack path, then adds a late client and compares server state with both clients' replicated attributes and locally selected variants. Test modules are inert outside Studio and unless their exact test argument is present; see [MULTIPLAYER_TESTING.md](MULTIPLAYER_TESTING.md).
 
 Concrete, metal, and lightweight material profiles vary fragment material, colour, size, and speed without changing gameplay. Dust particles, camera impulses, and sound remain separate evidence-gated layers; Roblox warns that particles add draw calls and that emitter property changes can be expensive.
