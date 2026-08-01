@@ -450,3 +450,11 @@ One exact-commit attempt stalled inside Studio before adding its late client and
 ### Decision
 
 Retain the asymmetric combat foundation for a physical two-device test. The engineering path proves authoritative damage, death, respawn, actions and configured contact filtering; it does not prove that `40` blaster damage, `25` contact damage, instant Smash/Charge/Beam human damage, the collision feel or either role's balance is enjoyable. Do not expand the weapon roster or rebuild the city around combat until two people test natural aiming, collision stability, deaths, rematches and role preference on representative hardware.
+
+### Production publication
+
+- Published source commit: `fe005119e0e803d56f0a4adba7638ad8513a9565`
+- Artifact: `build/KaijuCitybreakers.rbxlx`
+- SHA-256: `8950083b7bfc7f4aab1392dd6aa541c50198f0b830dc6bb90d25b7ed9252fea5`
+- The exact generated artifact was opened in the sole Studio editor and used to overwrite the existing `Kaiju Citybreakers` place. Studio displayed `Successfully published!` and logged `Published "Kaiju Citybreakers" to Roblox.` at 18:06 BST.
+- No additional local play session was run after publication because the Mac may be locked. A fresh owner-device join and a physical two-device combat test remain the release validation gates.
