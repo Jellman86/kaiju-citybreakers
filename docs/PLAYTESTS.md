@@ -88,3 +88,23 @@ The desktop Studio session reported no touch hardware, so button appearance, thu
 ### Unverified
 
 Studio's mouse-click automation intersected CoreGui rather than the game viewport, so the click binding itself was not re-proven in this run. The cursor-facing behaviour, independent movement, and downstream authoritative attack direction passed; natural mouse feel and preferred-input transitions still require a human desktop playtest. Gamepad and touch retain native auto-facing by code and still require the representative-device checks recorded above.
+
+## 2026-08-01 — Behind-kaiju mouse camera integration
+
+- Build commit: `7431b64`
+- Environment: Roblox Studio desktop, macOS, one local client and server.
+- Operator: Studio MCP synthetic relative mouse movement, wheel input, obstruction probe, keyboard movement, and gamepad attack input; **zero human testers**.
+- Systems: locked-center mouse input, scriptable orbit camera, camera-forward creature facing, zoom, camera collision, and the existing authoritative smash path.
+
+### Results
+
+- Desktop mode reported a `Scriptable` camera, `LockCenter` mouse behaviour, hidden cursor, and `Humanoid.AutoRotate = false`.
+- Repeated rightward mouse movement rotated the camera and Brontide from straight ahead to a horizontal direction of approximately `(-0.67, 0, -0.74)`. Their normalized horizontal look vectors maintained a dot product of exactly `1`, confirming that the creature's back remained toward the camera.
+- Two wheel-up inputs reduced the camera arm from `42` to `36` studs.
+- A temporary client-only obstruction placed behind Brontide shortened the visible camera arm from the configured `36` studs to approximately `9.25` studs, confirming that the collision ray prevents wall clipping. The probe was destroyed immediately after measurement.
+- From attack range, two synthetic right-trigger smashes followed the real remote, server hitbox, and destruction path, changing the gate from `Intact` with health `2` to `Collapsed` with health `0`.
+- No gameplay runtime errors appeared in client or server output.
+
+### Unverified
+
+Synthetic pointer movement proves camera routing and alignment, not comfort. A human desktop player must still judge sensitivity, pitch limits, zoom range, motion comfort, and whether locked-center smash clicking feels natural. Studio's automation cannot send Escape because Roblox reserves it for CoreGui, so the coded menu-open cursor release also needs a manual check. Gamepad and touchscreen keep Roblox's native camera/facing path and retain the representative-device checks recorded above.
