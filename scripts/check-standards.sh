@@ -103,6 +103,20 @@ if ! grep --quiet '<string name="Name">Rig_LeftArm</string>' src/world/KaijuFeel
   exit 1
 fi
 
+for factory_authoring_name in \
+  FactoryObjectives \
+  TEMP_ArcFactoryObjective \
+  TankSpawn \
+  HelicopterSpawn \
+  GroundRoute \
+  AirRoute; do
+  factory_authoring_count="$(grep -c "<string name=\"Name\">${factory_authoring_name}</string>" src/world/KaijuFeelLab.rbxmx || true)"
+  if [[ "${factory_authoring_count}" -ne 1 ]]; then
+    echo "Temporary factory authoring contract requires one ${factory_authoring_name}; found ${factory_authoring_count}." >&2
+    exit 1
+  fi
+done
+
 if grep --extended-regexp --ignore-case --line-number \
   'Mire Goji|Godzilla|Gojira|RigMotionSmoke' src/world/KaijuFeelLab.rbxmx \
   || grep --recursive --include='*.luau' --extended-regexp --ignore-case --line-number \

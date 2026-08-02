@@ -126,6 +126,20 @@ local function collectRoute(model: Model, folderName: string): { BasePart }
 	return route
 end
 
+local function hideAuthoringMarker(marker: BasePart?)
+	if not marker then
+		return
+	end
+	marker.Transparency = 1
+	marker.CanCollide = false
+	marker.CanTouch = false
+	for _, descendant in marker:GetDescendants() do
+		if descendant:IsA("BillboardGui") then
+			descendant.Enabled = false
+		end
+	end
+end
+
 local function findLinkedStructure(structureId: string): Model?
 	if structureId == "" then
 		return nil
@@ -409,6 +423,14 @@ function FactoryService:_register(instance: Instance)
 	}
 	self._factories[instance] = record
 	self._factoryIds[id] = instance
+	hideAuthoringMarker(record.tankSpawn)
+	hideAuthoringMarker(record.helicopterSpawn)
+	for _, node in record.groundRoute do
+		hideAuthoringMarker(node)
+	end
+	for _, node in record.airRoute do
+		hideAuthoringMarker(node)
+	end
 	self:_resetFactory(record)
 end
 
