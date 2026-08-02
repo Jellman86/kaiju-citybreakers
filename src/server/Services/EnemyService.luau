@@ -617,7 +617,7 @@ function EnemyService:_stepRecord(record: EnemyRecord, dt: number, now: number)
 	self:_moveToward(record, record.patrolTarget, dt)
 end
 
-function EnemyService:GetTargets(): { Target }
+function EnemyService:GetRogueTargets(): { Target }
 	local targets = {} :: { Target }
 	for _, record in self._records do
 		if record.health > 0 and record.model:IsDescendantOf(workspace) then
@@ -630,6 +630,11 @@ function EnemyService:GetTargets(): { Target }
 			})
 		end
 	end
+	return targets
+end
+
+function EnemyService:GetTargets(): { Target }
+	local targets = self:GetRogueTargets()
 	for _, provider in self._targetProviders do
 		for _, target in provider:GetTargets() do
 			table.insert(targets, target)

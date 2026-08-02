@@ -278,10 +278,8 @@ function MultiplayerDestructionRegression.TryStart(
 					else "Unavailable",
 				hasSmashButton = ContextActionService:GetButton("KaijuBasicAttack") ~= nil,
 				hasHumanFireButton = ContextActionService:GetButton("HumanBlasterFire") ~= nil,
-				hasHumanReticle = Players.LocalPlayer.PlayerGui:FindFirstChild(
-					"HumanAimReticle",
-					true
-				) ~= nil,
+				hasAimReticle = Players.LocalPlayer.PlayerGui:FindFirstChild("AimReticle", true)
+					~= nil,
 				characterHealth = if Players.LocalPlayer.Character
 						and Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
 					then (

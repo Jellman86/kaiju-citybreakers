@@ -4,6 +4,7 @@ local ContextActionService = game:GetService("ContextActionService")
 local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
@@ -52,15 +53,16 @@ function CombatController.new(
 	self._touchLayoutConnection = nil :: RBXScriptConnection?
 	self._touchLayoutPositionConnection = nil :: RBXScriptConnection?
 	self._roleConnection = nil :: RBXScriptConnection?
-	self._humanReticleGui = nil :: ScreenGui?
+	self._aimReticleGui = nil :: ScreenGui?
+	self._reticleRenderConnection = nil :: RBXScriptConnection?
 	self._actionsBound = false
 	player:SetAttribute("ClientSmashAnimationCount", 0)
 
 	return self
 end
 
-function CombatController:_createHumanReticle()
-	if self._humanReticleGui then
+function CombatController:_createAimReticle()
+	if self._aimReticleGui then
 		return
 	end
 	local playerGui = player:FindFirstChildOfClass("PlayerGui")
@@ -69,17 +71,19 @@ function CombatController:_createHumanReticle()
 	end
 
 	local gui = Instance.new("ScreenGui")
-	gui.Name = "HumanCombatHud"
+	gui.Name = "CombatAimHud"
 	gui.IgnoreGuiInset = true
+	gui.ScreenInsets = Enum.ScreenInsets.None
 	gui.ResetOnSpawn = false
 	gui.DisplayOrder = 15
 
 	local reticle = Instance.new("Frame")
-	reticle.Name = "HumanAimReticle"
+	reticle.Name = "AimReticle"
 	reticle.AnchorPoint = Vector2.new(0.5, 0.5)
 	reticle.Position = UDim2.fromScale(0.5, 0.5)
 	reticle.Size = UDim2.fromOffset(26, 26)
 	reticle.BackgroundTransparency = 1
+	reticle.Active = false
 	reticle.Parent = gui
 
 	for _, definition in
@@ -101,13 +105,23 @@ function CombatController:_createHumanReticle()
 	end
 
 	gui.Parent = playerGui
-	self._humanReticleGui = gui
+	self._aimReticleGui = gui
+	self._reticleRenderConnection = RunService.RenderStepped:Connect(function()
+		if reticle.Parent then
+			local point = self._aimController:GetAimViewportPoint()
+			reticle.Position = UDim2.fromOffset(point.X, point.Y)
+		end
+	end)
 end
 
-function CombatController:_destroyHumanReticle()
-	if self._humanReticleGui then
-		self._humanReticleGui:Destroy()
-		self._humanReticleGui = nil
+function CombatController:_destroyAimReticle()
+	if self._reticleRenderConnection then
+		self._reticleRenderConnection:Disconnect()
+		self._reticleRenderConnection = nil
+	end
+	if self._aimReticleGui then
+		self._aimReticleGui:Destroy()
+		self._aimReticleGui = nil
 	end
 end
 
@@ -772,7 +786,7 @@ function CombatController:_unbindActions()
 	self._actionsBound = false
 	self._predictedSmashSequence = nil
 	self._smashAnimator:Reset()
-	self:_destroyHumanReticle()
+	self:_destroyAimReticle()
 	self:_resetChargeCooldownVisual()
 	self:_resetBeamCooldownVisual()
 	ContextActionService:UnbindAction(ACTION_BASIC_ATTACK)
@@ -795,8 +809,8 @@ function CombatController:_bindActions()
 		return
 	end
 	self._actionsBound = true
+	self:_createAimReticle()
 	if role == PlayerRole.Human then
-		self:_createHumanReticle()
 		ContextActionService:BindAction(ACTION_HUMAN_FIRE, function(_actionName, inputState)
 			if inputState == Enum.UserInputState.Begin then
 				self:_requestHumanFire()

@@ -13,6 +13,9 @@ local Config = {
 
 	Combat = {
 		MaximumAimDistance = 250,
+		AimQueryRange = 600,
+		MouseReticleDeltaScale = 0.72,
+		ReticleSafeMarginFraction = 0.08,
 		AbilityRequestRatePerSecond = 8,
 		HumanFireCooldownSeconds = 0.35,
 		HumanFireDamage = 40,
@@ -135,6 +138,7 @@ local Config = {
 		DefaultCaptureRadius = 38,
 		DefaultCaptureSeconds = 8,
 		MaximumCaptureVerticalDistance = 55,
+		ObjectiveFeedbackDistance = 320,
 		VehicleDetectionRange = 260,
 		TankHealth = 180,
 		TankMoveSpeed = 18,
@@ -166,6 +170,7 @@ local Config = {
 		CameraCollisionPadding = 0.5,
 		CameraZoomStep = 2,
 		MouseCameraSensitivity = 0.003,
+		CameraShoulderOffset = 2.6,
 	},
 
 	StarterKaiju = {
@@ -185,6 +190,7 @@ local Config = {
 		CameraCollisionPadding = 1.5,
 		CameraZoomStep = 6,
 		MouseCameraSensitivity = 0.003,
+		CameraShoulderOffset = 0,
 	},
 
 	Prototype = {

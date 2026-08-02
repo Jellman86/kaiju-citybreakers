@@ -8,6 +8,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 ### Added
 
+- Human-only factory capture with visible neutral/capturing/allied/destroyed feedback, active reinforcement and linked-turret allegiance transfer, and kaiju-only demolition as the asymmetric alternative.
+- Shared bounded aim reticle for human blaster and Brontide Beam, including pointer-driven keyboard/mouse targeting and centred touch/gamepad targeting.
 - First server-authoritative reinforcement-factory foundation with generic team/lane/objective contracts, contested capture, destructible shutdown, linked-turret transfer, bounded tank/helicopter waves, authored routes, distinct travelling projectiles, vehicle health/defeat, and integration with existing player attacks and turret targeting.
 - Research-led urban-island conquest and factory-objective specification, H14 playtest gate, Edit-visible map-owner handoff, and audited free-commercial-use asset candidate decisions.
 - Edit-visible temporary Arc Power Plant factory objective linked to the destructible turbine hall, with a movable capture footprint, tank/helicopter spawns, and five-node ground and aerial routes for the first feasibility test.
@@ -52,6 +54,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 ### Changed
 
+- The first reinforcement factory and its units now begin neutral and hostile to nearby players; human ownership prevents friendly fire and continues bounded allied production.
+- Keyboard/mouse humans now use the same custom third-person camera family as Brontide, with a human-scale shoulder offset and reticle-derived server-validated fire direction.
 - Turret tracers, lock cues, cannon shells, and missiles now originate at each shell's moving visual muzzle while authoritative hit resolution remains server-owned.
 - External-asset policy now explicitly requires `£0` commercial use with no royalty, revenue share, subscription, usage fee, or earnings-triggered payment, plus legitimate rights to the underlying IP.
 - Runtime world startup now preserves an authored `KaijuFeelLab` and non-empty Terrain instead of destroying the designer's map whenever Play begins.

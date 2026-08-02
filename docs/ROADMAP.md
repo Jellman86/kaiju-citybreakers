@@ -147,7 +147,7 @@ One complete five-to-eight-minute run works from join to replay with no manual i
 
 - Bounded capturable-turret feasibility slice using four sanitized shells, distinct bullet/minigun/cannon/rocket attacks, and native two-client validation.
 - One smaller original rogue-kaiju target from an Edit-visible articulated template, with server-owned patrol/perception/memory/investigation, bounded pathfinding, swipe and lunge attacks, stagger, enrage, turret targeting, health, and defeat.
-- One MOBA-compatible factory-objective feasibility slice: an enemy factory, authored road and air routes, bounded tank/helicopter production, capture/destruction shutdown, linked-turret transfer, and distinct server-owned projectiles. See [FACTORY_OBJECTIVES.md](FACTORY_OBJECTIVES.md).
+- One MOBA-compatible factory-objective feasibility slice: a hostile neutral factory, authored road and air routes, bounded tank/helicopter production, human-only capture with reinforcement/turret allegiance transfer, kaiju demolition shutdown, and distinct server-owned projectiles. See [FACTORY_OBJECTIVES.md](FACTORY_OBJECTIVES.md).
 - Dense urban islands separated by broad traversal terrain, tested as one golden-path sequence before multiplying districts; each island combines one primary objective, optional branches, a pressure spike, and recovery space on the route toward an enemy base.
 - Expand and reuse the existing generated smooth terrain as the island chain requires, with streaming and representative-phone profiling at each bounded expansion rather than treating the current `1520 × 1220` authoring boundary as a permanent map limit.
 - Scout-drone navigation and attack behaviour after the turret and rogue-kaiju integration gates.
@@ -162,8 +162,8 @@ One complete five-to-eight-minute run works from join to replay with no manual i
 3. Validate the articulated original `Riftback` rogue kaiju from the visible `EnemyTemplates` contract. Replace only after the map owner supplies a commercially royalty-free, underlying-IP-authorised model that passes security and mobile review.
 4. Add one scout drone using authored aerial patrol nodes and line-of-sight checks; it fires a slow, dodgeable projectile and never needs ground pathfinding.
 5. Consolidate the proven turret and enemy damage, team, telegraph, projectile, and pooling contracts without changing their distinct presentations.
-6. Place one Edit-visible factory contract and routes in a map-owner-selected city; validate production, capture/destruction shutdown, vehicle combat, linked-turret transfer, multiplayer authority, and phone budgets before adding a second factory.
-7. Add enemy-base shield dependencies and allied production only after the one-factory capture choice is understood and preferred; these are the bridge to a future MOBA mode, not assumptions baked into the current round.
+6. Place one Edit-visible factory contract and routes in a map-owner-selected city; validate neutral hostility, human-only capture, kaiju destruction, reinforcement/turret transfer, vehicle combat, multiplayer authority, and phone budgets before adding a second factory.
+7. Add enemy-base shield dependencies only after the one-factory capture/demolition choice and allied production are understood in play; these are the bridge to a future MOBA mode, not assumptions baked into the current round.
 8. Add another ground defence unit only after the rogue-kaiju path and mobile budget are proven.
 9. Build the defence-mech boss only after the drone, turret, and factory are readable and performant on mobile.
 

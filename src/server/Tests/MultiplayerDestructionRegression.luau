@@ -45,7 +45,7 @@ type ClientReport = {
 	cameraType: string,
 	hasSmashButton: boolean,
 	hasHumanFireButton: boolean,
-	hasHumanReticle: boolean,
+	hasAimReticle: boolean,
 	characterHealth: number,
 }
 
@@ -109,7 +109,7 @@ local function parseReport(player: Player, payload: any): ClientReport?
 		or type(payload.cameraType) ~= "string"
 		or type(payload.hasSmashButton) ~= "boolean"
 		or type(payload.hasHumanFireButton) ~= "boolean"
-		or type(payload.hasHumanReticle) ~= "boolean"
+		or type(payload.hasAimReticle) ~= "boolean"
 		or type(payload.characterHealth) ~= "number"
 	then
 		return nil
@@ -139,7 +139,7 @@ local function parseReport(player: Player, payload: any): ClientReport?
 		cameraType = payload.cameraType,
 		hasSmashButton = payload.hasSmashButton,
 		hasHumanFireButton = payload.hasHumanFireButton,
-		hasHumanReticle = payload.hasHumanReticle,
+		hasAimReticle = payload.hasAimReticle,
 		characterHealth = payload.characterHealth,
 	}
 end
@@ -816,7 +816,7 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 			or existingReport.cameraMin ~= Config.StarterKaiju.CameraMinZoom
 			or existingReport.cameraMax ~= Config.StarterKaiju.CameraMaxZoom
 			or existingReport.hasHumanFireButton
-			or existingReport.hasHumanReticle
+			or not existingReport.hasAimReticle
 		then
 			fail("kaiju client did not apply its role camera metrics")
 			return
@@ -825,10 +825,10 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 			lateReport.role ~= PlayerRole.Human
 			or lateReport.cameraMin ~= Config.Human.CameraMinZoom
 			or lateReport.cameraMax ~= Config.Human.CameraMaxZoom
-			or lateReport.cameraType ~= tostring(Enum.CameraType.Custom)
+			or lateReport.cameraType ~= tostring(Enum.CameraType.Scriptable)
 			or lateReport.hasSmashButton
 			or not lateReport.hasHumanFireButton
-			or not lateReport.hasHumanReticle
+			or not lateReport.hasAimReticle
 			or lateReport.characterHealth ~= Config.Human.MaxHealth
 		then
 			fail("human client retained kaiju camera or touch-action state")
@@ -893,7 +893,7 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 			humanCameraType = lateReport.cameraType,
 			humanHadSmashButton = lateReport.hasSmashButton,
 			humanHadFireButton = lateReport.hasHumanFireButton,
-			humanHadReticle = lateReport.hasHumanReticle,
+			bothHadAimReticle = existingReport.hasAimReticle and lateReport.hasAimReticle,
 			kaijuHealthAfterHumanFire = kaijuHealthAfterHumanFire,
 			kaijuRespawnHealth = kaijuRespawnHealth,
 			contactVelocity = contactVelocity,
