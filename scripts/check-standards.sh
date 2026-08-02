@@ -14,6 +14,7 @@ required_files=(
   "docs/DECISIONS.md"
   "docs/PLAYTESTS.md"
   "docs/MAP_AUTHORING.md"
+  "docs/FACTORY_OBJECTIVES.md"
   "assets/ASSET_REGISTER.md"
   ".github/CODEOWNERS"
   ".github/pull_request_template.md"
@@ -26,6 +27,22 @@ for required_file in "${required_files[@]}"; do
     exit 1
   fi
 done
+
+for factory_source in \
+  src/shared/FactoryContract.luau \
+  src/shared/VehicleContract.luau \
+  src/server/Services/FactoryService.luau; do
+  if [[ ! -s "${factory_source}" ]]; then
+    echo "Factory objective source is missing or empty: ${factory_source}" >&2
+    exit 1
+  fi
+done
+
+if ! grep --quiet 'factoryService:Start()' src/server/init.server.luau \
+  || ! grep --quiet 'factoryService:Stop()' src/server/init.server.luau; then
+  echo "FactoryService must remain in the production startup and cleanup lifecycle." >&2
+  exit 1
+fi
 
 if ! grep --quiet '"servePlaceIds": \[137103245194702\]' default.project.json; then
   echo "Rojo must remain restricted to the Kaiju Citybreakers production place." >&2

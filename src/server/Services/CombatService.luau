@@ -9,6 +9,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local DestructibleContract = require(ReplicatedStorage.Shared.DestructibleContract)
 local PlayerRole = require(ReplicatedStorage.Shared.PlayerRole)
 local Types = require(ReplicatedStorage.Shared.Types)
+local VehicleContract = require(ReplicatedStorage.Shared.VehicleContract)
 
 type AbilityResult = Types.AbilityResult
 
@@ -38,11 +39,24 @@ local function findDestructible(part: BasePart): Model?
 	return nil
 end
 
+local function findVehicleId(part: BasePart): string?
+	local candidate: Instance? = part
+	while candidate and candidate ~= workspace do
+		if candidate:IsA("Model") and CollectionService:HasTag(candidate, VehicleContract.Tag) then
+			local id = candidate:GetAttribute(VehicleContract.Attribute.Id)
+			return if typeof(id) == "string" and id ~= "" then id else nil
+		end
+		candidate = candidate.Parent
+	end
+	return nil
+end
+
 function CombatService.new(
 	abilityRequestRemote: RemoteEvent,
 	abilityResultRemote: RemoteEvent,
 	destructionService: any,
-	roundService: any
+	roundService: any,
+	enemyService: any
 )
 	local self = setmetatable({}, CombatService)
 
@@ -50,6 +64,7 @@ function CombatService.new(
 	self._abilityResultRemote = abilityResultRemote
 	self._destructionService = destructionService
 	self._roundService = roundService
+	self._enemyService = enemyService
 	self._rateStates = {} :: { [Player]: RateState }
 	self._lastContactDamage = {} :: { [Player]: number }
 	self._contactAccumulator = 0
@@ -252,6 +267,13 @@ function CombatService:_performHumanFire(player: Player, sequence: number, reque
 		then
 			humanoid:TakeDamage(Config.Combat.HumanFireDamage)
 			hitCount = 1
+		else
+			local vehicleId = findVehicleId(result.Instance)
+			if
+				vehicleId and self._enemyService:Damage(vehicleId, Config.Combat.HumanFireDamage)
+			then
+				hitCount = 1
+			end
 		end
 	end
 
@@ -318,9 +340,17 @@ function CombatService:_performBasicAttack(player: Player, sequence: number)
 		overlapParams
 	)
 	local seen = {} :: { [Model]: boolean }
+	local seenVehicles = {} :: { [string]: boolean }
 	local hitCount = 0
 
 	for _, part in parts do
+		local vehicleId = findVehicleId(part)
+		if vehicleId and not seenVehicles[vehicleId] then
+			seenVehicles[vehicleId] = true
+			if self._enemyService:Damage(vehicleId, Config.Combat.BasicAttackHumanDamage) then
+				hitCount += 1
+			end
+		end
 		local structure = findDestructible(part)
 		if structure and not seen[structure] then
 			seen[structure] = true
@@ -421,6 +451,7 @@ function CombatService:_performCharge(player: Player, sequence: number)
 	overlapParams.ExcludeInstances = { character }
 	overlapParams.MaxParts = Config.Combat.MaximumChargeStructures * 2
 	local seen = {} :: { [Model]: boolean }
+	local seenVehicles = {} :: { [string]: boolean }
 	local impactCount = 0
 	task.spawn(function()
 		local endsAt = os.clock() + Config.Combat.ChargeDurationSeconds
@@ -439,6 +470,13 @@ function CombatService:_performCharge(player: Player, sequence: number)
 				Config.Combat.ChargeHumanDamage
 			)
 			for _, part in parts do
+				local vehicleId = findVehicleId(part)
+				if vehicleId and not seenVehicles[vehicleId] then
+					seenVehicles[vehicleId] = true
+					if self._enemyService:Damage(vehicleId, Config.Combat.ChargeHumanDamage) then
+						impactCount += 1
+					end
+				end
 				local structure = findDestructible(part)
 				if structure and not seen[structure] then
 					seen[structure] = true
@@ -585,6 +623,10 @@ function CombatService:_performBeam(player: Player, sequence: number, requestedD
 			})
 		then
 			hitCount = 1
+		end
+		local vehicleId = findVehicleId(raycastResult.Instance)
+		if vehicleId and self._enemyService:Damage(vehicleId, Config.Combat.BeamHumanDamage) then
+			hitCount += 1
 		end
 	end
 

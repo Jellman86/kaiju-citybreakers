@@ -19,6 +19,7 @@ They are Roblox XML model sources tracked through Git LFS. A generated `build/Ka
 - `Workspace.KaijuFeelLab.GameplayMarkers` contains visible, movable source objects used by code. Move `RogueKaijuSpawn` to choose the first enemy's start position; do not rename it or remove its `EnemySpawn` tag.
 - `Workspace.KaijuFeelLab.EnemyTemplates.RogueKaijuTemplate` is an Edit-visible, articulated original proxy. Its `EnemyRoot` is the anchored assembly root and its named `Rig_*` motors drive limbs, head and tail. Imported visual geometry may replace its body only after Codex audits and adapts the rig; preserve the containing template and spawn contract.
 - Each model under `Workspace.KaijuFeelLab.Turrets` contains a `TurretRig` built from the actual shell. `RigRoot`, `YawMotor`, `PitchMotor`, their welded visual groups and `VisualMuzzle` are one validated anchored-root assembly. Move or rotate the complete top-level turret model; do not move individual rig parts, change joint names, or anchor/unanchor descendants. The hidden `AimAssembly` is a technical authoritative reference, not the visible weapon.
+- Factory objectives remain Edit-visible top-level models tagged `ReinforcementFactory`. The map owner chooses the building and city, then positions `CaptureZone`, `TankSpawn`, `HelicopterSpawn`, `GroundRoute/Node01...`, and `AirRoute/Node01...`. Codex owns the tag, attributes, linked destructible ID, query parts, security audit, and code integration. See [FACTORY_OBJECTIVES.md](FACTORY_OBJECTIVES.md).
 
 Terrain, templates, markers, and accepted gameplay objects are intentionally unlocked. The runtime reads or clones them; it must not procedurally replace the saved authored world.
 
@@ -33,15 +34,16 @@ Do not press Play after inserting a new third-party model until Codex has inspec
 5. Use anchored geometry for static scenery. Keep gameplay buildings inside the existing destructible hierarchy and preserve their tags, IDs, hitboxes, collision proxies, and Intact/Damaged/Collapsed variants.
 6. Put new third-party candidate models under `AuthoringInbox`, position them where you want, save, and hand the place back to Codex before Play. Do not add or edit gameplay scripts in Studio.
 7. To give Codex a placed object to integrate, use a descriptive name, leave it under `AuthoringInbox`, and position/scale it in the intended location. Codex preserves that transform while auditing and adding tags, attributes, collision/query parts, and code contracts.
-8. Choose **File → Save to File**. Save the open place at its existing ignored path under `build/`.
-9. From the repository root, run:
+8. For the first factory, place one candidate factory building plus tank and helicopter candidates in `AuthoringInbox`, and place simple marker Parts where each vehicle should spawn and travel. Do not insert gameplay scripts; Codex will convert the accepted hierarchy to the factory contract without changing your chosen transforms.
+9. Choose **File → Save to File**. Save the open place at its existing ignored path under `build/`.
+10. From the repository root, run:
 
    ```sh
    python3 scripts/capture-map.py build/KaijuCitybreakers.rbxlx
    ./scripts/check.sh
    ```
 
-10. Reopen the newly generated place and verify the map in Edit mode before committing. Codex prepares the testable build; the map owner performs the requested device/gameplay test and reports observations.
+11. Reopen the newly generated place and verify the map in Edit mode before committing. Codex prepares the testable build; the map owner performs the requested device/gameplay test and reports observations.
 
 Use `--world-only` when only objects under `KaijuFeelLab` changed, or `--terrain-only` when only Terrain changed. This avoids rewriting the other large source unnecessarily.
 

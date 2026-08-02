@@ -17,6 +17,11 @@ export type Target = {
 	userId: number,
 }
 
+export type TargetProvider = {
+	GetTargets: (self: any) -> { Target },
+	Damage: (self: any, enemyId: string, amount: number) -> boolean,
+}
+
 type SensedTarget = {
 	player: Player,
 	character: Model,
@@ -125,7 +130,18 @@ function EnemyService.new(roundService: any)
 	self._templateSource = nil :: Model?
 	self._accumulator = 0
 	self._lastRoundPhase = roundService:GetPhase()
+	self._targetProviders = {} :: { [string]: TargetProvider }
 	return self
+end
+
+function EnemyService:RegisterTargetProvider(name: string, provider: TargetProvider)
+	assert(name ~= "", "Target provider name cannot be empty")
+	assert(self._targetProviders[name] == nil, `Target provider {name} is already registered`)
+	self._targetProviders[name] = provider
+end
+
+function EnemyService:UnregisterTargetProvider(name: string)
+	self._targetProviders[name] = nil
 end
 
 function EnemyService:_setState(record: EnemyRecord, state: string, stateEndsAt: number)
@@ -602,7 +618,7 @@ function EnemyService:_stepRecord(record: EnemyRecord, dt: number, now: number)
 end
 
 function EnemyService:GetTargets(): { Target }
-	local targets = {}
+	local targets = {} :: { Target }
 	for _, record in self._records do
 		if record.health > 0 and record.model:IsDescendantOf(workspace) then
 			table.insert(targets, {
@@ -614,12 +630,28 @@ function EnemyService:GetTargets(): { Target }
 			})
 		end
 	end
+	for _, provider in self._targetProviders do
+		for _, target in provider:GetTargets() do
+			table.insert(targets, target)
+		end
+	end
 	return targets
 end
 
 function EnemyService:Damage(enemyId: string, amount: number): boolean
 	local record = self._records[enemyId]
-	if not record or record.health <= 0 or amount <= 0 or amount ~= amount then
+	if amount <= 0 or amount ~= amount then
+		return false
+	end
+	if not record then
+		for _, provider in self._targetProviders do
+			if provider:Damage(enemyId, amount) then
+				return true
+			end
+		end
+		return false
+	end
+	if record.health <= 0 then
 		return false
 	end
 	local now = os.clock()

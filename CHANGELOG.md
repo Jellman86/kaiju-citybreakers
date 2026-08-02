@@ -8,6 +8,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 ### Added
 
+- First server-authoritative reinforcement-factory foundation with generic team/lane/objective contracts, contested capture, destructible shutdown, linked-turret transfer, bounded tank/helicopter waves, authored routes, distinct travelling projectiles, vehicle health/defeat, and integration with existing player attacks and turret targeting.
+- Research-led urban-island conquest and factory-objective specification, H14 playtest gate, Edit-visible map-owner handoff, and audited free-commercial-use asset candidate decisions.
 - Native `Motor6D` rigs for all four placed turret shells, including moving visual muzzles and client-local traverse/elevation driven by server-selected targets.
 - Richer server-authoritative `Riftback` AI with patrol, FOV/line-of-sight vision, hearing, target memory and hysteresis, investigation, blocked/stuck path recovery, swipe/lunge choice, stagger, and enrage.
 - Client-local joint posing for the articulated original enemy proxy across locomotion, attacks, stagger, idle, and enrage states.
