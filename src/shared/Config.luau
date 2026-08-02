@@ -78,6 +78,30 @@ local Config = {
 		MaximumContactVelocity = 28,
 	},
 
+	Turrets = {
+		MaximumActive = 12,
+		SampleIntervalSeconds = 0.2,
+		MaximumCaptureVerticalDistance = 65,
+		ProjectileSampleIntervalSeconds = 0.05,
+		MaximumActiveProjectiles = 16,
+	},
+
+	Enemies = {
+		MaximumActive = 1,
+		SampleIntervalSeconds = 0.2,
+		PerceptionRange = 240,
+		MoveSpeed = 18,
+		AttackRange = 24,
+		AttackDamage = 24,
+		AttackTelegraphSeconds = 0.75,
+		AttackRecoverySeconds = 1.1,
+		MaximumHealth = 280,
+		GroundProbeHeight = 80,
+		GroundProbeDistance = 220,
+		PathRecomputeSeconds = 1.5,
+		PathTargetMovementThreshold = 14,
+	},
+
 	Human = {
 		MaxHealth = 100,
 		WalkSpeed = 16,

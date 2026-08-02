@@ -1,6 +1,6 @@
 # Enemy-system plan
 
-Enemies should make the kaiju fantasy clearer, not turn the game into a crowded humanoid simulator. The first enemy is one readable scout drone; turrets, ground units, and a boss follow only after the drone passes mobile readability and server-cost gates.
+Enemies should make the kaiju fantasy clearer, not turn the game into a crowded humanoid simulator. The original plan began with one readable scout drone. The owner-requested four-turret feasibility slice now runs first because candidate placements already exist; this is a bounded scheduling exception, not permission to populate the map before the turret and later drone pass their own mobile readability and server-cost gates.
 
 ## Evidence boundary
 
@@ -21,8 +21,15 @@ Primary sources:
 - Use one shared server enemy state machine and damage/team contract across drones, turrets, and the boss.
 - Reuse the existing client-local effect and fixed-budget pooling patterns for projectiles, impacts, and defeat fragments.
 - Use simple assemblies or animation-light controllers for crowds; do not multiply full Humanoids without profiler evidence.
+- Reuse the turret projectile resolver only where the hit model matches. Bullet rays, cannon shells, and missiles remain distinct profiles rather than one generic visual recolour; see [TURRET_SYSTEM.md](TURRET_SYSTEM.md).
 
-## First scout-drone slice
+## First rogue-kaiju integration slice
+
+The owner-requested first target is one smaller rogue kaiju so the capturable turrets have a non-player opponent. The map owner controls its visible template and spawn marker in Edit mode. The server clones the reviewed template, strips executable descendants defensively, acquires living players, follows a bounded native path, telegraphs a melee strike, applies damage, exposes health/state attributes, and accepts authoritative turret damage. It updates decisions at `5 Hz` and recomputes a native path no faster than every `1.5` seconds unless the target moves materially; these are provisional budgets.
+
+The checked-in primitive creature is deliberately labelled as a replaceable proxy, not final art. A Creator Store or user-imported model may replace it only after the reuse audit, script removal, provenance/IP check, and mobile geometry review. Keeping AI separate from the visual lets map and model work happen without rewriting combat code.
+
+## Later scout-drone slice
 
 The drone patrols a short authored loop, acquires the nearest living kaiju inside a bounded radius, turns visibly, shows a clear wind-up, fires one slow projectile, recovers, and returns to patrol when the target is lost. The server owns acquisition, cadence, projectile collision, damage, defeat, and rewards. Clients may immediately show non-authoritative wind-up, trail, impact, and sound feedback.
 

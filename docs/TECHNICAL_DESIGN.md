@@ -31,6 +31,10 @@ StarterPlayer
 Workspace
 ├── Terrain                <- src/world/Terrain.rbxmx
 └── KaijuFeelLab           <- src/world/KaijuFeelLab.rbxmx
+    ├── AuthoringGuides    <- Edit-only map bounds and scale references
+    ├── AuthoringInbox     <- sandboxed Edit-only candidate-model handoff
+    ├── GameplayMarkers    <- visible movable source markers read by server systems
+    └── EnemyTemplates     <- visible replaceable visual templates cloned at runtime
 ```
 
 ## Planned server services
@@ -166,6 +170,10 @@ The same builder owns Arc Power Plant's low-cost functional silhouette: paired c
 `SmashAnimator` gives the local player a measured windup, strike, impact hold, and eased recovery while `CombatService` remains authoritative for hit timing and damage. Each Brontide shell attachment uses a dedicated `Motor6D`; the six arm/forearm/claw pivots animate persistent `C0` offsets because Roblox's avatar animation pass overwrote ordinary body-joint transforms before display. The controller records actual displacement of those visible shell parts and restores every pivot after recovery. Confirmed, non-predicted Smash results can replay the pose for Studio coverage without granting the client damage authority.
 
 The human-authored `Workspace.Terrain` and `Workspace.KaijuFeelLab` models own the shipped environment. `PrototypeWorldService` preserves those instances during Play and only runs the procedural composition when the map root is absent. `TerrainBuilder.Ensure` likewise preserves any non-empty terrain; its destructive `Build` path remains an explicit empty-place fallback. The captured baseline retains the original bounded Grass, Rock, Sand, and Water profile, while future skyline, route, and terrain-quality decisions are made visually in Studio and captured through [MAP_AUTHORING.md](MAP_AUTHORING.md).
+
+`AuthoringGuides` and the sandboxed `AuthoringInbox` are source-controlled inside that world so the map owner can see full terrain bounds, compare human/kaiju scale, and place candidate assets in context. `PrototypeWorldService` destroys both before gameplay begins. They never become targets, collisions, objectives, AI, or production visuals. A candidate leaves the inbox only after the asset/reuse audit and removal of all imported executable behaviour.
+
+Gameplay markers, turret aim assemblies, and enemy templates are also source-controlled and remain visible in Edit mode. Unlike the two authoring-only folders, server systems read or clone them at Play. Names, tags, and contract parts are code-owned; their world transforms and reviewed visual descendants are map/model-owner authored.
 
 The versioned `StudioTestService` regression starts with one client, drives the real authoritative attack path, then adds a late client and compares server state with both clients' replicated attributes and locally selected variants. Test modules are inert outside Studio and unless their exact test argument is present; see [MULTIPLAYER_TESTING.md](MULTIPLAYER_TESTING.md).
 

@@ -11,10 +11,12 @@ Players.CharacterAutoLoads = false
 
 local CombatService = require(script.Services.CombatService)
 local DestructionService = require(script.Services.DestructionService)
+local EnemyService = require(script.Services.EnemyService)
 local KaijuService = require(script.Services.KaijuService)
 local PlaytestService = require(script.Services.PlaytestService)
 local PrototypeWorldService = require(script.Services.PrototypeWorldService)
 local RoundService = require(script.Services.RoundService)
+local TurretService = require(script.Services.TurretService)
 
 local remotes = ReplicatedStorage:WaitForChild("Remotes")
 
@@ -35,6 +37,7 @@ local roundStateRemote = getOrCreateRemoteEvent("RoundState")
 local abilityRequestRemote = getOrCreateRemoteEvent("AbilityRequest")
 local abilityResultRemote = getOrCreateRemoteEvent("AbilityResult")
 local destructionStateRemote = getOrCreateRemoteEvent("DestructionState")
+local turretFiredRemote = getOrCreateRemoteEvent("TurretFired")
 
 local playtestService = PlaytestService.new()
 local prototypeWorldService = PrototypeWorldService.new()
@@ -50,12 +53,16 @@ local kaijuService = KaijuService.new(function(player)
 end)
 local combatService =
 	CombatService.new(abilityRequestRemote, abilityResultRemote, destructionService, roundService)
+local enemyService = EnemyService.new(roundService)
+local turretService = TurretService.new(turretFiredRemote, roundService, enemyService)
 
 playtestService:Start()
 prototypeWorldService:Start()
 destructionService:Start()
 roundService:Start()
 kaijuService:Start()
+enemyService:Start()
+turretService:Start()
 combatService:Start()
 
 -- StudioTestService is unavailable to live experience servers. Keep the test
@@ -68,6 +75,8 @@ end
 
 game:BindToClose(function()
 	combatService:Stop()
+	turretService:Stop()
+	enemyService:Stop()
 	destructionService:Stop()
 	kaijuService:Stop()
 	roundService:Stop()

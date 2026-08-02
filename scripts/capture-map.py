@@ -36,6 +36,7 @@ def write_model(instance: ET.Element, shared_strings: ET.Element | None, destina
         temporary_path = Path(temporary.name)
         ET.ElementTree(root).write(temporary, encoding="utf-8", xml_declaration=False)
     os.replace(temporary_path, destination)
+    destination.chmod(0o644)
 
 
 def main() -> None:
@@ -48,6 +49,17 @@ def main() -> None:
         type=Path,
         default=Path("src/world"),
         help="Destination directory (default: src/world)",
+    )
+    capture_scope = parser.add_mutually_exclusive_group()
+    capture_scope.add_argument(
+        "--world-only",
+        action="store_true",
+        help="Capture KaijuFeelLab without replacing the terrain source",
+    )
+    capture_scope.add_argument(
+        "--terrain-only",
+        action="store_true",
+        help="Capture Terrain without replacing the KaijuFeelLab source",
     )
     args = parser.parse_args()
 
@@ -78,9 +90,14 @@ def main() -> None:
         raise SystemExit(f"Saved place does not contain Workspace.{WORLD_NAME}")
 
     shared_strings = root.find("SharedStrings")
-    write_model(terrain, shared_strings, args.output / "Terrain.rbxmx")
-    write_model(world, shared_strings, args.output / f"{WORLD_NAME}.rbxmx")
-    print(f"Captured authored terrain and {WORLD_NAME} in {args.output}")
+    captured = []
+    if not args.world_only:
+        write_model(terrain, shared_strings, args.output / "Terrain.rbxmx")
+        captured.append("Terrain")
+    if not args.terrain_only:
+        write_model(world, shared_strings, args.output / f"{WORLD_NAME}.rbxmx")
+        captured.append(WORLD_NAME)
+    print(f"Captured {' and '.join(captured)} in {args.output}")
 
 
 if __name__ == "__main__":

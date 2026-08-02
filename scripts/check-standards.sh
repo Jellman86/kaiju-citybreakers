@@ -67,6 +67,12 @@ for authored_world_source in src/world/Terrain.rbxmx src/world/KaijuFeelLab.rbxm
   fi
 done
 
+if grep --extended-regexp --line-number \
+  '<Item class="(Script|LocalScript|ModuleScript)"' src/world/KaijuFeelLab.rbxmx; then
+  echo "Captured world models must not contain executable scripts; audit and strip AuthoringInbox candidates first." >&2
+  exit 1
+fi
+
 tracked_generated="$(git ls-files -- '*.rbxl' '*.rbxlx' '*.rbxm' '*.rbxmx' \
   | grep -Ev '^src/world/(Terrain|KaijuFeelLab)\.rbxmx$' || true)"
 if [[ -n "${tracked_generated}" ]]; then

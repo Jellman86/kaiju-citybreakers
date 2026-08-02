@@ -145,19 +145,22 @@ One complete five-to-eight-minute run works from join to replay with no manual i
 
 ### Deliverables
 
-- Scout-drone navigation and attack behaviour.
-- Turret area denial if schedule permits.
+- Bounded capturable-turret feasibility slice using four sanitized shells, distinct bullet/minigun/cannon/rocket attacks, and native two-client validation.
+- One smaller rogue-kaiju target from an Edit-visible replaceable template, with server-owned bounded pathfinding, telegraphed melee, turret targeting, health, and defeat.
+- Scout-drone navigation and attack behaviour after the turret and rogue-kaiju integration gates.
 - Greybox defence-mech boss with telegraphed attacks and phases.
 - Difficulty director based on player count and round performance.
 - Server-side reward calculation.
 
 ### Enemy implementation order
 
-1. Define one server-owned enemy contract and a small state machine: idle, acquire, telegraph, attack, recover, stagger, and defeated.
-2. Add one scout drone using authored aerial patrol nodes and line-of-sight checks; it fires slow, dodgeable projectiles and never needs ground pathfinding.
-3. Add Arc Power Plant turrets as stationary area denial, reusing the same damage, team, telegraph, and pooling contracts.
-4. Add one ground defence unit using native `PathfindingService`, realistic agent dimensions, district cost modifiers, bounded replanning, and a direct-steering fallback.
-5. Build the defence-mech boss only after the drone and turret are readable and performant on mobile.
+1. Prove the owner-requested turret feasibility slice: sanitized assets, server-owned capture/targeting, visible traverse/elevation and first-shot wind-up, four distinct attack profiles, bounded projectile simulation, fixed-cap cosmetics, cover, and two-client tests. Do not multiply it across the map yet; see [TURRET_SYSTEM.md](TURRET_SYSTEM.md).
+2. Define the shared server-owned enemy contract and small state machine: idle, acquire, telegraph, attack, recover, stagger, and defeated.
+3. Integrate one smaller rogue kaiju from the visible `EnemyTemplates` contract so turrets have a non-player target; replace the primitive proxy after the map owner supplies an audited original model.
+4. Add one scout drone using authored aerial patrol nodes and line-of-sight checks; it fires a slow, dodgeable projectile and never needs ground pathfinding.
+5. Consolidate the proven turret and enemy damage, team, telegraph, projectile, and pooling contracts without changing their distinct presentations.
+6. Add another ground defence unit only after the rogue-kaiju path and mobile budget are proven.
+7. Build the defence-mech boss only after the drone and turret are readable and performant on mobile.
 
 Enemy decisions, health, damage, targeting, and rewards remain server-owned. Clients predict only harmless presentation such as wind-up effects and projectile trails. Active counts, perception frequency, path recomputation, projectiles, and effects receive explicit budgets before content multiplication; see [ENEMY_SYSTEM.md](ENEMY_SYSTEM.md).
 

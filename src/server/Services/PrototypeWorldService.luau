@@ -1019,6 +1019,19 @@ function PrototypeWorldService.new()
 	return setmetatable({}, PrototypeWorldService)
 end
 
+local function removeAuthoringOnlyContent(world: Instance)
+	-- These descendants exist so the map owner can see scale, frame the complete
+	-- terrain, and place untrusted candidate models in Edit mode. They are never
+	-- part of the playable runtime. AuthoringInbox is additionally sandboxed in
+	-- the saved place, and repository checks reject executable code in the map.
+	for _, name in { "AuthoringGuides", "AuthoringInbox" } do
+		local instance = world:FindFirstChild(name)
+		if instance then
+			instance:Destroy()
+		end
+	end
+end
+
 function PrototypeWorldService:Start()
 	local existing = workspace:FindFirstChild(Config.Prototype.WorldName)
 
@@ -1040,6 +1053,7 @@ function PrototypeWorldService:Start()
 	-- city in Edit mode without the runtime bootstrap erasing their work.
 	if existing then
 		TerrainBuilder.Ensure(existing)
+		removeAuthoringOnlyContent(existing)
 		print("[PrototypeWorldService] Preserved hand-authored Brontide world")
 		return
 	end

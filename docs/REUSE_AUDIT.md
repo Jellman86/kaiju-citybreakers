@@ -50,6 +50,31 @@ Roblox warns that unfamiliar packages can contain malicious scripts and recommen
 
 The 2026-08-01 Creator Store re-check used free, verified-creator-only searches for an original monster rig and a low-poly city. No character result passed the originality, provenance, relevance, and inspection threshold. Community city packs were not adopted because the source-controlled primitive city solves the current readability test with less security and performance risk. The official Roblox modular kit remains the strongest later candidate.
 
+## 2026-08-02 — Capturable-turret audit
+
+| Need | Candidate | Decision | Reason |
+| --- | --- | --- | --- |
+| Capture discovery and state | Native `CollectionService` tags and attributes | **Use** | Already established in the destructible contract; saved, replicated, inspectable, and sufficient for a small map-authored objective. |
+| Target obstruction and bullets | Native `Workspace:Raycast()` with server-owned filtering | **Use** | Roblox documents raycasts for instantaneous weapon hit checks. The server can exclude the turret shell and require the result to belong to the chosen character. |
+| Cannon and rocket collision | Bounded logical projectiles with fixed-rate swept raycasts | **Use provisionally** | Roblox distinguishes physically simulated and instantaneous hit checks. Segment casts prevent tunnelling without granting physics/network ownership to a moving damaging part. |
+| Projectile presentation | Fixed-cap client-local native parts, trails, and impact rings | **Use provisionally** | Effects cannot change outcomes, and pooling places a measurable ceiling on instances. Physical phone profiling remains mandatory. |
+| Full Roblox weapons kit | Roblox-published prefab system | **Reference; do not adopt** | It documents moving shot effects and explosions, but its player-weapon/input/configuration surface is substantially larger than four server-controlled stationary attacks. |
+| Imported turret gameplay scripts | Scripts embedded in four community Creator Store models | **Reject and remove** | The scripts use legacy seat/remotes and unknown gameplay assumptions. Roblox explicitly warns that Toolbox models are a common backdoor source and moderation is not guaranteed. |
+| Imported turret geometry | Four free public-domain Creator Store model listings | **Provisional sanitized candidates** | The user selected their placement and silhouettes. Every script, remote, sound, effect, mover, value, and seat behaviour was stripped; all parts were anchored; original gameplay contracts were added. Provenance and counts are in `assets/ASSET_REGISTER.md`; mobile/profile gates remain open. |
+
+No runtime package, paid service, telemetry, or external code is adopted. Replacement plan: keep the small tag/attribute contract and replace any rejected community shell with an original Blender model without changing capture or attack code.
+
+## 2026-08-02 — First rogue-kaiju AI audit
+
+| Need | Candidate | Decision | Reason |
+| --- | --- | --- | --- |
+| Ground navigation | Native `PathfindingService` with bounded recomputation | **Use provisionally** | Native paths avoid a custom navmesh/A* implementation. One actor senses at `5 Hz`; path recomputation is throttled and must be profiled on phone before adding actors. |
+| AI/combat framework | General NPC frameworks and Creator Store scripts | **Reject** | One chase/telegraph/recover actor is smaller and safer as a strict server service. Imported scripts, remotes, analytics, and client-owned damage are prohibited. |
+| Initial visual | Original source-controlled primitive proxy | **Use as replaceable test stand-in** | It is free, inspectable, original, low-cost, visible in Edit mode, and explicitly labelled non-final. It lets the complete contract run while the map owner imports a preferred reviewed model. |
+| `Majasaurus Kaiju For attack on Kaiju`, asset `287567981`, creator `Cryolophysis` | Free public-domain Creator Store candidate whose description says it is the creator's custom kaiju | **Candidate only; not adopted** | The silhouette appeared suitable and original-looking, but automated insertion was unauthorized and the contents have not been inspected. The map owner may place it in the sandboxed `AuthoringInbox`; it cannot enter gameplay or the asset register until the full audit passes. |
+
+No external enemy asset or runtime dependency is adopted. The visual replacement contract retains `RogueKaijuTemplate` and `EnemyRoot`; AI, health, targeting, and damage remain independent of imported art.
+
 ## 2026-08-01 — Game-development skill audit
 
 | Candidate | Decision | Reason |

@@ -8,6 +8,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 ### Added
 
+- Edit-visible full-map authoring guides, truthful Brontide/human scale references, and a sandboxed `AuthoringInbox` that formalize the map-owner/Codex handoff while remaining absent from Play.
+- Edit-visible turret aim assemblies, a movable rogue-kaiju spawn marker, and a replaceable enemy template that keep gameplay objects inspectable while server code owns their contracts.
+- First server-owned rogue-kaiju AI slice with bounded native pathfinding, chase/telegraph/recovery states, player melee damage, turret target integration, authoritative health, and defeat.
+- Research-led capturable-turret specification with sanitized Creator Store shell provenance, server-owned capture/targeting, distinct bullet/minigun/cannon/rocket profiles, bounded projectile/effect budgets, placement guidance, and explicit multiplayer/mobile gates.
 - Hand-authored Studio map pipeline with source-controlled Terrain and city models, a focused capture tool, and an Edit-mode authoring guide.
 - Native smooth terrain composition with a rocky Mount Brontide massif, park mounds, irregular sand banks, real terrain water, and perimeter relief around the city.
 - Procedural Brontide Smash animation with an eased wind-up, fast strike, server-authoritative impact moment, and recovery to the original pose.
