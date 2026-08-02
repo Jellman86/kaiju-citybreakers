@@ -12,6 +12,7 @@ Players.CharacterAutoLoads = false
 local CombatService = require(script.Services.CombatService)
 local DestructionService = require(script.Services.DestructionService)
 local EnemyService = require(script.Services.EnemyService)
+local FactoryService = require(script.Services.FactoryService)
 local KaijuService = require(script.Services.KaijuService)
 local PlaytestService = require(script.Services.PlaytestService)
 local PrototypeWorldService = require(script.Services.PrototypeWorldService)
@@ -51,9 +52,15 @@ local destructionService = DestructionService.new(
 local kaijuService = KaijuService.new(function(player)
 	playtestService:MarkControlGranted(player)
 end)
-local combatService =
-	CombatService.new(abilityRequestRemote, abilityResultRemote, destructionService, roundService)
 local enemyService = EnemyService.new(roundService)
+local combatService = CombatService.new(
+	abilityRequestRemote,
+	abilityResultRemote,
+	destructionService,
+	roundService,
+	enemyService
+)
+local factoryService = FactoryService.new(roundService, enemyService)
 local turretService = TurretService.new(turretFiredRemote, roundService, enemyService)
 
 playtestService:Start()
@@ -62,6 +69,7 @@ destructionService:Start()
 roundService:Start()
 kaijuService:Start()
 enemyService:Start()
+factoryService:Start()
 turretService:Start()
 combatService:Start()
 
@@ -76,6 +84,7 @@ end
 game:BindToClose(function()
 	combatService:Stop()
 	turretService:Stop()
+	factoryService:Stop()
 	enemyService:Stop()
 	destructionService:Stop()
 	kaijuService:Stop()

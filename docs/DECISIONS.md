@@ -253,3 +253,11 @@ Basis: the visible shell—not a proxy overlay—must aim for the placed model t
 An adopted external asset must cost `£0` and permit use and necessary modification in a monetised Roblox experience without purchase, subscription, revenue share, royalties, usage fees, or later payment triggered by earnings. Separately, the uploader must own the work or have authority to license every protected element. A free or permissive fan upload cannot grant rights to someone else's character.
 
 Basis: Creator Store terms govern use on Roblox services, but Roblox's IP rules still require ownership or permission for underlying content. The quarantined `Mire Godzilla` candidate was therefore removed despite being listed free; it also contained four scripts/modules and an unprofiled 119-mesh visual. Original work or a demonstrably authorised commercial asset remains the replacement route.
+
+## 2026-08-02 — Add one factory objective as the bridge to urban-island conquest and future MOBA lanes
+
+Implement one generic `ReinforcementFactory` contract rather than hard-coding the current game mode. Its server-owned owner, state, lane, spawn profile, linked destructible, capture progress, route markers, and bounded unit caps support the present cooperative assault and allow a later mode to enable allied production without replacing the objective system. Enemy ownership produces tanks and helicopters; capture or linked-building collapse stops production; capture transfers explicitly linked turrets.
+
+Keep the first vehicles as original primitive proxies. Their gameplay roots, health, targeting, route movement, distinct travelling projectiles, and damage integrate through the existing enemy registry and combat services. Candidate Creator Store tank/helicopter visuals remain research leads until rights, contents, performance, collision, and device gates pass.
+
+Basis: Roblox recommends layout-first greyboxing and testing traversal, orientation, choices, and bypasses before environmental art. Native streaming and pathfinding are appropriate building blocks for a larger authored world, while Roblox security guidance requires objectives, spawning, movement, hits, health, and ownership to remain authoritative. Whether factory capture improves pacing or just adds complexity is H14, so only one city-island slice may be built before evidence.

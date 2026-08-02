@@ -14,6 +14,7 @@ required_files=(
   "docs/DECISIONS.md"
   "docs/PLAYTESTS.md"
   "docs/MAP_AUTHORING.md"
+  "docs/FACTORY_OBJECTIVES.md"
   "assets/ASSET_REGISTER.md"
   ".github/CODEOWNERS"
   ".github/pull_request_template.md"
@@ -26,6 +27,22 @@ for required_file in "${required_files[@]}"; do
     exit 1
   fi
 done
+
+for factory_source in \
+  src/shared/FactoryContract.luau \
+  src/shared/VehicleContract.luau \
+  src/server/Services/FactoryService.luau; do
+  if [[ ! -s "${factory_source}" ]]; then
+    echo "Factory objective source is missing or empty: ${factory_source}" >&2
+    exit 1
+  fi
+done
+
+if ! grep --quiet 'factoryService:Start()' src/server/init.server.luau \
+  || ! grep --quiet 'factoryService:Stop()' src/server/init.server.luau; then
+  echo "FactoryService must remain in the production startup and cleanup lifecycle." >&2
+  exit 1
+fi
 
 if ! grep --quiet '"servePlaceIds": \[137103245194702\]' default.project.json; then
   echo "Rojo must remain restricted to the Kaiju Citybreakers production place." >&2
@@ -85,6 +102,20 @@ if ! grep --quiet '<string name="Name">Rig_LeftArm</string>' src/world/KaijuFeel
   echo "The authored rogue-kaiju template must retain its articulated Rig_* motor contract." >&2
   exit 1
 fi
+
+for factory_authoring_name in \
+  FactoryObjectives \
+  TEMP_ArcFactoryObjective \
+  TankSpawn \
+  HelicopterSpawn \
+  GroundRoute \
+  AirRoute; do
+  factory_authoring_count="$(grep -c "<string name=\"Name\">${factory_authoring_name}</string>" src/world/KaijuFeelLab.rbxmx || true)"
+  if [[ "${factory_authoring_count}" -ne 1 ]]; then
+    echo "Temporary factory authoring contract requires one ${factory_authoring_name}; found ${factory_authoring_count}." >&2
+    exit 1
+  fi
+done
 
 if grep --extended-regexp --ignore-case --line-number \
   'Mire Goji|Godzilla|Gojira|RigMotionSmoke' src/world/KaijuFeelLab.rbxmx \

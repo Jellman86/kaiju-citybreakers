@@ -27,6 +27,7 @@ TurretContract.Attribute = table.freeze({
 	AimActive = "AimActive",
 	AimTargetPosition = "AimTargetPosition",
 	ShotSequence = "ShotSequence",
+	FactoryId = "FactoryId",
 })
 
 TurretContract.Aim = table.freeze({

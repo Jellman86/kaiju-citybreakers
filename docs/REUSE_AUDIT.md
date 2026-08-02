@@ -87,6 +87,21 @@ No external enemy asset or runtime dependency is adopted. The visual replacement
 
 No new runtime dependency, paid service, royalty-bearing asset, or revenue-share obligation is introduced. The retained enemy is the original `Riftback` proxy, now articulated through native joints; an imported replacement must be original or duly licensed by the underlying IP owner and pass the same commercial-use, security, and mobile gates.
 
+## 2026-08-02 — Factory and reinforcement audit
+
+| Need | Candidate | Decision | Reason |
+| --- | --- | --- | --- |
+| Objective discovery/configuration | Native `CollectionService` tag plus replicated attributes | **Use** | Saved, Edit-visible, server-readable, and already the repository standard for destructibles, turrets, and enemies. |
+| Ground/air routes | Ordered authored marker parts; native pathfinding only when terrain/obstacle recovery proves necessary | **Use for first slice** | The map owner can see and move the intended lane. A tiny bounded wave following a designed road does not justify a navigation framework; native pathfinding remains the next step for dynamic obstruction. |
+| Factory/vehicle gameplay framework | General MOBA, NPC, spawner, and vehicle kits | **Reject for first slice** | The needed contract is small and tightly coupled to this game's mixed scale, destruction states, turret registry, team ownership, mobile caps, and authoring handoff. Imported frameworks add scripts, remotes, economy assumptions, and licence/security surface. |
+| Tank visual `10634014` | Free Creator Store model listing; no scripts; 1,168 triangles; two decals | **Candidate only; not adopted** | Promising lightweight shell, but uploader rights, decal provenance, hierarchy, pivots, collision, and current listing terms still require disposable-place inspection. |
+| Helicopter pair `15157854316` | Free Creator Store model listing described as military/mobile-support helicopters | **Candidate only; not adopted** | Contents, scripts, mesh/texture complexity, underlying design rights, assembly suitability, and commercial-use terms have not been fully inspected. |
+| Helicopter `3671684319` | Creator Store model with 34,916 triangles, 21 scripts, and six audio objects | **Reject** | Excessive unreviewed code/content and an unjustified mobile cost for the feasibility slice. |
+| Tank `8381621293` and army helicopter `56241437` | Creator Store models containing eight and eleven scripts respectively | **Reject** | Embedded behaviour and reported fragility duplicate authoritative systems and enlarge the attack, maintenance, and performance surface. |
+| Vehicle proxy visuals | Original native primitives with stable gameplay roots | **Use provisionally** | Free, inspectable, script-free, and sufficient to test routes, attacks, caps, and objective causality. Replace visuals only after H14 proves the system worth production art. |
+
+No external asset, dependency, paid service, royalty, revenue share, subscription, or earnings-triggered fee is adopted by this slice. Candidate listings remain research leads and therefore do not enter `assets/ASSET_REGISTER.md`.
+
 ## 2026-08-01 — Game-development skill audit
 
 | Candidate | Decision | Reason |

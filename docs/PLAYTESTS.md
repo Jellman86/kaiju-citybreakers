@@ -564,3 +564,22 @@ The build is safe to publish for owner-device testing. Retain the four rig contr
 - The commit-labelled artifact was opened in the sole Studio process, passed a fresh one-server/one-client boot smoke, and overwrote the existing `Kaiju Citybreakers` place. Studio displayed `Successfully published!` and logged `Published "Kaiju Citybreakers" to Roblox.` at 11:44 BST.
 - Roblox granted the destination experience access to the nine referenced asset IDs reported by Studio (`5590111085`, `5590111156`, `5590111209`, `5590112509`, `5590111661`, `5590112408`, `5590111714`, `5590112161`, and `5590112319`) before the upload completed.
 - A fresh owner-phone session remains required for visual aim alignment, enemy-state readability, live-server bootstrap, and representative-device performance; no human or production-client result is inferred from the Studio pass.
+
+## 2026-08-02 — Temporary factory objective boot smoke
+
+- Implementation commit: `596ed87` (factory foundation `41498f7`).
+- Environment: one clean Roblox Studio process, one local server and one client; **zero human testers**.
+- Scope: exact Rojo artifact startup, source-captured Edit-visible factory contract, route markers, bounded mixed wave, vehicle attributes, projectile presence, and project-script error inspection.
+
+### Results
+
+- The rebuilt place contained one tagged `TEMP_ArcFactoryObjective`, the production `FactoryService`, five ground-route nodes, and five air-route nodes.
+- The authored objective linked Arc Power Plant's destructible `arc_turbine_hall`, retained movable Edit-mode markers, and hid spawn/route authoring markers when runtime registration began.
+- The round reached `Active`; the factory's replicated `SpawnSequence` reached `3` and `RuntimeReinforcements` contained `Tank_1`, `Tank_2`, and `Helicopter_3`.
+- Both tanks replicated `VehicleArchetype = Tank`, health `180`, and state `Engaging`. The helicopter replicated `VehicleArchetype = Helicopter`, health `120`, and state `Engaging`.
+- A separate `HelicopterBullet` travelling projectile was present during inspection, establishing a distinct projectile instance from the combat vehicle. This does not yet prove visual clarity, collision fairness, or damage balance.
+- Studio Output contained no factory or project-script error during the smoke window. The test was stopped normally, and only one Studio process remained.
+
+### Decision
+
+Retain the temporary Arc factory as the first integration fixture. It proves registration, caps, spawning, replicated combat state, and basic projectile activity—not route quality, capture/destruction shutdown, linked-turret transfer, vehicle model quality, mobile performance, or fun. The map owner may move the complete objective and its markers while expanding the generated terrain; the next evidence gate is an owner playtest followed by the two-client capture/destruction regression.
