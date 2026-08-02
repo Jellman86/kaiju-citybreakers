@@ -42,7 +42,7 @@ Custom code is appropriate when the requirement is small or game-specific and th
 - Every external or generated asset **MUST** be entered in `assets/ASSET_REGISTER.md` before merge.
 - Unknown, custom, non-commercial-only, or incompatible licences **MUST NOT** be adopted.
 - Paid, trial-limited, account-locked, or quota-dependent production requirements **MUST NOT** be adopted.
-- Large Blender, model, and audio sources **MUST** use Git LFS. Generated places, exports, and renders **MUST NOT** be committed unless a written release process requires them.
+- Large Blender, model, and audio sources **MUST** use Git LFS. The two canonical hand-authored map models under `src/world/` are source assets and **MUST** use Git LFS. Generated places, arbitrary model exports, and renders **MUST NOT** be committed unless a written release process requires them.
 - Blender source in `assets/blender/` owns original 3D work; reviewed exports go to `exports/`.
 
 Public repository visibility does not itself grant a reuse licence. A project-wide code and asset licence requires an explicit owner decision; do not infer one.
@@ -50,7 +50,7 @@ Public repository visibility does not itself grant a reuse licence. A project-wi
 ## 5. Architecture and Roblox security
 
 - Rojo-managed Luau in `src/` **MUST** remain the source of truth for scripts.
-- Studio **MAY** own world composition, tags, attributes, terrain, lighting, and playtest state, but **MUST NOT** become an independent fork of Rojo scripts.
+- Studio **MAY** own world composition, tags, attributes, terrain, lighting, and playtest state, but **MUST NOT** become an independent fork of Rojo scripts. Authored map changes **MUST** follow `docs/MAP_AUTHORING.md`; runtime bootstrap **MUST NOT** erase a pre-existing authored map.
 - Production Luau modules **MUST** use `--!strict`.
 - Combat, rewards, objectives, mutations, persistence, purchases, and destruction **MUST** be server-authoritative.
 - Every client payload **MUST** be treated as hostile and validated against the rules in `SECURITY.md`.

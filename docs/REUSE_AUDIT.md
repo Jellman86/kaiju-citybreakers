@@ -137,3 +137,14 @@ No dependency, external asset, paid service or new production art is adopted. Re
 | Marketplace destruction framework | Creator Store/community packages | **Reject** | The existing strict registry, state machine, queries, late-join attributes, and debris pool already cover the requirement with less security, licence, and performance surface. |
 
 No dependency, external asset, texture, paid service, or new permission is added. Replacement plan: preserve the impact metadata and replace only the primitive client renderer with original archetype-specific Blender breakaway meshes if H10 passes.
+
+## 2026-08-02 — Hand-authored map workflow audit
+
+| Need | Candidate | Decision | Reason |
+| --- | --- | --- | --- |
+| Visual terrain and district composition | Roblox Studio Terrain Editor and native object tools | **Use** | The human designer receives continuous spatial feedback in the same editor used for playtesting; no external terrain plugin, asset pack, licence, or paid tool is required. |
+| Reviewable map ownership | Two focused `.rbxmx` model sources through Rojo and existing Git LFS | **Use** | Rojo natively maps model files into Workspace. Capturing only Terrain and the map root avoids committing generated places or accepting Studio scripts as a second source of truth. |
+| Procedural city generation | Existing builders | **Retain as fallback only** | Useful for empty-place recovery and measured scaffolding, but code-generated coordinates cannot establish visual quality. It must not overwrite authored work. |
+| Third-party terrain/city plugin | Creator Store and external editor plugins | **Do not add** | Native tools already solve the authoring requirement with less security, maintenance, provenance, and cost surface. |
+
+No dependency, external asset, paid service, or new runtime permission is added. Replacement plan: split the map into additional district model sources only if file size, merge contention, or streaming ownership makes the two-source layout measurably inadequate.

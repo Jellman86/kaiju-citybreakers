@@ -2,6 +2,14 @@
 
 Use [RESEARCH.md](RESEARCH.md) to classify the basis for each decision. For playtest decisions, include the build commit, device, sample size, observed result, and whether players received coaching.
 
+## 2026-08-02 — Human-authored map is the visual source of truth
+
+Store `Workspace.KaijuFeelLab` and `Workspace.Terrain` as focused Roblox XML model sources, capture them from an ignored saved Studio place, and preserve them whenever Play starts. Keep the procedural builder only as a fallback for an intentionally empty place and as reusable metric scaffolding.
+
+Basis: direct stakeholder feedback correctly identified that screenshot sampling, instance counts, and procedural coordinates do not provide continuous spatial judgement or convincing art direction. Roblox supplies a native visual Terrain Editor, while Rojo supports model files as project paths but does not reverse-sync Studio edits to the filesystem. Separating the two world roots from Rojo-owned scripts lets a human compose the map visually without introducing a second script source of truth. The solution uses only existing free tools and Git LFS already registered by the project.
+
+Risk and review condition: XML world models are large and visually opaque in code review, so each capture must be rebuilt and inspected in Edit mode, with gameplay and device regression proportional to the change. Revisit asset partitioning if repeated captures materially consume the project's free Git LFS allowance or create merge contention.
+
 ## 2026-08-01 — Core format
 
 Choose a cooperative kaiju rampage roguelite as the first product. Treat competitive territory control as a later mode, not the initial build.

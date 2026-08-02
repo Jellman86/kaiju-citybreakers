@@ -1021,9 +1021,6 @@ end
 
 function PrototypeWorldService:Start()
 	local existing = workspace:FindFirstChild(Config.Prototype.WorldName)
-	if existing then
-		existing:Destroy()
-	end
 
 	local legacyBaseplate = workspace:FindFirstChild("Baseplate")
 	if legacyBaseplate and legacyBaseplate:IsA("BasePart") then
@@ -1038,10 +1035,19 @@ function PrototypeWorldService:Start()
 
 	configureLighting()
 
+	-- A world that exists before Play is the hand-authored source of truth. Do
+	-- not replace it: designers must be able to sculpt terrain and rearrange the
+	-- city in Edit mode without the runtime bootstrap erasing their work.
+	if existing then
+		TerrainBuilder.Ensure(existing)
+		print("[PrototypeWorldService] Preserved hand-authored Brontide world")
+		return
+	end
+
 	local world = Instance.new("Folder")
 	world.Name = Config.Prototype.WorldName
 	world.Parent = workspace
-	TerrainBuilder.Build(world)
+	TerrainBuilder.Ensure(world)
 
 	for index, definition in
 		{

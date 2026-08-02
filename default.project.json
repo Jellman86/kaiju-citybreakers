@@ -38,6 +38,12 @@
     "Workspace": {
       "$properties": {
         "StreamingEnabled": true
+      },
+      "Terrain": {
+        "$path": "src/world/Terrain.rbxmx"
+      },
+      "KaijuFeelLab": {
+        "$path": "src/world/KaijuFeelLab.rbxmx"
       }
     }
   }

@@ -5,7 +5,7 @@
 - The server owns round phase, damage, objectives, rewards, destructible state, and enemy decisions.
 - Clients own input collection, camera, HUD, local animation prediction, cosmetic debris, and non-authoritative effects.
 - Remotes express intent rather than outcomes. A client requests an attack; the server determines whether it can happen and what it hits.
-- Rojo-managed files are authoritative for scripts. Studio instances, tags, attributes, terrain, lighting, and placement remain in the place.
+- Rojo-managed files are authoritative for scripts. The focused `src/world` model files are authoritative for Studio-authored terrain and map composition; see [MAP_AUTHORING.md](MAP_AUTHORING.md).
 - Systems are built for one player first, then tested with two clients before expanding capacity.
 
 ## Rojo data model
@@ -27,6 +27,10 @@ StarterPlayer
         ├── Controllers
         ├── Effects
         └── Tests          <- Studio-only client observations
+
+Workspace
+├── Terrain                <- src/world/Terrain.rbxmx
+└── KaijuFeelLab           <- src/world/KaijuFeelLab.rbxmx
 ```
 
 ## Planned server services
@@ -161,7 +165,7 @@ The same builder owns Arc Power Plant's low-cost functional silhouette: paired c
 
 `SmashAnimator` gives the local player a measured windup, strike, impact hold, and eased recovery while `CombatService` remains authoritative for hit timing and damage. Each Brontide shell attachment uses a dedicated `Motor6D`; the six arm/forearm/claw pivots animate persistent `C0` offsets because Roblox's avatar animation pass overwrote ordinary body-joint transforms before display. The controller records actual displacement of those visible shell parts and restores every pivot after recovery. Confirmed, non-predicted Smash results can replay the pose for Studio coverage without granting the client damage authority.
 
-`TerrainBuilder` owns the generated smooth-terrain profile. It clears only the project-owned terrain during world bootstrap, creates one broad horizontal Grass layer, then uses a bounded list of native `FillBall`/`FillBlock` operations for perimeter relief, park mounds, Mount Brontide, Azure Lake Water, and Sand banks. Roads, spawns, destructible foundations, and the park promenade retain the validated flat traversal plane. Terrain adds no Part instances; its operation count and cell count are exposed as world attributes for regression evidence.
+The human-authored `Workspace.Terrain` and `Workspace.KaijuFeelLab` models own the shipped environment. `PrototypeWorldService` preserves those instances during Play and only runs the procedural composition when the map root is absent. `TerrainBuilder.Ensure` likewise preserves any non-empty terrain; its destructive `Build` path remains an explicit empty-place fallback. The captured baseline retains the original bounded Grass, Rock, Sand, and Water profile, while future skyline, route, and terrain-quality decisions are made visually in Studio and captured through [MAP_AUTHORING.md](MAP_AUTHORING.md).
 
 The versioned `StudioTestService` regression starts with one client, drives the real authoritative attack path, then adds a late client and compares server state with both clients' replicated attributes and locally selected variants. Test modules are inert outside Studio and unless their exact test argument is present; see [MULTIPLAYER_TESTING.md](MULTIPLAYER_TESTING.md).
 

@@ -8,6 +8,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 ### Added
 
+- Hand-authored Studio map pipeline with source-controlled Terrain and city models, a focused capture tool, and an Edit-mode authoring guide.
 - Native smooth terrain composition with a rocky Mount Brontide massif, park mounds, irregular sand banks, real terrain water, and perimeter relief around the city.
 - Procedural Brontide Smash animation with an eased wind-up, fast strike, server-authoritative impact moment, and recovery to the original pose.
 - Localized authored building damage with server-derived surface zones, Smash/Charge/Beam-shaped rupture marks, compact late-join reconstruction, and bounded pooled impact chips.
@@ -41,6 +42,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 ### Changed
 
+- Runtime world startup now preserves an authored `KaijuFeelLab` and non-empty Terrain instead of destroying the designer's map whenever Play begins.
 - Central skyline towers now use materially different heights so Brontide is framed by an urban silhouette instead of a field of similarly low boxes.
 - Smash now drives dedicated Brontide visual-shell pivots that Roblox's avatar animation pass cannot erase and uses a deliberately readable `0.87`-second anticipation-to-recovery sequence.
 - Arc Power Plant now uses functional industrial grouping—cooling basins and pipes, service lanes, a fenced transformer/switchgear yard, busbars and an outgoing grid gantry—instead of decorative Neon floor channels.

@@ -12,6 +12,17 @@ type BallDefinition = {
 	material: Enum.Material,
 }
 
+local function configureAppearance(terrain: Terrain)
+	terrain.WaterColor = Color3.fromRGB(34, 111, 151)
+	terrain.WaterReflectance = 0.18
+	terrain.WaterTransparency = 0.28
+	terrain.WaterWaveSize = 0.18
+	terrain.WaterWaveSpeed = 7
+	terrain:SetMaterialColor(Enum.Material.Grass, Color3.fromRGB(67, 104, 67))
+	terrain:SetMaterialColor(Enum.Material.Rock, Color3.fromRGB(79, 84, 88))
+	terrain:SetMaterialColor(Enum.Material.Sand, Color3.fromRGB(190, 171, 124))
+end
+
 local function fillBalls(terrain: Terrain, definitions: { BallDefinition }): number
 	for _, definition in definitions do
 		terrain:FillBall(definition.center, definition.radius, definition.material)
@@ -22,14 +33,7 @@ end
 function TerrainBuilder.Build(world: Instance): Terrain
 	local terrain = Workspace.Terrain
 	terrain:Clear()
-	terrain.WaterColor = Color3.fromRGB(34, 111, 151)
-	terrain.WaterReflectance = 0.18
-	terrain.WaterTransparency = 0.28
-	terrain.WaterWaveSize = 0.18
-	terrain.WaterWaveSpeed = 7
-	terrain:SetMaterialColor(Enum.Material.Grass, Color3.fromRGB(67, 104, 67))
-	terrain:SetMaterialColor(Enum.Material.Rock, Color3.fromRGB(79, 84, 88))
-	terrain:SetMaterialColor(Enum.Material.Sand, Color3.fromRGB(190, 171, 124))
+	configureAppearance(terrain)
 
 	local operations = 0
 	terrain:FillBlock(CFrame.new(0, -12, -100), Vector3.new(1520, 24, 1220), Enum.Material.Grass)
@@ -91,6 +95,22 @@ function TerrainBuilder.Build(world: Instance): Terrain
 	world:SetAttribute("TerrainOperationCount", operations)
 	world:SetAttribute("TerrainCellCount", terrain:CountCells())
 
+	return terrain
+end
+
+-- Preserve terrain authored in Studio. Build() remains the explicit fallback for
+-- a clean Rojo artifact that does not yet contain a captured hand-authored map.
+function TerrainBuilder.Ensure(world: Instance): Terrain
+	local terrain = Workspace.Terrain
+	configureAppearance(terrain)
+
+	local cellCount = terrain:CountCells()
+	if cellCount == 0 then
+		return TerrainBuilder.Build(world)
+	end
+
+	world:SetAttribute("TerrainProfile", world:GetAttribute("TerrainProfile") or "HandAuthored")
+	world:SetAttribute("TerrainCellCount", cellCount)
 	return terrain
 end
 

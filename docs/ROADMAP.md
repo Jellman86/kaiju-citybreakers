@@ -63,6 +63,8 @@ Destruction is readable, repeatable, synchronized, and maintains the target fram
 
 This focused slice comes before enemy production. It must make the existing city satisfying to destroy before new combatants compete for attention.
 
+**Map ownership:** visual environment composition has moved to a human-authored Studio workflow. The checked-in `KaijuFeelLab` and Terrain models are the editable baseline; procedural generation is fallback and measurement scaffolding, not the art-direction authority. See [MAP_AUTHORING.md](MAP_AUTHORING.md).
+
 #### Deliverables
 
 - Replace arbitrary glowing damage seams with impact-local rupture marks. Every accepted structure hit carries a server-derived attack type and quantized surface zone; replicated zone state reconstructs the same holes for late joiners without replaying transient debris.
