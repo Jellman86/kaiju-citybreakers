@@ -24,6 +24,11 @@
       }
     },
     "StarterPlayer": {
+      "StarterCharacterScripts": {
+        "Health": {
+          "$path": "src/character/Health.server.luau"
+        }
+      },
       "StarterPlayerScripts": {
         "Client": {
           "$path": "src/client"
@@ -33,6 +38,12 @@
     "Workspace": {
       "$properties": {
         "StreamingEnabled": true
+      },
+      "Terrain": {
+        "$path": "src/world/Terrain.rbxmx"
+      },
+      "KaijuFeelLab": {
+        "$path": "src/world/KaijuFeelLab.rbxmx"
       }
     }
   }

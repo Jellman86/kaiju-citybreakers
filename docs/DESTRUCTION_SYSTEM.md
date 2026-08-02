@@ -41,6 +41,10 @@ Runtime attributes owned by the server:
 - `CurrentHealth`
 - `DestructionState`
 - `DestructionStateSequence`
+- `DamageImpactSequence`
+- `DamageZoneState`
+
+`DamageZoneState` is a fixed-width, compact surface map. The server derives a zone from the validated attack geometry rather than accepting a client-selected building coordinate. Box structures use four faces, two columns, and three height bands; cylindrical structures use eight angular sectors and three height bands. Each zone stores `-`, `S`, `C`, or `B` for empty, Smash, Charge, or Beam. The configured per-structure mark cap bounds the client instance cost.
 
 The shared `DestructibleContract` module is the source of truth for names and validation. Invalid or duplicate structures are ignored with a diagnostic rather than crashing the round.
 
@@ -59,9 +63,9 @@ Intact → Damaged → Collapsed
 - Zero health produces `Collapsed`.
 - A collapsed structure rejects further damage.
 - Reset restores maximum health and `Intact`; round reset batching is deferred until the round service consumes it.
-- A sequence number increases only when the state changes.
+- The state sequence increases only when the state changes; the impact sequence increases for every accepted hit, including repeated hits while already damaged.
 
-The replicated event contains only `StructureId`, state, sequence, effect position, and material profile. It triggers live feedback; it is not the source of truth. Replicated attributes reconstruct the durable state for late joiners or structures that stream in after their transition. Clients tolerate either arrival order.
+The replicated event contains stable IDs, state and impact sequences, server-derived attack type, zone index, impact position/normal, zone state, and material profile. It triggers live feedback; it is not the source of truth. Replicated attributes reconstruct durable state and localized rupture marks for late joiners or structures that stream in after their transition. Clients tolerate either arrival order.
 
 ## Rendering, collision, and hit detection
 
@@ -98,6 +102,8 @@ A general destruction framework or third-party part-cache package would add more
 Roblox explicitly recommends pooling frequently respawned instances and creating outcome-independent visuals locally. Applying that advice to fragments is an engineering inference, so the implementation records spawned, created, active, peak-active, and recycled counts. It is retained only if the stress test reduces created instances and respects the configured cap. See [Improve performance](https://create.roblox.com/docs/performance-optimization/improve).
 
 Concrete, metal, and lightweight profiles vary only fragment colour, native material, size, and speed. A separate dust layer is deferred: Roblox notes that particles do not batch well and that emitter property changes can have a dramatic performance impact. Add `ParticleEmitter:Emit()` presets only after the Phase 2C archetype scene establishes render headroom. See [ParticleEmitter](https://create.roblox.com/docs/reference/engine/classes/ParticleEmitter).
+
+Persistent localized marks use three overlapping dark cavity layers plus five displaced non-emissive rim pieces built from anchored, non-queryable client parts. Attack dimensions are clamped to the struck face, with a strict eight-part-per-mark and two-mark-per-structure ceiling. Marks are rebuilt only when the replicated zone string changes, hidden outside `Damaged`, and destroyed with the streamed structure/controller. Transient impact chips reuse the existing fixed-cap debris pool. Runtime CSG and `EditableMesh` are deliberately not used in this slice because their yielding/permission/device-memory paths do not improve the bounded visual hypothesis enough to justify the risk.
 
 ## Provisional Phase 2 gates
 

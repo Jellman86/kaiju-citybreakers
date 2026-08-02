@@ -2,6 +2,14 @@
 
 export type RoundPhase = "Waiting" | "Countdown" | "Active" | "Results"
 export type DestructionState = "Intact" | "Damaged" | "Collapsed"
+export type PlayerRole = "Kaiju" | "Human"
+export type DamageAttackType = "Smash" | "Charge" | "Beam"
+
+export type StructureDamageContext = {
+	attackType: DamageAttackType,
+	position: Vector3,
+	normal: Vector3?,
+}
 
 export type RoundSnapshot = {
 	phase: RoundPhase,
@@ -29,8 +37,13 @@ export type AbilityResult = {
 export type DestructionEvent = {
 	structureId: string,
 	state: DestructionState,
-	sequence: number,
+	stateSequence: number,
+	impactSequence: number,
 	position: Vector3,
+	normal: Vector3,
+	attackType: DamageAttackType,
+	zoneIndex: number,
+	zoneState: string,
 	materialProfile: string,
 }
 

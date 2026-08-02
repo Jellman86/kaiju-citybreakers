@@ -7,6 +7,7 @@ local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local DestructibleContract = require(ReplicatedStorage.Shared.DestructibleContract)
+local PlayerRole = require(ReplicatedStorage.Shared.PlayerRole)
 local Types = require(ReplicatedStorage.Shared.Types)
 
 type AbilityResult = Types.AbilityResult
@@ -14,6 +15,7 @@ type AbilityResult = Types.AbilityResult
 type RateState = {
 	tokens: number,
 	lastRefill: number,
+	lastHumanFire: number,
 	lastBasicAttack: number,
 	lastCharge: number,
 	lastBeam: number,
@@ -49,6 +51,8 @@ function CombatService.new(
 	self._destructionService = destructionService
 	self._roundService = roundService
 	self._rateStates = {} :: { [Player]: RateState }
+	self._lastContactDamage = {} :: { [Player]: number }
+	self._contactAccumulator = 0
 	self._connections = {} :: { RBXScriptConnection }
 
 	return self
@@ -65,6 +69,7 @@ function CombatService:_consumeRateToken(player: Player): boolean
 		state = {
 			tokens = Config.Combat.AbilityRequestRatePerSecond,
 			lastRefill = now,
+			lastHumanFire = -math.huge,
 			lastBasicAttack = -math.huge,
 			lastCharge = -math.huge,
 			lastBeam = -math.huge,
@@ -87,7 +92,13 @@ function CombatService:_consumeRateToken(player: Player): boolean
 	return true
 end
 
-function CombatService:_getLivingCharacter(player: Player): (Model?, BasePart?)
+function CombatService:_getLivingCharacterForRole(
+	player: Player,
+	role: PlayerRole.Value
+): (Model?, BasePart?, Humanoid?)
+	if PlayerRole.Get(player) ~= role then
+		return nil, nil
+	end
 	local character = player.Character
 	local humanoid = if character then character:FindFirstChildOfClass("Humanoid") else nil
 	local rootPart = if character then character:FindFirstChild("HumanoidRootPart") else nil
@@ -98,10 +109,160 @@ function CombatService:_getLivingCharacter(player: Player): (Model?, BasePart?)
 		or not rootPart
 		or not rootPart:IsA("BasePart")
 	then
-		return nil, nil
+		return nil, nil, nil
 	end
 
+	return character, rootPart, humanoid
+end
+
+function CombatService:_getLivingCharacter(player: Player): (Model?, BasePart?)
+	local character, rootPart = self:_getLivingCharacterForRole(player, PlayerRole.Kaiju)
 	return character, rootPart
+end
+
+local function findPlayerCharacterFromPart(part: BasePart): (Player?, Humanoid?, Model?)
+	local candidate: Instance? = part
+	while candidate and candidate ~= workspace do
+		if candidate:IsA("Model") then
+			local player = Players:GetPlayerFromCharacter(candidate)
+			local humanoid = candidate:FindFirstChildOfClass("Humanoid")
+			if player and humanoid then
+				return player, humanoid, candidate
+			end
+		end
+		candidate = candidate.Parent
+	end
+	return nil, nil, nil
+end
+
+function CombatService:_damageHumansInBox(
+	attackerCharacter: Model,
+	hitboxCFrame: CFrame,
+	hitboxSize: Vector3,
+	damage: number
+): number
+	local overlapParams = OverlapParams.new()
+	overlapParams.CollisionGroup = PlayerRole.CollisionGroup.KaijuDamageQuery
+	overlapParams.FilterType = Enum.RaycastFilterType.Exclude
+	overlapParams.FilterDescendantsInstances = { attackerCharacter }
+
+	local seen = {} :: { [Player]: boolean }
+	local hitCount = 0
+	for _, part in workspace:GetPartBoundsInBox(hitboxCFrame, hitboxSize, overlapParams) do
+		local targetPlayer, humanoid = findPlayerCharacterFromPart(part)
+		if
+			targetPlayer
+			and humanoid
+			and not seen[targetPlayer]
+			and PlayerRole.IsHuman(targetPlayer)
+			and humanoid.Health > 0
+		then
+			seen[targetPlayer] = true
+			humanoid:TakeDamage(damage)
+			hitCount += 1
+		end
+	end
+	return hitCount
+end
+
+local function getValidatedHumanAimDirection(rootPart: BasePart, requestedDirection: any): Vector3
+	local fallback = rootPart.CFrame.LookVector
+	if typeof(requestedDirection) ~= "Vector3" then
+		return fallback
+	end
+	if
+		requestedDirection.X ~= requestedDirection.X
+		or requestedDirection.Y ~= requestedDirection.Y
+		or requestedDirection.Z ~= requestedDirection.Z
+		or requestedDirection.Magnitude < 0.5
+	then
+		return fallback
+	end
+
+	local direction = requestedDirection.Unit
+	if
+		direction:Dot(fallback) < math.cos(math.rad(Config.Combat.HumanFireMaximumAimAngleDegrees))
+	then
+		return fallback
+	end
+	return direction
+end
+
+function CombatService:_performHumanFire(player: Player, sequence: number, requestedDirection: any)
+	local state = self._rateStates[player]
+	assert(state, "Rate state must exist before firing")
+
+	local now = os.clock()
+	if now - state.lastHumanFire < Config.Combat.HumanFireCooldownSeconds then
+		self:_sendResult(player, {
+			accepted = false,
+			abilityId = "humanFire",
+			sequence = sequence,
+			hitCount = 0,
+			reason = "cooldown",
+		})
+		return
+	end
+	if self._roundService:GetPhase() ~= "Active" then
+		self:_sendResult(player, {
+			accepted = false,
+			abilityId = "humanFire",
+			sequence = sequence,
+			hitCount = 0,
+			reason = "round_inactive",
+		})
+		return
+	end
+
+	local character, rootPart = self:_getLivingCharacterForRole(player, PlayerRole.Human)
+	if not character or not rootPart then
+		self:_sendResult(player, {
+			accepted = false,
+			abilityId = "humanFire",
+			sequence = sequence,
+			hitCount = 0,
+			reason = "invalid_character",
+		})
+		return
+	end
+
+	state.lastHumanFire = now
+	local direction = getValidatedHumanAimDirection(rootPart, requestedDirection)
+	local head = character:FindFirstChild("Head")
+	local origin = if head and head:IsA("BasePart")
+		then head.Position
+		else rootPart.Position + Vector3.new(0, Config.Combat.HumanFireOriginHeight, 0)
+	local raycastParams = RaycastParams.new()
+	raycastParams.CollisionGroup = PlayerRole.CollisionGroup.HumanWeaponQuery
+	raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+	raycastParams.FilterDescendantsInstances = { character }
+	raycastParams.IgnoreWater = true
+	local result =
+		workspace:Raycast(origin, direction * Config.Combat.HumanFireRange, raycastParams)
+	local target = origin + direction * Config.Combat.HumanFireRange
+	local hitCount = 0
+	if result then
+		target = result.Position
+		local targetPlayer, humanoid = findPlayerCharacterFromPart(result.Instance)
+		if
+			targetPlayer
+			and humanoid
+			and PlayerRole.IsKaiju(targetPlayer)
+			and humanoid.Health > 0
+		then
+			humanoid:TakeDamage(Config.Combat.HumanFireDamage)
+			hitCount = 1
+		end
+	end
+
+	self:_sendResult(player, {
+		accepted = true,
+		abilityId = "humanFire",
+		sequence = sequence,
+		hitCount = hitCount,
+		effectOrigin = origin,
+		effectTarget = target,
+	})
 end
 
 function CombatService:_performBasicAttack(player: Player, sequence: number)
@@ -164,7 +325,15 @@ function CombatService:_performBasicAttack(player: Player, sequence: number)
 		if structure and not seen[structure] then
 			seen[structure] = true
 			if
-				self._destructionService:Damage(player, structure, Config.Combat.BasicAttackDamage)
+				self._destructionService:Damage(
+					player,
+					structure,
+					Config.Combat.BasicAttackDamage,
+					{
+						attackType = "Smash",
+						position = hitboxCFrame.Position,
+					}
+				)
 			then
 				hitCount += 1
 				if hitCount >= Config.Combat.MaximumStructuresPerAttack then
@@ -173,11 +342,21 @@ function CombatService:_performBasicAttack(player: Player, sequence: number)
 			end
 		end
 	end
-
-	self:_sendResult(
-		player,
-		{ accepted = true, abilityId = "basic", sequence = sequence, hitCount = hitCount }
+	hitCount += self:_damageHumansInBox(
+		character,
+		hitboxCFrame,
+		Config.Combat.BasicAttackHitboxSize,
+		Config.Combat.BasicAttackHumanDamage
 	)
+
+	self:_sendResult(player, {
+		accepted = true,
+		abilityId = "basic",
+		sequence = sequence,
+		hitCount = hitCount,
+		effectOrigin = rootPart.Position,
+		effectTarget = hitboxCFrame.Position,
+	})
 end
 
 function CombatService:_performCharge(player: Player, sequence: number)
@@ -253,6 +432,12 @@ function CombatService:_performCharge(player: Player, sequence: number)
 				Config.Combat.ChargeImpactHitboxSize,
 				overlapParams
 			)
+			self:_damageHumansInBox(
+				character,
+				impactCFrame,
+				Config.Combat.ChargeImpactHitboxSize,
+				Config.Combat.ChargeHumanDamage
+			)
 			for _, part in parts do
 				local structure = findDestructible(part)
 				if structure and not seen[structure] then
@@ -261,7 +446,11 @@ function CombatService:_performCharge(player: Player, sequence: number)
 						self._destructionService:Damage(
 							player,
 							structure,
-							Config.Combat.ChargeImpactDamage
+							Config.Combat.ChargeImpactDamage,
+							{
+								attackType = "Charge",
+								position = impactCFrame.Position,
+							}
 						)
 					then
 						impactCount += 1
@@ -368,7 +557,9 @@ function CombatService:_performBeam(player: Player, sequence: number, requestedD
 	local aimDirection = getValidatedBeamDirection(rootPart, requestedDirection)
 	local head = character:FindFirstChild("Head")
 	local mouthPosition = if head and head:IsA("BasePart")
-		then head.Position + Vector3.new(0, -1.1, 0) + aimDirection * 6.5
+		then head.Position
+			+ Vector3.new(0, Config.Combat.BeamMouthVerticalOffset, 0)
+			+ aimDirection * Config.Combat.BeamMouthForwardOffset
 		else rootPart.Position + Vector3.new(0, Config.Combat.BeamOriginHeight, 0)
 	local origin = mouthPosition
 	local direction = aimDirection * Config.Combat.BeamRange
@@ -387,9 +578,40 @@ function CombatService:_performBeam(player: Player, sequence: number, requestedD
 		local structure = findDestructible(raycastResult.Instance)
 		if
 			structure
-			and self._destructionService:Damage(player, structure, Config.Combat.BeamDamage)
+			and self._destructionService:Damage(player, structure, Config.Combat.BeamDamage, {
+				attackType = "Beam",
+				position = raycastResult.Position,
+				normal = raycastResult.Normal,
+			})
 		then
 			hitCount = 1
+		end
+	end
+
+	local characterRaycastParams = RaycastParams.new()
+	characterRaycastParams.CollisionGroup = PlayerRole.CollisionGroup.HumanWeaponQuery
+	characterRaycastParams.FilterType = Enum.RaycastFilterType.Exclude
+	characterRaycastParams.FilterDescendantsInstances = { character }
+	characterRaycastParams.IgnoreWater = true
+	local characterResult = workspace:Spherecast(
+		origin,
+		Config.Combat.BeamHumanCastRadius,
+		direction,
+		characterRaycastParams
+	)
+	if characterResult then
+		local targetPlayer, humanoid = findPlayerCharacterFromPart(characterResult.Instance)
+		if
+			targetPlayer
+			and humanoid
+			and PlayerRole.IsHuman(targetPlayer)
+			and humanoid.Health > 0
+		then
+			humanoid:TakeDamage(Config.Combat.BeamHumanDamage)
+			hitCount += 1
+			if (characterResult.Position - origin).Magnitude < (target - origin).Magnitude then
+				target = characterResult.Position
+			end
 		end
 	end
 
@@ -415,7 +637,12 @@ function CombatService:_onAbilityRequest(player: Player, payload: any)
 	local abilityId = payload.abilityId
 	local sequence = payload.sequence
 	if
-		(abilityId ~= "basic" and abilityId ~= "charge" and abilityId ~= "beam")
+		(
+			abilityId ~= "humanFire"
+			and abilityId ~= "basic"
+			and abilityId ~= "charge"
+			and abilityId ~= "beam"
+		)
 		or typeof(sequence) ~= "number"
 		or sequence % 1 ~= 0
 		or sequence < 1
@@ -423,12 +650,78 @@ function CombatService:_onAbilityRequest(player: Player, payload: any)
 		return
 	end
 
-	if abilityId == "basic" then
+	if abilityId == "humanFire" then
+		self:_performHumanFire(player, sequence, payload.aimDirection)
+	elseif abilityId == "basic" then
 		self:_performBasicAttack(player, sequence)
 	elseif abilityId == "charge" then
 		self:_performCharge(player, sequence)
 	else
 		self:_performBeam(player, sequence, payload.aimDirection)
+	end
+end
+
+function CombatService:_applyContactDamage()
+	if self._roundService:GetPhase() ~= "Active" then
+		return
+	end
+
+	for _, kaijuPlayer in Players:GetPlayers() do
+		if not PlayerRole.IsKaiju(kaijuPlayer) then
+			continue
+		end
+		local character, rootPart = self:_getLivingCharacter(kaijuPlayer)
+		local hull = if character then character:FindFirstChild("KaijuContactHull") else nil
+		if not character or not rootPart or not hull or not hull:IsA("BasePart") then
+			continue
+		end
+
+		local overlapParams = OverlapParams.new()
+		overlapParams.CollisionGroup = PlayerRole.CollisionGroup.KaijuDamageQuery
+		overlapParams.FilterType = Enum.RaycastFilterType.Exclude
+		overlapParams.FilterDescendantsInstances = { character }
+		local querySize = hull.Size + Config.MixedScale.ContactQueryPadding
+		local seen = {} :: { [Player]: boolean }
+		for _, part in workspace:GetPartBoundsInBox(hull.CFrame, querySize, overlapParams) do
+			local humanPlayer, humanoid, humanCharacter = findPlayerCharacterFromPart(part)
+			if
+				not humanPlayer
+				or not humanoid
+				or not humanCharacter
+				or seen[humanPlayer]
+				or not PlayerRole.IsHuman(humanPlayer)
+				or humanoid.Health <= 0
+			then
+				continue
+			end
+			seen[humanPlayer] = true
+			local now = os.clock()
+			if
+				now - (self._lastContactDamage[humanPlayer] or -math.huge)
+				< Config.MixedScale.ContactDamageCooldownSeconds
+			then
+				continue
+			end
+			self._lastContactDamage[humanPlayer] = now
+			humanoid:TakeDamage(Config.MixedScale.ContactDamage)
+
+			local humanRoot = humanCharacter:FindFirstChild("HumanoidRootPart")
+			if humanRoot and humanRoot:IsA("BasePart") and humanoid.Health > 0 then
+				local away = humanRoot.Position - rootPart.Position
+				local horizontalAway = Vector3.new(away.X, 0, away.Z)
+				if horizontalAway.Magnitude < 0.01 then
+					horizontalAway =
+						Vector3.new(rootPart.CFrame.LookVector.X, 0, rootPart.CFrame.LookVector.Z)
+				end
+				local velocity = horizontalAway.Unit
+						* Config.MixedScale.ContactKnockbackHorizontalSpeed
+					+ Vector3.new(0, Config.MixedScale.ContactKnockbackVerticalSpeed, 0)
+				if velocity.Magnitude > Config.MixedScale.MaximumContactVelocity then
+					velocity = velocity.Unit * Config.MixedScale.MaximumContactVelocity
+				end
+				humanRoot.AssemblyLinearVelocity = velocity
+			end
+		end
 	end
 end
 
@@ -441,8 +734,20 @@ function CombatService:Start()
 	)
 	table.insert(
 		self._connections,
+		RunService.Heartbeat:Connect(function(deltaTime)
+			self._contactAccumulator += deltaTime
+			if self._contactAccumulator < Config.MixedScale.ContactQueryIntervalSeconds then
+				return
+			end
+			self._contactAccumulator %= Config.MixedScale.ContactQueryIntervalSeconds
+			self:_applyContactDamage()
+		end)
+	)
+	table.insert(
+		self._connections,
 		Players.PlayerRemoving:Connect(function(player)
 			self._rateStates[player] = nil
+			self._lastContactDamage[player] = nil
 		end)
 	)
 end
@@ -453,6 +758,8 @@ function CombatService:Stop()
 	end
 	table.clear(self._connections)
 	table.clear(self._rateStates)
+	table.clear(self._lastContactDamage)
+	self._contactAccumulator = 0
 end
 
 return CombatService

@@ -63,8 +63,15 @@ Destruction is readable, repeatable, synchronized, and maintains the target fram
 
 This focused slice comes before enemy production. It must make the existing city satisfying to destroy before new combatants compete for attention.
 
+**Map ownership:** visual environment composition has moved to a human-authored Studio workflow. The checked-in `KaijuFeelLab` and Terrain models are the editable baseline; procedural generation is fallback and measurement scaffolding, not the art-direction authority. See [MAP_AUTHORING.md](MAP_AUTHORING.md).
+
 #### Deliverables
 
+- Replace arbitrary glowing damage seams with impact-local rupture marks. Every accepted structure hit carries a server-derived attack type and quantized surface zone; replicated zone state reconstructs the same holes for late joiners without replaying transient debris.
+- Prove archetype-specific damage first on the Arc Power Plant cooling towers: dark interior breach, torn non-emissive rim, attack-scaled silhouette, and no persistent Neon damage indicator. Retain authored health/collision/collapse states rather than runtime fracture physics.
+- Replace the phone-failed small circular mark with an attack-scaled irregular breach: layered dark depth, displaced non-emissive rim pieces, and a strict eight-part-per-mark ceiling. Pair Smash with a visibly measured local wind-up, fast strike, impact response, and eased recovery while the server remains authoritative for the actual hit; phase changes alone are not animation evidence.
+- Replace the flat-slab five-zone backdrop with bounded native terrain: real terrain water and sand banks at Azure Lake, clear park mounds outside the combat promenade, a layered rocky massif behind Mount Brontide, and perimeter relief that breaks the horizon without blocking the road grid. Increase central tower-height contrast before adding building count.
+- Recompose Arc Power Plant dressing around a functional thermal-plant read: paired cooling basins, large generation/turbine halls, visible coolant/service pipes, a fenced transformer and switchgear yard, busbars, and an outgoing transmission gantry. Remove decorative floor-light channels that make the site read as a generic sci-fi plaza.
 - Replace the single-impact Beam with a short hold-to-channel action: wind-up, approximately `1.5` seconds of active sweep, and recovery. Duration is a playtest parameter, not a final balance value.
 - Keep a server-owned Beam session with bounded begin, aim-update, and end requests. Resolve damage at a fixed low frequency instead of every rendered frame; validate the living character, direction cone, duration, cadence, range, and cooldown on every session.
 - Let the Beam draw a destructive path by damaging successive unique structures as aim moves or earlier structures collapse. Reuse the existing destructible registry, collision group, state machine, and cleared-rubble behaviour; cap targets per sample and per channel.
@@ -82,11 +89,43 @@ Compare bounded repeated `Spherecast` traversal with a native swept-volume overl
 - Confirm one channel cannot exceed its duration, sample rate, unique-target cap, or damage budget even with malformed or repeated remotes.
 - Stress a twenty-building chain while recording client/server frame time, memory trend, network traffic, active fragments, and concurrent emitters on a physical phone.
 - Verify that damaged and collapsed states remain visually distinct after effects finish, late joiners reconstruct authoritative states, and two clients cannot double-apply one player's Beam samples.
+- Confirm repeated hits create at most the configured persistent marks per structure, no damaged archetype uses placeholder Neon geometry, and reset/collapse removes localized marks without leaving client instances behind.
+- Confirm Smash moves named visible Brontide shell parts by at least a provisional six studs, restores every dedicated shell-pivot offset, does not double-play on predicted confirmation, and still produces exactly one server-authoritative hit per accepted request.
+- Raycast the generated mountain, park mound, and lake to verify tall Rock terrain, walkable Grass relief, and native Water respectively; record terrain cell count and retain the existing world-part ceiling.
 - Check Reduced Effects, photosensitivity-safe flashing, camera comfort, and aim readability with no coaching.
+- Ask phone testers to identify Arc Power Plant without reading its sign and name the visual clues they used; treat recognition from the cooling towers alone as insufficient evidence for the whole district.
 
 #### Exit gate
 
 The Beam visibly traces a controllable path through multiple buildings, each confirmed impact feels substantially stronger than the current prototype, all transient effects return to rest, and the representative phone remains at or above the provisional `30 FPS` destruction threshold without unbounded instance, memory, or remote growth.
+
+### Phase 2E — Genuine mixed-scale players
+
+Prove one human-scale player and one physically giant Brontide in the same server before rebuilding the full city or producing human-versus-kaiju progression. See [MIXED_SCALE_PLAYERS.md](MIXED_SCALE_PLAYERS.md).
+
+**Status:** foundation implemented and automated two-client regression passed on 2026-08-01. Physical-device controls/performance and a useful human role remain open exit gates.
+
+#### Deliverables
+
+- Server-owned `Human` and `Kaiju` roles with solo-safe assignment, role-specific spawning and automatic human promotion if the kaiju leaves.
+- One provisional `60–75` stud Brontide beside an ordinary `5–6.5` stud R15 human, with actual model bounds maintaining at least a provisional `10:1` standing-height ratio.
+- Separate role metrics for movement, camera, spawn clearance, collision and combat reach.
+- Non-colliding human/kaiju character groups so the giant cannot fling a human; explicit server spatial queries remain the only source of combat and destruction outcomes.
+- A smooth kaiju contact hull that physically blocks humans while server queries apply capped contact damage and knockback; raw limb collision remains disabled.
+- A stylized cross-device human blaster, damageable Humanoids for both roles, kaiju attacks that can defeat humans, and role-preserving respawn.
+- A small human-scale doorway/approach reference inside the greybox and one useful mixed-role interaction before any production-scale human content.
+
+#### Validation
+
+- Run the native two-client Studio regression with one kaiju and one human, including role replication, actual bounds, respawn/promotion, collision filtering and human rejection from kaiju-only remotes.
+- Extend the regression through human fire damaging the kaiju, a kaiju attack defeating the human, role-preserving human respawn, and contact-hull collision/damage checks.
+- Verify both cameras, touch controls, human-scale navigation and kaiju-scale traversal on a physical phone.
+- Measure client/server frame time, memory, moving character parts and streaming behaviour with both roles present.
+- Conduct an uncoached two-player test in which both roles complete a useful task and can explain their contribution.
+
+#### Exit gate
+
+The size difference exists in replicated model bounds rather than camera presentation alone; both roles remain controllable and useful; contact cannot fling either player; server authority and solo play remain intact; and the representative phone passes the provisional performance gate.
 
 ## Phase 3 — Complete round loop (weeks 6–7)
 
@@ -106,19 +145,22 @@ One complete five-to-eight-minute run works from join to replay with no manual i
 
 ### Deliverables
 
-- Scout-drone navigation and attack behaviour.
-- Turret area denial if schedule permits.
+- Bounded capturable-turret feasibility slice using four sanitized shells, distinct bullet/minigun/cannon/rocket attacks, and native two-client validation.
+- One smaller rogue-kaiju target from an Edit-visible replaceable template, with server-owned bounded pathfinding, telegraphed melee, turret targeting, health, and defeat.
+- Scout-drone navigation and attack behaviour after the turret and rogue-kaiju integration gates.
 - Greybox defence-mech boss with telegraphed attacks and phases.
 - Difficulty director based on player count and round performance.
 - Server-side reward calculation.
 
 ### Enemy implementation order
 
-1. Define one server-owned enemy contract and a small state machine: idle, acquire, telegraph, attack, recover, stagger, and defeated.
-2. Add one scout drone using authored aerial patrol nodes and line-of-sight checks; it fires slow, dodgeable projectiles and never needs ground pathfinding.
-3. Add Arc Power Plant turrets as stationary area denial, reusing the same damage, team, telegraph, and pooling contracts.
-4. Add one ground defence unit using native `PathfindingService`, realistic agent dimensions, district cost modifiers, bounded replanning, and a direct-steering fallback.
-5. Build the defence-mech boss only after the drone and turret are readable and performant on mobile.
+1. Prove the owner-requested turret feasibility slice: sanitized assets, server-owned capture/targeting, visible traverse/elevation and first-shot wind-up, four distinct attack profiles, bounded projectile simulation, fixed-cap cosmetics, cover, and two-client tests. Do not multiply it across the map yet; see [TURRET_SYSTEM.md](TURRET_SYSTEM.md).
+2. Define the shared server-owned enemy contract and small state machine: idle, acquire, telegraph, attack, recover, stagger, and defeated.
+3. Integrate one smaller rogue kaiju from the visible `EnemyTemplates` contract so turrets have a non-player target; replace the primitive proxy after the map owner supplies an audited original model.
+4. Add one scout drone using authored aerial patrol nodes and line-of-sight checks; it fires a slow, dodgeable projectile and never needs ground pathfinding.
+5. Consolidate the proven turret and enemy damage, team, telegraph, projectile, and pooling contracts without changing their distinct presentations.
+6. Add another ground defence unit only after the rogue-kaiju path and mobile budget are proven.
+7. Build the defence-mech boss only after the drone and turret are readable and performant on mobile.
 
 Enemy decisions, health, damage, targeting, and rewards remain server-owned. Clients predict only harmless presentation such as wind-up effects and projectile trails. Active counts, perception frequency, path recomputation, projectiles, and effects receive explicit budgets before content multiplication; see [ENEMY_SYSTEM.md](ENEMY_SYSTEM.md).
 
@@ -213,9 +255,10 @@ Ordered only after the vertical-slice gate:
 
 ## Immediate implementation sequence
 
-1. Record the current physical-device baseline for Beam aim, zone recognition, frame rate, and the least satisfying destruction moments.
-2. Implement Phase 2D first in one five-to-eight-building Central City street: bounded Beam sessions, fixed-rate server hits, and the first tiered collapse presentation.
-3. Tune on a physical phone, then run the twenty-building destruction/performance and full-round reset gates before rolling the presentation across all structures.
-4. Run an uncoached navigation/destruction session in all five zones and revise scale or routes before adding more scenery.
-5. Prototype exactly one scout drone only after the sustained Beam and destruction spectacle pass their mobile and readability gates; do not populate the whole map yet.
-6. Add energy collection and mutation choice only after Beam, Charge, Smash, and the scout are readable together on phone.
+1. Validate the implemented `61.37`-stud Brontide and `5.50`-stud human foundation on a physical phone; retain, reduce or reject the measured `11.17:1` scale from evidence.
+2. Give the human one small, useful interaction and run an uncoached two-player navigation/destruction session before adding production human content.
+3. Implement Phase 2D's sustained Beam and tiered collapse presentation against the retained physical scale in one five-to-eight-building Central City street.
+4. Tune on a physical phone, then run the twenty-building destruction/performance and full-round reset gates before rolling the presentation across all structures.
+5. Revise mixed-scale routes from the two-player evidence before rebuilding scenery.
+6. Prototype exactly one scout drone only after mixed scale, Beam and destruction spectacle pass their mobile and readability gates; do not populate the whole map yet.
+7. Add energy collection and mutation choice only after both roles, Beam, Charge, Smash and the scout are readable together on phone.

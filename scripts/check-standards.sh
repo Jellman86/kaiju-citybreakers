@@ -13,6 +13,7 @@ required_files=(
   "docs/REUSE_AUDIT.md"
   "docs/DECISIONS.md"
   "docs/PLAYTESTS.md"
+  "docs/MAP_AUTHORING.md"
   "assets/ASSET_REGISTER.md"
   ".github/CODEOWNERS"
   ".github/pull_request_template.md"
@@ -59,10 +60,34 @@ if grep --recursive --include='*.luau' --extended-regexp --line-number \
   exit 1
 fi
 
-tracked_generated="$(git ls-files -- '*.rbxl' '*.rbxlx' '*.rbxm' '*.rbxmx')"
+for authored_world_source in src/world/Terrain.rbxmx src/world/KaijuFeelLab.rbxmx; do
+  if [[ ! -s "${authored_world_source}" ]]; then
+    echo "Canonical authored world source is missing or empty: ${authored_world_source}" >&2
+    exit 1
+  fi
+done
+
+if grep --extended-regexp --line-number \
+  '<Item class="(Script|LocalScript|ModuleScript)"' src/world/KaijuFeelLab.rbxmx; then
+  echo "Captured world models must not contain executable scripts; audit and strip AuthoringInbox candidates first." >&2
+  exit 1
+fi
+
+tracked_generated="$(git ls-files -- '*.rbxl' '*.rbxlx' '*.rbxm' '*.rbxmx' \
+  | grep -Ev '^src/world/(Terrain|KaijuFeelLab)\.rbxmx$' || true)"
 if [[ -n "${tracked_generated}" ]]; then
   echo "Generated Roblox files must not be tracked:" >&2
   echo "${tracked_generated}" >&2
+  exit 1
+fi
+
+if ! grep --quiet '^src/world/\*\.rbxmx filter=lfs ' .gitattributes; then
+  echo "Authored Roblox world sources must remain configured for Git LFS." >&2
+  exit 1
+fi
+
+if ! grep --quiet '^          lfs: true$' .github/workflows/ci.yml; then
+  echo "CI must fetch Git LFS map sources before running Rojo." >&2
   exit 1
 fi
 

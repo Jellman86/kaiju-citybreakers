@@ -13,7 +13,7 @@ Read and follow `docs/PROJECT_STANDARDS.md`. It is the normative project policy;
 ## Source of truth
 
 - Rojo-managed Luau in `src/` is the source of truth for scripts.
-- Use Roblox Studio MCP for inspection, world building, attributes, tags, playtests, and screenshots. Do not overwrite Rojo-managed scripts directly in Studio.
+- Use Roblox Studio MCP for inspection, attributes, tags, playtests, and screenshots. A human designer owns visual map composition in Studio; follow `docs/MAP_AUTHORING.md` to capture only `Workspace.KaijuFeelLab` and `Workspace.Terrain`. Do not overwrite Rojo-managed scripts directly in Studio.
 - Use Blender files in `assets/blender/` as the source for 3D models. Export game-ready assets to `exports/`.
 
 ## Engineering conventions

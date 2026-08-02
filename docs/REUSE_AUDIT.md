@@ -50,6 +50,31 @@ Roblox warns that unfamiliar packages can contain malicious scripts and recommen
 
 The 2026-08-01 Creator Store re-check used free, verified-creator-only searches for an original monster rig and a low-poly city. No character result passed the originality, provenance, relevance, and inspection threshold. Community city packs were not adopted because the source-controlled primitive city solves the current readability test with less security and performance risk. The official Roblox modular kit remains the strongest later candidate.
 
+## 2026-08-02 — Capturable-turret audit
+
+| Need | Candidate | Decision | Reason |
+| --- | --- | --- | --- |
+| Capture discovery and state | Native `CollectionService` tags and attributes | **Use** | Already established in the destructible contract; saved, replicated, inspectable, and sufficient for a small map-authored objective. |
+| Target obstruction and bullets | Native `Workspace:Raycast()` with server-owned filtering | **Use** | Roblox documents raycasts for instantaneous weapon hit checks. The server can exclude the turret shell and require the result to belong to the chosen character. |
+| Cannon and rocket collision | Bounded logical projectiles with fixed-rate swept raycasts | **Use provisionally** | Roblox distinguishes physically simulated and instantaneous hit checks. Segment casts prevent tunnelling without granting physics/network ownership to a moving damaging part. |
+| Projectile presentation | Fixed-cap client-local native parts, trails, and impact rings | **Use provisionally** | Effects cannot change outcomes, and pooling places a measurable ceiling on instances. Physical phone profiling remains mandatory. |
+| Full Roblox weapons kit | Roblox-published prefab system | **Reference; do not adopt** | It documents moving shot effects and explosions, but its player-weapon/input/configuration surface is substantially larger than four server-controlled stationary attacks. |
+| Imported turret gameplay scripts | Scripts embedded in four community Creator Store models | **Reject and remove** | The scripts use legacy seat/remotes and unknown gameplay assumptions. Roblox explicitly warns that Toolbox models are a common backdoor source and moderation is not guaranteed. |
+| Imported turret geometry | Four free public-domain Creator Store model listings | **Provisional sanitized candidates** | The user selected their placement and silhouettes. Every script, remote, sound, effect, mover, value, and seat behaviour was stripped; all parts were anchored; original gameplay contracts were added. Provenance and counts are in `assets/ASSET_REGISTER.md`; mobile/profile gates remain open. |
+
+No runtime package, paid service, telemetry, or external code is adopted. Replacement plan: keep the small tag/attribute contract and replace any rejected community shell with an original Blender model without changing capture or attack code.
+
+## 2026-08-02 — First rogue-kaiju AI audit
+
+| Need | Candidate | Decision | Reason |
+| --- | --- | --- | --- |
+| Ground navigation | Native `PathfindingService` with bounded recomputation | **Use provisionally** | Native paths avoid a custom navmesh/A* implementation. One actor senses at `5 Hz`; path recomputation is throttled and must be profiled on phone before adding actors. |
+| AI/combat framework | General NPC frameworks and Creator Store scripts | **Reject** | One chase/telegraph/recover actor is smaller and safer as a strict server service. Imported scripts, remotes, analytics, and client-owned damage are prohibited. |
+| Initial visual | Original source-controlled primitive proxy | **Use as replaceable test stand-in** | It is free, inspectable, original, low-cost, visible in Edit mode, and explicitly labelled non-final. It lets the complete contract run while the map owner imports a preferred reviewed model. |
+| `Majasaurus Kaiju For attack on Kaiju`, asset `287567981`, creator `Cryolophysis` | Free public-domain Creator Store candidate whose description says it is the creator's custom kaiju | **Candidate only; not adopted** | The silhouette appeared suitable and original-looking, but automated insertion was unauthorized and the contents have not been inspected. The map owner may place it in the sandboxed `AuthoringInbox`; it cannot enter gameplay or the asset register until the full audit passes. |
+
+No external enemy asset or runtime dependency is adopted. The visual replacement contract retains `RogueKaijuTemplate` and `EnemyRoot`; AI, health, targeting, and damage remain independent of imported art.
+
 ## 2026-08-01 — Game-development skill audit
 
 | Candidate | Decision | Reason |
@@ -108,3 +133,43 @@ No dependency or external asset is adopted. Replacement plan: preserve structure
 | Blender park assets | Original meshes | **Defer** | Replace the approved blockout kit only after route comprehension and target-device evidence justify production art. |
 
 No dependency, external asset, texture, or paid service is added. Replacement plan: keep the layout coordinates and gameplay surfaces stable while later replacing only decorative descendants with original optimized assets.
+
+## 2026-08-01 — Mixed-scale player audit
+
+| Need | Candidate | Decision | Reason |
+| --- | --- | --- | --- |
+| Two physical character scales | Existing R15 `Humanoid`, `Model:ScaleTo()`, manual character loading and Brontide shell | **Use for feasibility** | Preserves native cross-device locomotion and tests actual replicated bounds without importing a rig or framework. |
+| Per-role camera | Existing camera controller plus Roblox's local `Camera` and player zoom properties | **Extend** | The client already owns camera presentation; selecting metrics by replicated server role is smaller than introducing another controller package. |
+| Contact filtering | Native `PhysicsService` collision groups | **Use** | Prevents human/kaiju flinging while leaving server spatial queries responsible for combat. |
+| Human/kaiju framework or marketplace character | Creator Store and general character frameworks | **Do not use** | The feasibility question needs two roles, native characters and one original shell. External models add provenance, IP, scripts and performance risk without answering it better. |
+| Character health, death and respawn | Native `Humanoid`, `Humanoid.Died`, and existing manual loading | **Use** | Already replicated and integrated with both character roles; a combat framework would add unnecessary state and remotes. |
+| Human ranged weapon | Native `ContextActionService`, `RemoteEvent`, and server `Workspace:Raycast()` | **Use** | The first weapon has one firing mode. Roblox's native path supports every target device and the required server validation without an inventory or weapon framework. |
+| Human/kaiju physical contact | One native smooth welded contact proxy plus collision groups and a throttled server overlap | **Use provisionally** | Full-rig collision is unstable at the measured scale difference. One inspectable proxy provides physical blocking while explicit server logic owns damage and bounded knockback. |
+
+No dependency, external asset, paid service or new production art is adopted. Replace the enlarged R15 proxy with an original Blender custom humanoid only after actual bounds, role fun, camera comfort and mobile performance pass.
+
+## 2026-08-01 — Localized authored-damage audit
+
+| Need | Candidate | Decision | Reason |
+| --- | --- | --- | --- |
+| Durable impact-local damage | Native attributes plus a shared fixed-zone codec | **Use** | A compact server-owned string reconstructs hit location and attack type for late joiners without replicating arbitrary geometry or trusting client coordinates. |
+| Persistent rupture presentation | Layered client-authored primitive cavity and displaced rim | **Iterate provisionally** | The first five-part mark passed location and late-join gates but failed a physical-phone scale/depth check. Enlarge it with built-in parts while retaining the two-mark and eight-parts-per-mark ceilings; replace it with original optimized meshes if the second comparison still reads flat. |
+| Smash animation | Dedicated native `Motor6D` shell pivots, `BindToRenderStep`, and the existing Brontide shell | **Use provisionally** | Tweening avatar-owned transforms advanced internally but Roblox's animation pass overwrote the visible pose. Persistent visual-shell `C0` offsets need no uploaded animation, external rig, licence, cost, or additional remote; the server still validates and applies the hit. Replace with an original authored animation asset when the final rig exists. |
+| City terrain | Native `Terrain:FillBlock()`/`FillBall()` and built-in materials | **Use for the blockout** | Smooth terrain adds large-scale relief and water without multiplying renderable Part instances or importing a heightmap/terrain plugin. Keep the operation list bounded, preserve flat traversal metrics, and profile the published place on phone. |
+| Power-station dressing | Source-controlled primitives informed by official functional layouts | **Use for the blockout** | Transformer bays, busbars, pipe runs, fences and gantries are small repeated forms. Native parts answer the recognition/layout question more safely than importing a real facility model, protected branding, or an unreviewed industrial pack. |
+| Runtime `SubtractAsync`/CSG | Native CSG operation | **Reject for this slice** | It yields and would create changing complex geometry on the authoritative path; the current hypothesis does not require arbitrary topology. |
+| Runtime `EditableMesh` cutting | Native mesh API | **Defer** | Published use requires the Mesh/Image API setting and eligible account verification, and creation can fail against device-specific editable-memory budgets. Reassess only if authored zones cannot meet the visual gate. |
+| Marketplace destruction framework | Creator Store/community packages | **Reject** | The existing strict registry, state machine, queries, late-join attributes, and debris pool already cover the requirement with less security, licence, and performance surface. |
+
+No dependency, external asset, texture, paid service, or new permission is added. Replacement plan: preserve the impact metadata and replace only the primitive client renderer with original archetype-specific Blender breakaway meshes if H10 passes.
+
+## 2026-08-02 — Hand-authored map workflow audit
+
+| Need | Candidate | Decision | Reason |
+| --- | --- | --- | --- |
+| Visual terrain and district composition | Roblox Studio Terrain Editor and native object tools | **Use** | The human designer receives continuous spatial feedback in the same editor used for playtesting; no external terrain plugin, asset pack, licence, or paid tool is required. |
+| Reviewable map ownership | Two focused `.rbxmx` model sources through Rojo and existing Git LFS | **Use** | Rojo natively maps model files into Workspace. Capturing only Terrain and the map root avoids committing generated places or accepting Studio scripts as a second source of truth. |
+| Procedural city generation | Existing builders | **Retain as fallback only** | Useful for empty-place recovery and measured scaffolding, but code-generated coordinates cannot establish visual quality. It must not overwrite authored work. |
+| Third-party terrain/city plugin | Creator Store and external editor plugins | **Do not add** | Native tools already solve the authoring requirement with less security, maintenance, provenance, and cost surface. |
+
+No dependency, external asset, paid service, or new runtime permission is added. Replacement plan: split the map into additional district model sources only if file size, merge contention, or streaming ownership makes the two-source layout measurably inadequate.

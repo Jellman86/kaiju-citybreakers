@@ -6,9 +6,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local DestructibleContract = require(ReplicatedStorage.Shared.DestructibleContract)
+local PlayerRole = require(ReplicatedStorage.Shared.PlayerRole)
 local DestructibleStructureBuilder =
 	require(script.Parent.Parent.Builders.DestructibleStructureBuilder)
 local DistrictDressingBuilder = require(script.Parent.Parent.Builders.DistrictDressingBuilder)
+local TerrainBuilder = require(script.Parent.Parent.Builders.TerrainBuilder)
 
 local PrototypeWorldService = {}
 PrototypeWorldService.__index = PrototypeWorldService
@@ -155,17 +157,33 @@ local function createBuilding(
 		damageHitboxCFrame = origin * CFrame.new(0, size.Y / 2, 0),
 		damageHitboxSize = size + Vector3.new(2, 2, 2),
 	}, function(visuals)
+		local hasSetback = size.Y >= 72
+		local lowerHeight = if hasSetback then size.Y * 0.68 else size.Y
+		local upperHeight = size.Y - lowerHeight
+		local upperSize = Vector3.new(size.X * 0.72, upperHeight, size.Z * 0.72)
 		createVisualPart(
 			"Shell",
-			size,
-			origin * CFrame.new(0, size.Y / 2, 0),
+			Vector3.new(size.X, lowerHeight, size.Z),
+			origin * CFrame.new(0, lowerHeight / 2, 0),
 			color,
 			Enum.Material.Concrete,
 			visuals.intact
 		)
+		if hasSetback then
+			createVisualPart(
+				"UpperShell",
+				upperSize,
+				origin * CFrame.new(0, lowerHeight + upperHeight / 2, 0),
+				color:Lerp(accent, 0.08),
+				Enum.Material.Concrete,
+				visuals.intact
+			)
+		end
 		createVisualPart(
 			"Roof",
-			Vector3.new(size.X + 1.5, 1.2, size.Z + 1.5),
+			if hasSetback
+				then Vector3.new(upperSize.X + 1.5, 1.2, upperSize.Z + 1.5)
+				else Vector3.new(size.X + 1.5, 1.2, size.Z + 1.5),
 			origin * CFrame.new(0, size.Y + 0.6, 0),
 			accent,
 			Enum.Material.Metal,
@@ -189,6 +207,20 @@ local function createBuilding(
 				Enum.Material.Neon,
 				visuals.intact
 			)
+			if hasSetback then
+				createTrimPart(
+					"UpperWindowStripe",
+					Vector3.new(math.max(upperSize.X - 5, 5), 1.8, 0.3),
+					CFrame.new(
+						position.X,
+						lowerHeight + upperHeight * 0.56,
+						position.Z - upperSize.Z / 2 - 0.16
+					),
+					WINDOW,
+					Enum.Material.Neon,
+					visuals.intact
+				)
+			end
 			createTrimPart(
 				"SideWindowStripe",
 				Vector3.new(0.3, 1.8, math.max(size.Z - 7, 5)),
@@ -203,12 +235,24 @@ local function createBuilding(
 
 		createVisualPart(
 			"BuckledShell",
-			size,
-			origin * CFrame.new(0.7, size.Y / 2, 0) * CFrame.Angles(0, 0, math.rad(-3)),
+			Vector3.new(size.X, lowerHeight, size.Z),
+			origin * CFrame.new(0.7, lowerHeight / 2, 0) * CFrame.Angles(0, 0, math.rad(-3)),
 			damagedColor,
 			Enum.Material.Concrete,
 			visuals.damaged
 		)
+		if hasSetback then
+			createVisualPart(
+				"BuckledUpperShell",
+				upperSize,
+				origin
+					* CFrame.new(-0.9, lowerHeight + upperHeight / 2 - 0.8, 0.4)
+					* CFrame.Angles(math.rad(2), 0, math.rad(5)),
+				damagedColor:Lerp(accent, 0.06),
+				Enum.Material.Concrete,
+				visuals.damaged
+			)
+		end
 		for side = -1, 1, 2 do
 			createVisualPart(
 				`BrokenRoof{side}`,
@@ -221,13 +265,13 @@ local function createBuilding(
 				visuals.damaged
 			)
 			createTrimPart(
-				`EnergyCrack{side}`,
+				`StructuralSplit{side}`,
 				Vector3.new(0.5, math.max(7, size.Y * 0.45), 0.45),
 				origin
 					* CFrame.new(side * size.X * 0.2, size.Y * 0.5, -size.Z / 2 - 0.24)
 					* CFrame.Angles(0, 0, math.rad(side * 18)),
-				Color3.fromRGB(255, 137, 60),
-				Enum.Material.Neon,
+				Color3.fromRGB(39, 33, 31),
+				Enum.Material.SmoothPlastic,
 				visuals.damaged
 			)
 		end
@@ -276,6 +320,7 @@ local function createCoolingTower(
 		collapsedCollisionSize = Vector3.new(diameter, 1.5, diameter),
 		damageHitboxCFrame = origin * CFrame.new(0, height / 2, 0),
 		damageHitboxSize = Vector3.new(diameter + 4, height + 2, diameter + 4),
+		damageSurfaceProfile = "Cylinder",
 	}, function(visuals)
 		local intactShell = createVisualPart(
 			"CoolingShell",
@@ -305,15 +350,6 @@ local function createCoolingTower(
 			visuals.damaged
 		)
 		damagedShell.Shape = Enum.PartType.Cylinder
-		createTrimPart(
-			"EnergyFracture",
-			Vector3.new(1.2, height * 0.55, diameter + 0.5),
-			origin * CFrame.new(-diameter / 2 - 0.3, height * 0.58, 0),
-			Color3.fromRGB(255, 153, 61),
-			Enum.Material.Neon,
-			visuals.damaged
-		)
-
 		createCollapsedChunks(
 			visuals.collapsed,
 			origin,
@@ -439,6 +475,7 @@ local function createWall(parent: Instance): Model
 	wall:SetAttribute(DestructibleContract.Attribute.MaxHealth, Config.Prototype.WallMaxHealth)
 	wall:SetAttribute(DestructibleContract.Attribute.EnergyValue, 10)
 	wall:SetAttribute(DestructibleContract.Attribute.MaterialProfile, "Concrete")
+	wall:SetAttribute(DestructibleContract.Attribute.DamageSurfaceProfile, "Box")
 
 	local wallCFrame = CFrame.new(0, 11, -28)
 
@@ -480,13 +517,13 @@ local function createWall(parent: Instance): Model
 
 	for index = -1, 1 do
 		local crack = createTrimPart(
-			`Crack{index + 2}`,
+			`StructuralSplit{index + 2}`,
 			Vector3.new(0.35, 9, 0.35),
 			wallCFrame
 				* CFrame.new(index * 6, index * 2, -3.65)
 				* CFrame.Angles(0, 0, math.rad(index * 18 + 12)),
-			Color3.fromRGB(255, 139, 61),
-			Enum.Material.Neon,
+			Color3.fromRGB(42, 35, 33),
+			Enum.Material.SmoothPlastic,
 			damaged
 		)
 		crack.CanCollide = false
@@ -665,8 +702,8 @@ local function buildWarehouseVisuals(visuals: VisualModels, origin: CFrame)
 			origin
 				* CFrame.new(index * 10, 8 + index, -14.35)
 				* CFrame.Angles(0, 0, math.rad(index * 16 + 8)),
-			warningColor,
-			Enum.Material.Neon,
+			Color3.fromRGB(46, 39, 36),
+			Enum.Material.Metal,
 			visuals.damaged
 		)
 	end
@@ -789,13 +826,13 @@ local function buildTowerVisuals(visuals: VisualModels, origin: CFrame)
 	)
 	for index = -1, 1 do
 		createTrimPart(
-			`EnergyCrack{index + 2}`,
+			`StructuralSplit{index + 2}`,
 			Vector3.new(0.45, 11, 0.45),
 			origin
 				* CFrame.new(index * 6, 22 + index * 3, -13.25)
 				* CFrame.Angles(0, 0, math.rad(index * 20 + 9)),
-			Color3.fromRGB(255, 132, 62),
-			Enum.Material.Neon,
+			Color3.fromRGB(40, 34, 32),
+			Enum.Material.SmoothPlastic,
 			visuals.damaged
 		)
 	end
@@ -918,11 +955,11 @@ local function buildSubstationVisuals(visuals: VisualModels, origin: CFrame)
 			visuals.damaged
 		)
 		createTrimPart(
-			`ArcSeam{side}`,
+			`TornConduit{side}`,
 			Vector3.new(1, 7, 1),
 			origin * CFrame.new(10 + side * 2, 9, side * 8),
-			Color3.fromRGB(255, 145, 61),
-			Enum.Material.Neon,
+			Color3.fromRGB(39, 34, 32),
+			Enum.Material.Metal,
 			visuals.damaged
 		)
 	end
@@ -982,11 +1019,21 @@ function PrototypeWorldService.new()
 	return setmetatable({}, PrototypeWorldService)
 end
 
+local function removeAuthoringOnlyContent(world: Instance)
+	-- These descendants exist so the map owner can see scale, frame the complete
+	-- terrain, and place untrusted candidate models in Edit mode. They are never
+	-- part of the playable runtime. AuthoringInbox is additionally sandboxed in
+	-- the saved place, and repository checks reject executable code in the map.
+	for _, name in { "AuthoringGuides", "AuthoringInbox" } do
+		local instance = world:FindFirstChild(name)
+		if instance then
+			instance:Destroy()
+		end
+	end
+end
+
 function PrototypeWorldService:Start()
 	local existing = workspace:FindFirstChild(Config.Prototype.WorldName)
-	if existing then
-		existing:Destroy()
-	end
 
 	local legacyBaseplate = workspace:FindFirstChild("Baseplate")
 	if legacyBaseplate and legacyBaseplate:IsA("BasePart") then
@@ -1001,18 +1048,44 @@ function PrototypeWorldService:Start()
 
 	configureLighting()
 
+	-- A world that exists before Play is the hand-authored source of truth. Do
+	-- not replace it: designers must be able to sculpt terrain and rearrange the
+	-- city in Edit mode without the runtime bootstrap erasing their work.
+	if existing then
+		TerrainBuilder.Ensure(existing)
+		removeAuthoringOnlyContent(existing)
+		print("[PrototypeWorldService] Preserved hand-authored Brontide world")
+		return
+	end
+
 	local world = Instance.new("Folder")
 	world.Name = Config.Prototype.WorldName
 	world.Parent = workspace
+	TerrainBuilder.Ensure(world)
 
-	createSurfacePart(
-		"CityFoundation",
-		Vector3.new(1400, 2, 1100),
-		CFrame.new(0, -1, -100),
-		CONCRETE,
-		Enum.Material.Concrete,
-		world
-	)
+	for index, definition in
+		{
+			{ position = Vector3.new(-88, 0, 104), size = Vector3.new(112, 0.3, 120) },
+			{ position = Vector3.new(88, 0, 104), size = Vector3.new(112, 0.3, 120) },
+			{ position = Vector3.new(-88, 0, -88), size = Vector3.new(112, 0.3, 88) },
+			{ position = Vector3.new(88, 0, -88), size = Vector3.new(112, 0.3, 88) },
+			{ position = Vector3.new(-92, 0, -181), size = Vector3.new(116, 0.3, 86) },
+			{ position = Vector3.new(88, 0, -181), size = Vector3.new(112, 0.3, 86) },
+			{ position = Vector3.new(185, 0, 73), size = Vector3.new(70, 0.3, 116) },
+			{ position = Vector3.new(185, 0, -80), size = Vector3.new(70, 0.3, 118) },
+			{ position = Vector3.new(-177, 0, -79), size = Vector3.new(76, 0.3, 116) },
+			{ position = Vector3.new(-177, 0, -181), size = Vector3.new(76, 0.3, 76) },
+		}
+	do
+		createSurfacePart(
+			`UrbanBlockPad{index}`,
+			definition.size,
+			CFrame.new(definition.position.X, 0.15, definition.position.Z),
+			CONCRETE,
+			Enum.Material.Concrete,
+			world
+		)
+	end
 	createPart(
 		"MainAvenue",
 		Vector3.new(40, 0.3, 900),
@@ -1161,6 +1234,61 @@ function PrototypeWorldService:Start()
 	spawn.Anchored = true
 	spawn.Parent = world
 
+	local humanSpawn = Instance.new("SpawnLocation")
+	humanSpawn.Name = "HumanSpawn"
+	humanSpawn.Size = Vector3.new(6, 1, 6)
+	humanSpawn.CFrame = CFrame.lookAt(Vector3.new(-65, 1, 69), Vector3.new(-65, 1, 52))
+	humanSpawn.Transparency = 1
+	humanSpawn.CanCollide = false
+	humanSpawn.Neutral = true
+	humanSpawn.Enabled = true
+	humanSpawn.Duration = 0
+	humanSpawn.Anchored = true
+	humanSpawn.Parent = world
+
+	local mixedScaleReference = Instance.new("Model")
+	mixedScaleReference.Name = "MixedScaleReference"
+	mixedScaleReference.Parent = world
+	createSurfacePart(
+		"HumanApproachPad",
+		Vector3.new(18, 0.4, 30),
+		CFrame.new(-65, 0.2, 62),
+		CURB,
+		Enum.Material.Concrete,
+		mixedScaleReference
+	)
+	for _, definition in
+		{
+			{
+				name = "DoorPostLeft",
+				size = Vector3.new(1.2, 8, 1.2),
+				position = Vector3.new(-68.6, 4, 50),
+			},
+			{
+				name = "DoorPostRight",
+				size = Vector3.new(1.2, 8, 1.2),
+				position = Vector3.new(-61.4, 4, 50),
+			},
+			{
+				name = "DoorLintel",
+				size = Vector3.new(8.4, 1.2, 1.2),
+				position = Vector3.new(-65, 8.6, 50),
+			},
+		}
+	do
+		local referencePart = createPart(
+			definition.name,
+			definition.size,
+			CFrame.new(definition.position),
+			Color3.fromRGB(232, 177, 72),
+			Enum.Material.Metal,
+			mixedScaleReference
+		)
+		referencePart.CanTouch = false
+		referencePart.CanQuery = false
+		CollectionService:AddTag(referencePart, PlayerRole.HumanScaleGeometryTag)
+	end
+
 	createBuilding(
 		world,
 		"GateTowerWest",
@@ -1217,9 +1345,10 @@ function PrototypeWorldService:Start()
 		"EastCivicTower",
 		"east_civic_tower",
 		Vector3.new(180, 0, 68),
-		Vector3.new(32, 56, 34),
+		Vector3.new(32, 88, 34),
 		Color3.fromRGB(68, 83, 105),
-		Color3.fromRGB(43, 54, 72)
+		Color3.fromRGB(43, 54, 72),
+		true
 	)
 	createBuilding(
 		world,
@@ -1235,9 +1364,10 @@ function PrototypeWorldService:Start()
 		"EastHarbourBlock",
 		"east_harbour_block",
 		Vector3.new(180, 0, -72),
-		Vector3.new(34, 42, 38),
+		Vector3.new(34, 76, 38),
 		Color3.fromRGB(68, 94, 101),
-		Color3.fromRGB(42, 62, 70)
+		Color3.fromRGB(42, 62, 70),
+		true
 	)
 	createBuilding(
 		world,
@@ -1253,9 +1383,10 @@ function PrototypeWorldService:Start()
 		"SouthTower",
 		"south_tower",
 		Vector3.new(62, 0, -178),
-		Vector3.new(34, 52, 34),
+		Vector3.new(34, 96, 34),
 		Color3.fromRGB(78, 82, 105),
-		Color3.fromRGB(49, 51, 69)
+		Color3.fromRGB(49, 51, 69),
+		true
 	)
 	createBuilding(
 		world,
@@ -1271,9 +1402,10 @@ function PrototypeWorldService:Start()
 		"WestHarbourTower",
 		"west_harbour_tower",
 		Vector3.new(-165, 0, -84),
-		Vector3.new(38, 46, 38),
+		Vector3.new(38, 78, 38),
 		Color3.fromRGB(72, 91, 98),
-		Color3.fromRGB(45, 58, 65)
+		Color3.fromRGB(45, 58, 65),
+		true
 	)
 	createBuilding(
 		world,
@@ -1289,7 +1421,7 @@ function PrototypeWorldService:Start()
 		"CentralNorthWestTower",
 		"central_north_west_tower",
 		Vector3.new(-145, 0, 120),
-		Vector3.new(44, 62, 42),
+		Vector3.new(44, 118, 42),
 		Color3.fromRGB(75, 84, 106),
 		Color3.fromRGB(45, 54, 72),
 		true
@@ -1299,9 +1431,49 @@ function PrototypeWorldService:Start()
 		"CentralNorthEastTower",
 		"central_north_east_tower",
 		Vector3.new(145, 0, 120),
-		Vector3.new(44, 68, 42),
+		Vector3.new(44, 132, 42),
 		Color3.fromRGB(68, 89, 104),
 		Color3.fromRGB(42, 59, 70),
+		true
+	)
+	createBuilding(
+		world,
+		"MidtownWestSpire",
+		"midtown_west_spire",
+		Vector3.new(-76, 0, 128),
+		Vector3.new(40, 104, 36),
+		Color3.fromRGB(79, 87, 103),
+		Color3.fromRGB(56, 66, 83),
+		true
+	)
+	createBuilding(
+		world,
+		"MidtownEastTower",
+		"midtown_east_tower",
+		Vector3.new(76, 0, 126),
+		Vector3.new(42, 84, 38),
+		Color3.fromRGB(70, 91, 103),
+		Color3.fromRGB(47, 65, 74),
+		true
+	)
+	createBuilding(
+		world,
+		"CanalWestTower",
+		"canal_west_tower",
+		Vector3.new(-108, 0, -100),
+		Vector3.new(44, 76, 38),
+		Color3.fromRGB(86, 79, 94),
+		Color3.fromRGB(61, 52, 70),
+		true
+	)
+	createBuilding(
+		world,
+		"CanalEastBlock",
+		"canal_east_block",
+		Vector3.new(108, 0, -104),
+		Vector3.new(42, 64, 40),
+		Color3.fromRGB(78, 92, 94),
+		Color3.fromRGB(51, 64, 67),
 		true
 	)
 	createBuilding(
@@ -1359,7 +1531,7 @@ function PrototypeWorldService:Start()
 		"ArcControlTower",
 		"arc_control_tower",
 		Vector3.new(520, 0, -60),
-		Vector3.new(32, 64, 32),
+		Vector3.new(32, 92, 32),
 		Color3.fromRGB(67, 82, 98),
 		Color3.fromRGB(38, 190, 182),
 		true
@@ -1395,7 +1567,7 @@ function PrototypeWorldService:Start()
 		"AzureMarinaHotel",
 		"azure_marina_hotel",
 		Vector3.new(-310, 0, -405),
-		Vector3.new(42, 44, 34),
+		Vector3.new(42, 72, 34),
 		Color3.fromRGB(72, 102, 116),
 		Color3.fromRGB(46, 72, 84),
 		true

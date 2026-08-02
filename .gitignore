@@ -4,6 +4,8 @@
 *.rbxlx
 *.rbxm
 *.rbxmx
+!src/world/*.rbxm
+!src/world/*.rbxmx
 
 # Roblox/Studio state
 *.rbxl.lock
@@ -27,4 +29,3 @@
 *.blend1
 *.blend2
 *.blend@
-

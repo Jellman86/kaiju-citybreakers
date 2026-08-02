@@ -1,6 +1,6 @@
 # Release process
 
-Production is place `137103245194702` in universe `10609698937`. Rojo-managed files remain the source of truth; generated place files are disposable release artifacts and stay out of Git.
+Production is place `137103245194702` in universe `10609698937`. Rojo-managed Luau and the two captured models in `src/world/` remain the source of truth; generated place files are disposable release artifacts and stay out of Git.
 
 Rojo documents `rojo build -o build.rbxlx` as the supported way to assemble a complete place file from a project. It separately describes live sync as the faster active-iteration workflow. This project therefore uses live sync for development and a clean, exact-commit build artifact for production publishing:
 

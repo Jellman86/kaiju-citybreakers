@@ -7,13 +7,16 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local PlayerRole = require(ReplicatedStorage.Shared.PlayerRole)
 local Types = require(ReplicatedStorage.Shared.Types)
+local SmashAnimator = require(script.Parent.Parent.Effects.SmashAnimator)
 
 type AbilityResult = Types.AbilityResult
 
 local ACTION_BASIC_ATTACK = "KaijuBasicAttack"
 local ACTION_CHARGE = "KaijuCharge"
 local ACTION_BEAM = "KaijuEnergyBeam"
+local ACTION_HUMAN_FIRE = "HumanBlasterFire"
 local TOUCH_BUTTON_MIN_SIZE = 72
 local TOUCH_BUTTON_MAX_SIZE = 96
 local TOUCH_BUTTON_FRAME_HEIGHT_RATIO = 0.25
@@ -39,16 +42,97 @@ function CombatController.new(
 	self._lastRequestedAt = -math.huge
 	self._lastChargeRequestedAt = -math.huge
 	self._lastBeamRequestedAt = -math.huge
+	self._lastHumanFireRequestedAt = -math.huge
+	self._predictedSmashSequence = nil :: number?
+	self._smashAnimationCount = 0
+	self._smashAnimator = SmashAnimator.new()
 	self._jumpLayoutConnections = {} :: { RBXScriptConnection }
 	self._playerGuiDescendantAddedConnection = nil :: RBXScriptConnection?
 	self._resultConnection = nil :: RBXScriptConnection?
 	self._touchLayoutConnection = nil :: RBXScriptConnection?
 	self._touchLayoutPositionConnection = nil :: RBXScriptConnection?
+	self._roleConnection = nil :: RBXScriptConnection?
+	self._humanReticleGui = nil :: ScreenGui?
+	self._actionsBound = false
+	player:SetAttribute("ClientSmashAnimationCount", 0)
 
 	return self
 end
 
+function CombatController:_createHumanReticle()
+	if self._humanReticleGui then
+		return
+	end
+	local playerGui = player:FindFirstChildOfClass("PlayerGui")
+	if not playerGui then
+		return
+	end
+
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "HumanCombatHud"
+	gui.IgnoreGuiInset = true
+	gui.ResetOnSpawn = false
+	gui.DisplayOrder = 15
+
+	local reticle = Instance.new("Frame")
+	reticle.Name = "HumanAimReticle"
+	reticle.AnchorPoint = Vector2.new(0.5, 0.5)
+	reticle.Position = UDim2.fromScale(0.5, 0.5)
+	reticle.Size = UDim2.fromOffset(26, 26)
+	reticle.BackgroundTransparency = 1
+	reticle.Parent = gui
+
+	for _, definition in
+		{
+			{ name = "Top", position = UDim2.fromOffset(12, 1), size = UDim2.fromOffset(2, 7) },
+			{ name = "Bottom", position = UDim2.fromOffset(12, 18), size = UDim2.fromOffset(2, 7) },
+			{ name = "Left", position = UDim2.fromOffset(1, 12), size = UDim2.fromOffset(7, 2) },
+			{ name = "Right", position = UDim2.fromOffset(18, 12), size = UDim2.fromOffset(7, 2) },
+		}
+	do
+		local line = Instance.new("Frame")
+		line.Name = definition.name
+		line.Position = definition.position
+		line.Size = definition.size
+		line.BackgroundColor3 = Color3.fromRGB(230, 249, 255)
+		line.BackgroundTransparency = 0.12
+		line.BorderSizePixel = 0
+		line.Parent = reticle
+	end
+
+	gui.Parent = playerGui
+	self._humanReticleGui = gui
+end
+
+function CombatController:_destroyHumanReticle()
+	if self._humanReticleGui then
+		self._humanReticleGui:Destroy()
+		self._humanReticleGui = nil
+	end
+end
+
+function CombatController:_requestHumanFire()
+	if not PlayerRole.IsHuman(player) then
+		return
+	end
+	local now = os.clock()
+	if now - self._lastHumanFireRequestedAt < Config.Combat.HumanFireCooldownSeconds then
+		return
+	end
+
+	self._lastHumanFireRequestedAt = now
+	self._sequence += 1
+	self._abilityRequestRemote:FireServer({
+		abilityId = "humanFire",
+		sequence = self._sequence,
+		aimDirection = self._aimController:GetAimDirection(),
+	})
+end
+
 function CombatController:_requestBeam()
+	if not PlayerRole.IsKaiju(player) then
+		return
+	end
 	local now = os.clock()
 	if now - self._lastBeamRequestedAt < Config.Combat.BeamCooldownSeconds then
 		return
@@ -67,6 +151,9 @@ function CombatController:_requestBeam()
 end
 
 function CombatController:_requestBasicAttack()
+	if not PlayerRole.IsKaiju(player) then
+		return
+	end
 	local now = os.clock()
 	if now - self._lastRequestedAt < Config.Combat.BasicAttackCooldownSeconds then
 		return
@@ -74,10 +161,38 @@ function CombatController:_requestBasicAttack()
 
 	self._lastRequestedAt = now
 	self._sequence += 1
-	self._abilityRequestRemote:FireServer({
-		abilityId = "basic",
-		sequence = self._sequence,
-	})
+	local sequence = self._sequence
+	local character = player.Character
+	self._predictedSmashSequence = sequence
+	if not character then
+		self._abilityRequestRemote:FireServer({ abilityId = "basic", sequence = sequence })
+		return
+	end
+
+	local played = self._smashAnimator:Play(character, function()
+		if
+			self._predictedSmashSequence == sequence
+			and player.Character == character
+			and PlayerRole.IsKaiju(player)
+		then
+			self._abilityRequestRemote:FireServer({ abilityId = "basic", sequence = sequence })
+		end
+	end)
+	if played then
+		self._smashAnimationCount += 1
+		player:SetAttribute("ClientSmashAnimationCount", self._smashAnimationCount)
+	end
+end
+
+function CombatController:_playConfirmedSmashAnimation()
+	local character = player.Character
+	if not character then
+		return
+	end
+	if self._smashAnimator:Play(character, function() end) then
+		self._smashAnimationCount += 1
+		player:SetAttribute("ClientSmashAnimationCount", self._smashAnimationCount)
+	end
 end
 
 function CombatController:_resetBeamCooldownVisual()
@@ -116,6 +231,9 @@ function CombatController:_startBeamCooldownVisual()
 end
 
 function CombatController:_requestCharge()
+	if not PlayerRole.IsKaiju(player) then
+		return
+	end
 	local now = os.clock()
 	if now - self._lastChargeRequestedAt < Config.Combat.ChargeCooldownSeconds then
 		return
@@ -269,6 +387,30 @@ function CombatController:_emitImpactFeedback(position: Vector3, color: Color3, 
 	Debris:AddItem(flash, 0.25)
 end
 
+function CombatController:_emitSmashImpactFeedback(position: Vector3, hit: boolean)
+	local dust = Instance.new("Part")
+	dust.Name = "SmashImpactDust"
+	dust.Shape = Enum.PartType.Ball
+	dust.Size = Vector3.new(7, 7, 7)
+	dust.CFrame = CFrame.new(position)
+	dust.Color = if hit then Color3.fromRGB(118, 104, 89) else Color3.fromRGB(76, 82, 84)
+	dust.Material = Enum.Material.SmoothPlastic
+	dust.Transparency = 0.48
+	dust.Anchored = true
+	dust.CanCollide = false
+	dust.CanTouch = false
+	dust.CanQuery = false
+	dust.CastShadow = false
+	dust.Parent = workspace
+
+	TweenService:Create(
+		dust,
+		TweenInfo.new(0.24, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ Size = Vector3.new(26, 19, 26), Transparency = 1 }
+	):Play()
+	Debris:AddItem(dust, 0.3)
+end
+
 function CombatController:_emitBeamMuzzleFeedback(aimDirection: Vector3)
 	local character = player.Character
 	local rootPart = character and character:FindFirstChild("HumanoidRootPart")
@@ -372,6 +514,36 @@ function CombatController:_emitBeam(origin: Vector3, target: Vector3, hit: boole
 		if hit then Color3.fromRGB(255, 174, 74) else Color3.fromRGB(53, 225, 211),
 		if hit then 7 else 3.5
 	)
+end
+
+function CombatController:_emitHumanShot(origin: Vector3, target: Vector3, hit: boolean)
+	local delta = target - origin
+	local length = delta.Magnitude
+	if length < 0.1 then
+		return
+	end
+
+	local tracer = Instance.new("Part")
+	tracer.Name = "HumanBlasterTracer"
+	tracer.Size = Vector3.new(0.18, 0.18, length)
+	tracer.CFrame = CFrame.lookAt(origin + delta * 0.5, target)
+	tracer.Color = if hit then Color3.fromRGB(255, 211, 84) else Color3.fromRGB(86, 190, 255)
+	tracer.Material = Enum.Material.Neon
+	tracer.Transparency = 0.05
+	tracer.Anchored = true
+	tracer.CanCollide = false
+	tracer.CanTouch = false
+	tracer.CanQuery = false
+	tracer.CastShadow = false
+	tracer.Parent = workspace
+
+	TweenService:Create(
+		tracer,
+		TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ Transparency = 1 }
+	):Play()
+	Debris:AddItem(tracer, 0.15)
+	self:_emitImpactFeedback(target, tracer.Color, if hit then 0.8 else 0.35)
 end
 
 local function styleTouchButton(button: ImageButton, color: Color3, buttonSize: number)
@@ -513,6 +685,55 @@ function CombatController:_layoutTouchButtons()
 	styleTouchButton(beamButton, Color3.fromRGB(34, 133, 222), buttonSize)
 end
 
+function CombatController:_layoutHumanTouchButton()
+	local fireButton = ContextActionService:GetButton(ACTION_HUMAN_FIRE)
+	if not fireButton or not fireButton:IsA("ImageButton") then
+		return
+	end
+	fireButton.Name = "HumanFireTouchButton"
+	local buttonFrame = fireButton.Parent
+	if not buttonFrame or not buttonFrame:IsA("GuiObject") then
+		return
+	end
+
+	local frameSize = buttonFrame.AbsoluteSize
+	local buttonSize = math.clamp(
+		math.round(frameSize.Y * TOUCH_BUTTON_FRAME_HEIGHT_RATIO),
+		TOUCH_BUTTON_MIN_SIZE,
+		TOUCH_BUTTON_MAX_SIZE
+	)
+	local gap = math.max(12, math.round(buttonSize * TOUCH_BUTTON_GAP_RATIO))
+	local position = Vector2.new(
+		math.max(gap, math.round(frameSize.X - gap - buttonSize)),
+		math.max(gap, math.round(frameSize.Y - gap - buttonSize))
+	)
+	local playerGui = player:FindFirstChildOfClass("PlayerGui")
+	local jumpButton = playerGui and playerGui:FindFirstChild("JumpButton", true)
+	if
+		jumpButton
+		and jumpButton:IsA("GuiObject")
+		and overlapsGuiObject(position, buttonSize, buttonFrame, jumpButton, gap)
+	then
+		local jumpLeftInFrame = jumpButton.AbsolutePosition.X - buttonFrame.AbsolutePosition.X
+		local screenLeftInFrame = -buttonFrame.AbsolutePosition.X
+		position = Vector2.new(
+			math.max(screenLeftInFrame + gap, math.round(jumpLeftInFrame - gap - buttonSize)),
+			position.Y
+		)
+	end
+
+	ContextActionService:SetPosition(ACTION_HUMAN_FIRE, UDim2.fromOffset(position.X, position.Y))
+	styleTouchButton(fireButton, Color3.fromRGB(52, 145, 230), buttonSize)
+end
+
+function CombatController:_layoutRoleTouchButtons()
+	if PlayerRole.IsKaiju(player) then
+		self:_layoutTouchButtons()
+	elseif PlayerRole.IsHuman(player) then
+		self:_layoutHumanTouchButton()
+	end
+end
+
 function CombatController:_disconnectJumpLayoutConnections()
 	for _, connection in self._jumpLayoutConnections do
 		connection:Disconnect()
@@ -530,7 +751,7 @@ function CombatController:_watchJumpButton(instance: Instance)
 	local function relayout()
 		task.defer(function()
 			if jumpButton.Parent then
-				self:_layoutTouchButtons()
+				self:_layoutRoleTouchButtons()
 			end
 		end)
 	end
@@ -544,16 +765,67 @@ function CombatController:_watchJumpButton(instance: Instance)
 	relayout()
 end
 
-function CombatController:Start()
-	local playerGui = player:WaitForChild("PlayerGui")
-	self._playerGuiDescendantAddedConnection = playerGui.DescendantAdded:Connect(function(instance)
-		if instance.Name == "JumpButton" then
-			self:_watchJumpButton(instance)
-		end
-	end)
-	local existingJumpButton = playerGui:FindFirstChild("JumpButton", true)
-	if existingJumpButton then
-		self:_watchJumpButton(existingJumpButton)
+function CombatController:_unbindActions()
+	if not self._actionsBound then
+		return
+	end
+	self._actionsBound = false
+	self._predictedSmashSequence = nil
+	self._smashAnimator:Reset()
+	self:_destroyHumanReticle()
+	self:_resetChargeCooldownVisual()
+	self:_resetBeamCooldownVisual()
+	ContextActionService:UnbindAction(ACTION_BASIC_ATTACK)
+	ContextActionService:UnbindAction(ACTION_CHARGE)
+	ContextActionService:UnbindAction(ACTION_BEAM)
+	ContextActionService:UnbindAction(ACTION_HUMAN_FIRE)
+	if self._touchLayoutConnection then
+		self._touchLayoutConnection:Disconnect()
+		self._touchLayoutConnection = nil
+	end
+	if self._touchLayoutPositionConnection then
+		self._touchLayoutPositionConnection:Disconnect()
+		self._touchLayoutPositionConnection = nil
+	end
+end
+
+function CombatController:_bindActions()
+	local role = PlayerRole.Get(player)
+	if self._actionsBound or not role then
+		return
+	end
+	self._actionsBound = true
+	if role == PlayerRole.Human then
+		self:_createHumanReticle()
+		ContextActionService:BindAction(ACTION_HUMAN_FIRE, function(_actionName, inputState)
+			if inputState == Enum.UserInputState.Begin then
+				self:_requestHumanFire()
+			end
+			return Enum.ContextActionResult.Sink
+		end, true, Enum.UserInputType.MouseButton1, Enum.KeyCode.F, Enum.KeyCode.ButtonR2)
+		ContextActionService:SetTitle(ACTION_HUMAN_FIRE, "FIRE")
+		ContextActionService:SetDescription(ACTION_HUMAN_FIRE, "Fire at Brontide")
+		task.defer(function()
+			if not self._actionsBound or not PlayerRole.IsHuman(player) then
+				return
+			end
+			self:_layoutRoleTouchButtons()
+			local button = ContextActionService:GetButton(ACTION_HUMAN_FIRE)
+			local buttonFrame = button and button.Parent
+			if buttonFrame and buttonFrame:IsA("GuiObject") then
+				self._touchLayoutConnection = buttonFrame
+					:GetPropertyChangedSignal("AbsoluteSize")
+					:Connect(function()
+						self:_layoutRoleTouchButtons()
+					end)
+				self._touchLayoutPositionConnection = buttonFrame
+					:GetPropertyChangedSignal("AbsolutePosition")
+					:Connect(function()
+						self:_layoutRoleTouchButtons()
+					end)
+			end
+		end)
+		return
 	end
 
 	ContextActionService:BindAction(ACTION_BASIC_ATTACK, function(_actionName, inputState)
@@ -587,26 +859,58 @@ function CombatController:Start()
 	ContextActionService:SetTitle(ACTION_BEAM, "BEAM")
 	ContextActionService:SetDescription(ACTION_BEAM, "Fire Brontide's energy beam")
 	task.defer(function()
-		self:_layoutTouchButtons()
+		if not self._actionsBound then
+			return
+		end
+		self:_layoutRoleTouchButtons()
 		local button = ContextActionService:GetButton(ACTION_BASIC_ATTACK)
 		local buttonFrame = button and button.Parent
 		if buttonFrame and buttonFrame:IsA("GuiObject") then
 			self._touchLayoutConnection = buttonFrame
 				:GetPropertyChangedSignal("AbsoluteSize")
 				:Connect(function()
-					self:_layoutTouchButtons()
+					self:_layoutRoleTouchButtons()
 				end)
 			self._touchLayoutPositionConnection = buttonFrame
 				:GetPropertyChangedSignal("AbsolutePosition")
 				:Connect(function()
-					self:_layoutTouchButtons()
+					self:_layoutRoleTouchButtons()
 				end)
 		end
 	end)
+end
+
+function CombatController:_updateRoleBindings()
+	self:_unbindActions()
+	self:_bindActions()
+end
+
+function CombatController:Start()
+	local playerGui = player:WaitForChild("PlayerGui")
+	self._playerGuiDescendantAddedConnection = playerGui.DescendantAdded:Connect(function(instance)
+		if instance.Name == "JumpButton" then
+			self:_watchJumpButton(instance)
+		end
+	end)
+	local existingJumpButton = playerGui:FindFirstChild("JumpButton", true)
+	if existingJumpButton then
+		self:_watchJumpButton(existingJumpButton)
+	end
+
+	self._roleConnection = player:GetAttributeChangedSignal(PlayerRole.Attribute):Connect(function()
+		self:_updateRoleBindings()
+	end)
+	self:_updateRoleBindings()
 
 	self._resultConnection = self._abilityResultRemote.OnClientEvent:Connect(
 		function(result: AbilityResult)
 			if not result.accepted then
+				if
+					result.abilityId == "basic"
+					and result.sequence == self._predictedSmashSequence
+				then
+					self._predictedSmashSequence = nil
+				end
 				if result.abilityId == "charge" then
 					self:_resetChargeCooldownVisual()
 				elseif result.abilityId == "beam" then
@@ -614,7 +918,20 @@ function CombatController:Start()
 				end
 				return
 			end
-			if result.abilityId == "charge" then
+			if result.abilityId == "basic" then
+				local wasPredicted = result.sequence == self._predictedSmashSequence
+				if wasPredicted then
+					self._predictedSmashSequence = nil
+				else
+					self:_playConfirmedSmashAnimation()
+				end
+				if result.effectTarget then
+					self:_emitSmashImpactFeedback(result.effectTarget, result.hitCount > 0)
+				end
+				if result.hitCount > 0 then
+					self:_pulseCamera(5, 0.055, 0.2)
+				end
+			elseif result.abilityId == "charge" then
 				self:_pulseCamera(8, 0.06, 0.28)
 				self:_emitChargeFeedback()
 			elseif result.abilityId == "chargeImpact" and result.effectTarget then
@@ -623,6 +940,12 @@ function CombatController:Start()
 			elseif result.abilityId == "beam" and result.effectOrigin and result.effectTarget then
 				self:_pulseCamera(if result.hitCount > 0 then 6 else 3, 0.04, 0.22)
 				self:_emitBeam(result.effectOrigin, result.effectTarget, result.hitCount > 0)
+			elseif
+				result.abilityId == "humanFire"
+				and result.effectOrigin
+				and result.effectTarget
+			then
+				self:_emitHumanShot(result.effectOrigin, result.effectTarget, result.hitCount > 0)
 			elseif result.hitCount > 0 then
 				self:_pulseCamera(3, 0.08, 0.18)
 			end
@@ -631,11 +954,8 @@ function CombatController:Start()
 end
 
 function CombatController:Destroy()
-	self:_resetChargeCooldownVisual()
-	self:_resetBeamCooldownVisual()
-	ContextActionService:UnbindAction(ACTION_BASIC_ATTACK)
-	ContextActionService:UnbindAction(ACTION_CHARGE)
-	ContextActionService:UnbindAction(ACTION_BEAM)
+	self:_unbindActions()
+	self._smashAnimator:Destroy()
 	self:_disconnectJumpLayoutConnections()
 	if self._resultConnection then
 		self._resultConnection:Disconnect()
@@ -652,6 +972,10 @@ function CombatController:Destroy()
 	if self._touchLayoutPositionConnection then
 		self._touchLayoutPositionConnection:Disconnect()
 		self._touchLayoutPositionConnection = nil
+	end
+	if self._roleConnection then
+		self._roleConnection:Disconnect()
+		self._roleConnection = nil
 	end
 end
 

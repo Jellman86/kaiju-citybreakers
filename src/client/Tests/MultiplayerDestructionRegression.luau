@@ -1,6 +1,8 @@
 --!strict
 
 local CollectionService = game:GetService("CollectionService")
+local ContextActionService = game:GetService("ContextActionService")
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
@@ -36,17 +38,53 @@ local function isRequestedTest(): boolean
 	return ok and args == StudioTestProtocol.MultiplayerDestructionTest
 end
 
-local function findTarget(): Model?
+local function findTarget(structureId: string): Model?
 	for _, tagged in CollectionService:GetTagged(DestructibleContract.Tag) do
 		if
 			tagged:IsA("Model")
-			and tagged:GetAttribute(DestructibleContract.Attribute.StructureId)
-				== StudioTestProtocol.TargetStructureId
+			and tagged:GetAttribute(DestructibleContract.Attribute.StructureId) == structureId
 		then
 			return tagged
 		end
 	end
 	return nil
+end
+
+local function measureLocalizedDamage(target: Model): (number, number, number)
+	local container = target:FindFirstChild("ClientLocalizedDamage")
+	if not container or not container:IsA("Model") then
+		return 0, 0, 0
+	end
+	local holes = 0
+	local visibleParts = 0
+	for _, descendant in container:GetDescendants() do
+		if descendant:IsA("BasePart") and descendant.LocalTransparencyModifier < 1 then
+			visibleParts += 1
+			if descendant.Name == "LocalizedDamageHole" then
+				holes += 1
+			end
+		end
+	end
+	local maximumSpan = 0
+	if visibleParts > 0 then
+		local _, bounds = container:GetBoundingBox()
+		maximumSpan = math.max(bounds.X, bounds.Y, bounds.Z)
+	end
+	return holes, visibleParts, maximumSpan
+end
+
+local function countVisibleNeon(variant: Model): number
+	local count = 0
+	for _, descendant in variant:GetDescendants() do
+		if
+			descendant:IsA("BasePart")
+			and descendant.LocalTransparencyModifier < 1
+			and descendant.Material == Enum.Material.Neon
+		then
+			count += 1
+		end
+	end
+	return count
 end
 
 local function countVisibleParts(variant: Model): number
@@ -99,14 +137,50 @@ function MultiplayerDestructionRegression.TryStart(
 				end
 				return
 			end
+			if
+				payload.command == "human_fire"
+				and type(payload.shots) == "number"
+				and typeof(payload.target) == "Vector3"
+			then
+				task.wait(0.3)
+				for _ = 1, payload.shots do
+					local character = Players.LocalPlayer.Character
+					local head = character and character:FindFirstChild("Head")
+					local origin = if head and head:IsA("BasePart")
+						then head.Position
+						else Vector3.zero
+					local direction = payload.target - origin
+					if direction.Magnitude > 0.001 then
+						sequence += 1
+						abilityRequestRemote:FireServer({
+							abilityId = "humanFire",
+							sequence = sequence,
+							aimDirection = direction.Unit,
+						})
+					end
+					task.wait(0.42)
+				end
+				return
+			end
+			if payload.command == "leave" then
+				if StudioTestService:CanLeaveTest() then
+					StudioTestService:LeaveTest()
+				end
+				return
+			end
 
-			if payload.command ~= "report" or type(payload.stage) ~= "string" then
+			if
+				payload.command ~= "report"
+				or type(payload.stage) ~= "string"
+				or type(payload.structureId) ~= "string"
+				or type(payload.expectedState) ~= "string"
+			then
 				return
 			end
 
 			local target: Model? = nil
 			waitUntil(function()
-				target = findTarget()
+				target = findTarget(payload.structureId)
 				return target ~= nil
 			end, 15)
 			if not target then
@@ -121,13 +195,13 @@ function MultiplayerDestructionRegression.TryStart(
 			if
 				not waitUntil(function()
 					return resolvedTarget:GetAttribute(DestructibleContract.Attribute.State)
-						== "Collapsed"
+						== payload.expectedState
 				end, 15)
 			then
 				testRemote:FireServer({
 					kind = "report_error",
 					stage = payload.stage,
-					reason = "collapsed attributes did not replicate to client",
+					reason = "expected destruction attributes did not replicate to client",
 				})
 				return
 			end
@@ -160,6 +234,8 @@ function MultiplayerDestructionRegression.TryStart(
 				})
 				return
 			end
+			local localizedHoleCount, localizedPartCount, localizedMaximumSpan =
+				measureLocalizedDamage(resolvedTarget)
 
 			testRemote:FireServer({
 				kind = "report",
@@ -173,6 +249,45 @@ function MultiplayerDestructionRegression.TryStart(
 				damagedVisible = countVisibleParts(damaged),
 				collapsedVisible = countVisibleParts(collapsed),
 				debrisCount = countActiveDebris(),
+				damageZoneState = resolvedTarget:GetAttribute(
+					DestructibleContract.Attribute.DamageZoneState
+				),
+				impactSequence = resolvedTarget:GetAttribute(
+					DestructibleContract.Attribute.ImpactSequence
+				),
+				localizedHoleCount = localizedHoleCount,
+				localizedPartCount = localizedPartCount,
+				localizedMaximumSpan = localizedMaximumSpan,
+				damagedNeonCount = countVisibleNeon(damaged),
+				smashAnimationCount = Players.LocalPlayer:GetAttribute("ClientSmashAnimationCount")
+					or 0,
+				smashAnimationPhase = if Players.LocalPlayer.Character
+					then Players.LocalPlayer.Character:GetAttribute("ClientSmashAnimationPhase")
+						or "Idle"
+					else "Unavailable",
+				smashMaximumShellDisplacement = if Players.LocalPlayer.Character
+					then Players.LocalPlayer.Character:GetAttribute(
+						"ClientSmashMaximumShellDisplacement"
+					) or 0
+					else 0,
+				role = Players.LocalPlayer:GetAttribute("CharacterRole"),
+				cameraMin = Players.LocalPlayer.CameraMinZoomDistance,
+				cameraMax = Players.LocalPlayer.CameraMaxZoomDistance,
+				cameraType = if workspace.CurrentCamera
+					then tostring(workspace.CurrentCamera.CameraType)
+					else "Unavailable",
+				hasSmashButton = ContextActionService:GetButton("KaijuBasicAttack") ~= nil,
+				hasHumanFireButton = ContextActionService:GetButton("HumanBlasterFire") ~= nil,
+				hasHumanReticle = Players.LocalPlayer.PlayerGui:FindFirstChild(
+					"HumanAimReticle",
+					true
+				) ~= nil,
+				characterHealth = if Players.LocalPlayer.Character
+						and Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+					then (
+						Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid") :: Humanoid
+					).Health
+					else -1,
 			})
 		end)
 

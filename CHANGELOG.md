@@ -8,7 +8,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 ### Added
 
+- Edit-visible full-map authoring guides, truthful Brontide/human scale references, and a sandboxed `AuthoringInbox` that formalize the map-owner/Codex handoff while remaining absent from Play.
+- Edit-visible turret aim assemblies, a movable rogue-kaiju spawn marker, and a replaceable enemy template that keep gameplay objects inspectable while server code owns their contracts.
+- First server-owned rogue-kaiju AI slice with bounded native pathfinding, chase/telegraph/recovery states, player melee damage, turret target integration, authoritative health, and defeat.
+- Research-led capturable-turret specification with sanitized Creator Store shell provenance, server-owned capture/targeting, distinct bullet/minigun/cannon/rocket profiles, bounded projectile/effect budgets, placement guidance, and explicit multiplayer/mobile gates.
+- Hand-authored Studio map pipeline with source-controlled Terrain and city models, a focused capture tool, and an Edit-mode authoring guide.
+- Native smooth terrain composition with a rocky Mount Brontide massif, park mounds, irregular sand banks, real terrain water, and perimeter relief around the city.
+- Procedural Brontide Smash animation with an eased wind-up, fast strike, server-authoritative impact moment, and recovery to the original pose.
+- Localized authored building damage with server-derived surface zones, Smash/Charge/Beam-shaped rupture marks, compact late-join reconstruction, and bounded pooled impact chips.
+- Initial mixed-scale player foundation with one server-assigned giant Brontide, human-sized later players, role-specific spawns/cameras/metrics, non-flinging collision groups, and a human-scale doorway reference.
+- Native multiplayer regression coverage for measured role scale, human combat rejection, role-specific cameras/actions, late-join destruction reconstruction, and automatic kaiju promotion after disconnect.
+- Asymmetric mixed-scale combat foundation with a cross-device human energy blaster, damage and death for both roles, role-preserving respawns, kaiju attacks against humans, and controlled physical kaiju contact.
 - Research-backed Phase 2D roadmap for a sustained, server-authoritative demolition Beam and tiered, pooled destruction spectacle with mobile and Reduced Effects gates.
+- Research specification for genuinely mixed-scale human and kaiju players, including role architecture, truthful level metrics, collision/security rules, mobile constraints, and a two-client feasibility lab.
 - Research-led game design, technical architecture, roadmap, art direction, and validation ledger.
 - Free Rojo/Rokit/StyLua/Selene/Git LFS toolchain with public GitHub Actions validation.
 - Server-authoritative round state, charge, smash, and three-state destruction foundations.
@@ -34,6 +46,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 ### Changed
 
+- Runtime world startup now preserves an authored `KaijuFeelLab` and non-empty Terrain instead of destroying the designer's map whenever Play begins.
+- Central skyline towers now use materially different heights so Brontide is framed by an urban silhouette instead of a field of similarly low boxes.
+- Smash now drives dedicated Brontide visual-shell pivots that Roblox's avatar animation pass cannot erase and uses a deliberately readable `0.87`-second anticipation-to-recovery sequence.
+- Arc Power Plant now uses functional industrial grouping—cooling basins and pipes, service lanes, a fenced transformer/switchgear yard, busbars and an outgoing grid gantry—instead of decorative Neon floor channels.
+- Localized damage now uses much larger face-clamped irregular breaches with layered dark depth and displaced rims, capped at eight local parts per mark, after the first physical-phone mark read as a small flat bullet hole.
+- Damaged cooling towers and other building archetypes now use dark physical splits and impact-local cavities instead of persistent orange Neon crack plates; every accepted hit emits a sequenced localized-damage event even when the structure remains `Damaged`.
 - Repository visibility changed from private to public so standard GitHub-hosted CI remains free.
 - Production publishing now uses a clean, commit-labelled Rojo place artifact with a SHA-256 digest and mandatory fresh-server smoke test; Rojo sync is reserved for iteration.
 - Charge movement now uses a short native `LinearVelocity` constraint after Studio testing showed that a one-frame velocity was neutralized by the Humanoid controller.
@@ -51,6 +69,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 ### Fixed
 
+- Replaced the internally advancing but visually overwritten Smash tween after a physical-device test showed no visible wind-up or body motion.
 - Reflow touch actions after Roblox's native Jump button receives its final phone layout, keeping Smash unobscured on iPhone landscape screens.
 - Kept the Studio-only multiplayer regression out of live server and client startup, preventing published sessions from aborting before the city, Brontide, HUD, and controls load.
 - Disabled the template spawn and removed the overlapping runtime baseplate in the Kaiju Feel Lab.

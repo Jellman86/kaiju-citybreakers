@@ -2,6 +2,14 @@
 
 Use [RESEARCH.md](RESEARCH.md) to classify the basis for each decision. For playtest decisions, include the build commit, device, sample size, observed result, and whether players received coaching.
 
+## 2026-08-02 — Human-authored map is the visual source of truth
+
+Store `Workspace.KaijuFeelLab` and `Workspace.Terrain` as focused Roblox XML model sources, capture them from an ignored saved Studio place, and preserve them whenever Play starts. Keep the procedural builder only as a fallback for an intentionally empty place and as reusable metric scaffolding.
+
+Basis: direct stakeholder feedback correctly identified that screenshot sampling, instance counts, and procedural coordinates do not provide continuous spatial judgement or convincing art direction. Roblox supplies a native visual Terrain Editor, while Rojo supports model files as project paths but does not reverse-sync Studio edits to the filesystem. Separating the two world roots from Rojo-owned scripts lets a human compose the map visually without introducing a second script source of truth. The solution uses only existing free tools and Git LFS already registered by the project.
+
+Risk and review condition: XML world models are large and visually opaque in code review, so each capture must be rebuilt and inspected in Edit mode, with gameplay and device regression proportional to the change. Revisit asset partitioning if repeated captures materially consume the project's free Git LFS allowance or create merge contention.
+
 ## 2026-08-01 — Core format
 
 Choose a cooperative kaiju rampage roguelite as the first product. Treat competitive territory control as a later mode, not the initial build.
@@ -171,3 +179,63 @@ Basis: Roblox provides native ground pathfinding and warns that many server-anim
 Insert a focused Phase 2D slice ahead of the scout-drone prototype. Replace the brief one-hit presentation with a bounded server-owned Beam session that accepts rate-limited aim intent, resolves damage at fixed samples, and can advance through successive destructibles as the player sweeps or rubble clears. Keep the mouth/head presentation and tiered impact spectacle client-local, transient, pooled, and scalable through Reduced Effects.
 
 Basis: the stakeholder reports that the Beam needs to last longer, draw a destructive line across targets, and make destruction more spectacular. Roblox's security model still requires the server to validate combat context and cadence, while its performance guidance supports local outcome-independent visuals but warns that particle fill rate, transparency, property churn, and per-frame work can be expensive. A native-query spike against five to eight buildings and a physical-phone stress test therefore precede content rollout. The approximately `1.5`-second channel, sampling cadence, caps, feedback layers, and player preference remain explicit hypotheses rather than settled balance.
+
+## 2026-08-01 — Begin a mixed-scale lab before rebuilding the city
+
+Assign the first player as the solo-safe kaiju and later players as humans, with automatic promotion when the kaiju leaves. Prototype Brontide at scale `10`—expected to produce approximately `60–75` studs of actual height—beside an ordinary avatar. Give the roles separate server-owned spawn and movement metrics, separate local cameras, and non-colliding character groups. Keep all attacks kaiju-only and server-authoritative.
+
+Basis: the stakeholder wants human-size and kaiju-size players to coexist without relying on perceived-scale tricks. Roblox supports manual character loading, custom humanoids, model scaling, per-player cameras and collision groups, but does not publish a generally safe maximum in-experience character scale. The scale, role fun and mobile cost therefore remain hypotheses. The existing R15 controller and original primitive shell are reused for the feasibility build; no external rig, character framework or asset is adopted. See [MIXED_SCALE_PLAYERS.md](MIXED_SCALE_PLAYERS.md).
+
+## 2026-08-01 — Make mixed-scale players opposing combatants
+
+Allow humans and Brontide to damage and defeat each other in the feasibility lab. Humans receive one stylized energy blaster resolved by a server raycast; Smash, Charge, Beam and sustained kaiju contact can damage humans. Both roles retain native Humanoid death and the manual role-preserving respawn lifecycle.
+
+Disable Roblox's automatic passive Humanoid regeneration for the lab. It otherwise changes shots-to-defeat during a sustained exchange and makes damage tuning less legible. Any future healing will be an explicit server-owned mechanic with its own evidence gate.
+
+Direct full-rig collision remains disabled because client-owned articulated giant limbs create an avoidable flinging and exploit surface. A single smooth, massless contact hull physically blocks human characters, while a throttled server overlap owns contact damage and clamps knockback. This satisfies the requested physical confrontation while keeping the damaging outcome authoritative. The tuning and the stability of even this bounded proxy remain hypotheses until a physical two-device test.
+
+## 2026-08-01 — Replace glowing damage placeholders with localized authored rupture
+
+Keep the server-owned `Intact`, `Damaged`, and `Collapsed` gameplay states, but add a separate fixed-width surface-zone string updated on every accepted hit. Smash, Charge, and Beam provide only server-derived impact geometry; the server quantizes it and replicates compact durable state. Clients render at most two non-physical rupture marks per damaged structure and reuse the existing debris pool for transient chips.
+
+Basis: direct stakeholder playtest feedback identified the cooling tower's persistent orange Neon `EnergyFracture` slab as unconvincing. Inspection confirmed that repeated hits discarded location and attack type and emitted no new visual event unless the whole structure state changed. Roblox-native attributes, spatial geometry, and local cosmetic instances solve that observed failure without a framework, runtime CSG, EditableMesh permission, or authoritative rubble. Two marks, twenty-four zones, primitive cavity construction, and attack-specific diameters are provisional implementation thresholds pending physical-phone comparison.
+
+## 2026-08-01 — Enlarge rupture depth and animate Smash after the phone gate
+
+Keep the authoritative surface-zone contract, but replace each small five-part mark with at most eight client-local parts: three overlapping dark cavity layers and five displaced non-emissive rim pieces. Clamp the authored attack shape against the struck face so small buildings do not receive oversized geometry. Increase the provisional Smash diameter and give Charge and Beam distinct wide-tear and narrow-scar proportions.
+
+Add a dependency-free procedural Smash pose on the existing R15 shoulder and waist motors: brief eased anticipation, fast downstroke, one impact callback, and eased recovery to the captured joint offsets. The client may predict this presentation for responsiveness, but it sends only the existing ability request at the strike moment; the server retains cooldown, role, round, character, spatial-query, damage, and result authority. A matching result sequence suppresses duplicate local playback, while non-predicted Studio requests still exercise the animation path.
+
+Basis: the first physical-phone screenshot proved location correctness but showed that the twelve-stud circular mark read as a small flat bullet hole relative to Brontide and the cooling tower. The enlarged eight-part ceiling and animation timings are provisional H7/H10 parameters. If the second phone comparison still reads as decoration, preserve the server metadata and replace only the renderer with original archetype-specific breakaway meshes rather than adding runtime CSG or an external destruction framework.
+
+## 2026-08-01 — Recompose Arc Power Plant around functional visual grammar
+
+Remove the cyan floor-light grid and organise the district as an original stylized thermal plant: two cooling towers and basins feed visible coolant/service pipes toward the generation halls; a separate fenced switchyard contains repeated transformer bodies, insulators, breakers and elevated busbars; an outgoing gantry points toward the grid; concrete service lanes retain traversal space.
+
+Basis: a physical-phone screenshot showed that the current district read as generic box buildings on a glowing plaza with one visible cooling tower. DOE, National Grid and EDF sources consistently tie recognizable power generation to grouped turbine/generator or heat-recovery buildings, cooling infrastructure, dense pipes/cables, voltage step-up equipment, switchgear/busbars, site control and transmission connections. The blockout uses original native primitives, no real operator branding, no external asset, and no claim of engineering-scale fidelity. Uncoached child recognition and phone performance remain the gates.
+
+## 2026-08-01 — Supersede the overwritten Smash tween with dedicated visual-shell pivots
+
+The previous regression counted animation starts and phase recovery, but a physical-device tester saw no wind-up or body motion. Roblox's avatar animation pass overwrote the tweened shoulder and waist transforms before display. Attach Brontide's visual shell through dedicated `Motor6D` pivots, animate their persistent `C0` offsets through a bounded `0.87`-second wind-up/strike/hold/recovery sequence, and measure displacement of named shell parts rather than treating internal phase changes as visual proof.
+
+The client still sends the existing basic-attack intent only at the authored impact moment. Cooldown, role, round state, hitbox, targets, damage, and result remain server-authoritative. Six studs of visible shell displacement is a provisional engineering gate, not evidence that the timing feels powerful.
+
+## 2026-08-01 — Replace the flat backdrop with bounded native terrain and skyline contrast
+
+Use Roblox smooth Terrain for broad relief rather than adding hundreds of Parts or importing a terrain plugin/heightmap. Keep roads, spawn areas, the park promenade, and destructible foundations on the validated flat movement plane; place park mounds at open-space edges, native Water and overlapping Sand banks under Azure Lake, a tall layered Rock/Grass massif behind Mount Brontide, and low relief around the city perimeter. Increase selected central tower heights, add four bounded destructible infill buildings, and replace one giant city slab with separate urban pads so native grass breaks up the built area.
+
+Basis: player-height iPhone inspection showed a continuous level slab and many roofs near Brontide's own height, so labels—not landform or skyline—carried district recognition. Roblox documents native smooth-terrain fill operations and recommends built-in materials, streaming, instance reuse, and representative-device profiling for large mobile worlds. The automated blockout now contains `37` destructibles and `1,064` world Parts beneath a provisional `1,250`-Part ceiling; the operation count, six-stud Smash displacement, mountain height, park-mound height, terrain cell count, skyline proportions, traversal, and subjective city credibility remain provisional test gates.
+
+## 2026-08-02 — Pull a bounded capturable-turret feasibility slice ahead of the scout drone
+
+Use the four user-placed turret models as sanitized visual shells only. Remove every imported script, remote, sound, effect, mover, value, and seat behaviour; anchor their parts; register exact provenance and audit results; and supply gameplay through one strict source-controlled server service. Turrets use neutral/capturing/contested/owned state, pause while contested, require an uninterrupted opposing capture, select only living visible opposing players, and stop firing unless owned and uncontested.
+
+Do not implement all attacks as the same recoloured ray. Machine-gun and minigun shots use server raycasts with different wind-up/cadence presentation. Cannon shells and rockets are bounded logical projectiles using fixed-rate swept server raycasts; cannon impacts are smaller and faster, while rockets are slower, more visible, and apply a larger server-owned radius. Clients render only fixed-cap non-physical trails, projectile bodies, lock cues, and impacts.
+
+Basis: the stakeholder already placed turret candidates and requested MOBA-like capture plus distinct projectile behaviour. Roblox's official weapon guidance distinguishes instantaneous and physically simulated hit checks and separately documents moving rocket effects and exploding projectiles. Roblox also requires authoritative gameplay state and warns that Creator Store models are a common backdoor source even after moderation. Exact capture, lock, range, cadence, speed, damage, radial falloff, targeting priority, visual treatment, and whether the mechanic improves this game are H12 hypotheses. The exception to the former drone-first order is limited to one four-turret feasibility scene; neither system may be populated map-wide before its readability, multiplayer, security, and device-performance gates pass. See [TURRET_SYSTEM.md](TURRET_SYSTEM.md).
+
+## 2026-08-02 — Separate the first rogue-kaiju AI from its replaceable visual
+
+Build one server-owned rogue-kaiju actor before the scout drone so the complete turret system has a non-player target. Clone its visual from the Edit-visible `EnemyTemplates` folder at a movable tagged spawn. Keep target acquisition, bounded native pathfinding, telegraphed melee, health, damage, and defeat in strict source code; use an original primitive proxy until the map owner imports a model that passes the reuse audit.
+
+Basis: the stakeholder owns map composition, model importing, and testing while Codex owns code and model contracts. Separating `EnemyRoot` and stable template/spawn names from visual descendants lets either side iterate without overwriting the other. Exact movement and combat numbers remain untested hypotheses, and the actor cannot be multiplied before physical-device and multiplayer evidence.

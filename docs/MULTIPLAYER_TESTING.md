@@ -1,6 +1,6 @@
 # Multiplayer Studio regression
 
-The first automated multiplayer gate verifies durable destruction state with one existing client and one genuinely late client. It uses Roblox's native [`StudioTestService`](https://create.roblox.com/docs/reference/engine/classes/StudioTestService) and adds no package, service, runner, or cost.
+The automated multiplayer gate verifies durable destruction state and the mixed-scale role lifecycle with one existing client and one genuinely late client. It uses Roblox's native [`StudioTestService`](https://create.roblox.com/docs/reference/engine/classes/StudioTestService) and adds no package, service, runner, or cost.
 
 ## Evidence boundary
 
@@ -14,20 +14,32 @@ With Rojo connected and Studio in Edit mode, execute this through a plugin-secur
 local StudioTestService = game:GetService("StudioTestService")
 local result = StudioTestService:ExecuteMultiplayerTestAsync(
 	1,
-	"KaijuMultiplayerDestructionV1"
+	"KaijuVisibleSmashTerrainV5"
 )
 print(result)
 ```
 
-The argument intentionally starts one client. The server harness collapses the north warehouse through that client's normal ability remote, then calls `StudioTestService:AddPlayers(1)` to create the late client. `EndTest()` returns one structured pass/fail result to the Edit-mode caller.
+The argument intentionally starts one client. The server harness first damages an Arc Power Plant cooling tower through that client's normal Smash path, then collapses the north warehouse and calls `StudioTestService:AddPlayers(1)` to create the late client. The first client is the kaiju and the late client is human. After the replication checks, the kaiju client leaves and the server must promote and reload the remaining player as the kaiju. `EndTest()` returns one structured pass/fail result to the Edit-mode caller.
 
 ## Acceptance contract
 
 - The first client becomes ready and the normal round reaches `Active`.
+- One spatially valid Smash records one server-derived cooling-tower surface zone, moves named visible Brontide shell parts by at least a provisional `6` studs, returns the client pose to `Idle`, shows exactly one eight-part localized rupture spanning at least `22` studs, and leaves zero visible Neon parts in the damaged variant.
+- Native terrain reports its versioned profile and bounded generation count; terrain-only downward rays find a Rock mountain above `100` studs, a Grass park mound above `4` studs, and Water at Azure Lake.
+- The expanded world registers at least `37` destructibles while remaining under the provisional `1,250`-Part blockout ceiling.
+- The late client reconstructs the same rupture from `DamageZoneState` without replaying historical impact debris.
 - Three spatially valid, cooldown-respecting client attack requests collapse `north_warehouse`.
-- Server state ends at health `0`, `Collapsed`, sequence `2`, with the collapsed proxy active and damage hitbox queryable.
+- Server state ends at health `0`, `Collapsed`, sequence `2`, with the collapsed proxy active and damage hitbox no longer queryable.
 - The existing client and late client independently report the same replicated attributes and show only the collapsed visual variant.
 - The existing client observes the live collapse effect; the late client receives no historical debris burst.
+- The first player has the replicated `Kaiju` role and the late player has the replicated `Human` role.
+- Actual character bounds maintain a standing-height ratio of at least `10:1`; camera ranges are `58–105` studs for the provisional kaiju and `6–18` studs for the human.
+- The full kaiju and human rigs remain in separate non-colliding groups; a smooth `KaijuContactHull` physically collides with the human group and not the world.
+- A server contact query applies the configured human damage and keeps the explicit knockback within its velocity cap.
+- The human cannot damage a structure by invoking a kaiju-only ability directly, but one normal human blaster request raycasts from the server-known character and damages Brontide by the configured amount.
+- One normal kaiju Smash defeats the human; the same player respawns at full health with the `Human` role.
+- The human client has a Fire touch action, no Smash touch action, and retains Roblox's native custom camera.
+- When the kaiju client leaves through `StudioTestService`, the remaining human is promoted, reloaded and reaches at least 90% of the original kaiju's measured height.
 - Any missing client, streamed model, state, visual, or proxy produces a bounded timeout and explicit failure reason.
 
 ## Production safety

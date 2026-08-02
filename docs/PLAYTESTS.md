@@ -402,3 +402,138 @@ Retain the map scale, structure count, lean visual variants, server Beam correct
 - Tapping the exact artifact's `BEAM` control returned `accepted=true`, `hits=1`, and collapsed a registered structure. The generated `CHARGE` and `SMASH` controls separately returned accepted `charge` and `basic` results through the normal client/server path.
 - World, server, and client startup markers appeared without a project script error. Studio displayed `Successfully published!` and logged `Published "Kaiju Citybreakers" to Roblox.` for existing place `137103245194702` in universe `10609698937` at 4:41 PM BST.
 - A fresh physical-phone production join and Creator Hub Error Report review remain pending. This Mac has Roblox Studio but no Roblox player, so neither production-side gate is represented as passed.
+
+## 2026-08-01 — Genuine mixed-scale player foundation
+
+- Implementation commit: `641e84d6ac27409ded201362759df8dbddb0423e`
+- Environment: the existing Roblox Studio editor, one iPhone 16 landscape simulation run, then a native `StudioTestService` server with one initial and one late client; **zero human testers**.
+- Systems: server-owned roles, actual character scale, role-specific spawns/metrics/cameras/actions, collision groups, human-scale doorway reference, human combat rejection, late-join destruction reconstruction, and disconnect promotion.
+
+### One-client integration
+
+- The first player received the replicated `Kaiju` role and spawned as the real scaled Brontide in the generated city.
+- Measured character bounds were approximately `39.12 × 61.93 × 70.06` studs. The root spawned at approximately y=`30.36` in collision group `KaijuCharacters`.
+- The kaiju camera range was `58–105` studs. Brontide and the surrounding city rendered together in the iPhone 16 simulator, and no project runtime error appeared.
+
+### Native two-client regression
+
+- The original player was `Kaiju`; the late player was `Human`. Measured standing heights were `61.37` and `5.50` studs, an actual `11.17:1` model-bounds ratio rather than a camera-only illusion.
+- The human client retained `CameraType.Custom` with a `6–18` stud zoom range and had no Smash touch action.
+- A direct human basic-attack request left the intact target's health unchanged, exercising the server's role rejection rather than relying on the hidden client button.
+- The initial kaiju collapsed `north_warehouse` through normal cooldown and spatial validation. The existing client observed `10` live fragments; the late human reconstructed `Collapsed` state and observed `0` historical fragments.
+- The kaiju client then left through the native Studio test lifecycle. The remaining human was promoted and reloaded as `Kaiju`, measuring `61.71` studs tall. The regression returned `passed = true` with one player remaining.
+
+### Decision
+
+Retain scale `10` as the feasibility baseline: it produced a measured ratio above the provisional `10:1` gate while preserving the existing server-authoritative destruction path. This is not evidence that either role is fun, that touch controls are comfortable on hardware, or that two differently scaled moving characters meet the phone performance budget. Do not rebuild the city around this scale until a fresh physical-phone check and an uncoached two-person test validate scale readability, contact stability, navigation, and one useful human contribution.
+
+## 2026-08-01 — Asymmetric mixed-scale combat regression
+
+- Implementation commit: `7073cbc10f137afd7ec0c6f238f6ba95f388595c`
+- Environment: existing Roblox Studio editor with native `StudioTestService`, one server, one initial client and one late client; **zero human testers**.
+- Systems: human blaster, role-specific combat actions, Humanoid health/death, disabled passive regeneration, role-preserving respawn, kaiju-to-human damage, smooth contact hull, capped contact knockback, late-join destruction reconstruction and disconnect promotion.
+
+### Exact-commit results
+
+- The measured Brontide/human standing heights were `61.37` and `5.51` studs, an actual `11.15:1` ratio.
+- The human client had `FIRE`, the centre aim reticle and native `6–18` camera, but no Smash action. The kaiju client had no human Fire action or reticle.
+- A normal human request originated at the server-known character, raycast Brontide and reduced kaiju health `1000 → 960`. Continued cooldown-respecting fire defeated Brontide; the same player respawned at `1000` health with the `Kaiju` role and rebuilt contact hull.
+- The full character groups remained non-colliding while the smooth contact hull was physically collidable with humans. The authoritative proximity check damaged the human, and the sampled post-contact velocity remained below the configured `28` stud/second cap.
+- A human request for the kaiju-only basic attack left the structure unchanged. A normal kaiju Smash defeated the human; the same player respawned at `100` health with the `Human` role.
+- The initial client retained `10` live collapse fragments while the late client reconstructed the collapsed warehouse with `0` historical fragments.
+- After the original kaiju client left, the remaining human was promoted and rebuilt as a `61.59`-stud kaiju. The structured result returned `passed = true` with one player remaining.
+
+### Harness discovery
+
+One exact-commit attempt stalled inside Studio before adding its late client and returned `null` only after the editor's native **End Session** command. No project-script error appeared, and the temporary test processes were closed. A clean retry from the same single editor completed with the pass above. Treat a `null` native result as no evidence and always confirm that only the editor process remains after an interrupted run.
+
+### Decision
+
+Retain the asymmetric combat foundation for a physical two-device test. The engineering path proves authoritative damage, death, respawn, actions and configured contact filtering; it does not prove that `40` blaster damage, `25` contact damage, instant Smash/Charge/Beam human damage, the collision feel or either role's balance is enjoyable. Do not expand the weapon roster or rebuild the city around combat until two people test natural aiming, collision stability, deaths, rematches and role preference on representative hardware.
+
+### Production publication
+
+- Published source commit: `fe005119e0e803d56f0a4adba7638ad8513a9565`
+- Artifact: `build/KaijuCitybreakers.rbxlx`
+- SHA-256: `8950083b7bfc7f4aab1392dd6aa541c50198f0b830dc6bb90d25b7ed9252fea5`
+- The exact generated artifact was opened in the sole Studio editor and used to overwrite the existing `Kaiju Citybreakers` place. Studio displayed `Successfully published!` and logged `Published "Kaiju Citybreakers" to Roblox.` at 18:06 BST.
+- No additional local play session was run after publication because the Mac may be locked. A fresh owner-device join and a physical two-device combat test remain the release validation gates.
+
+## 2026-08-01 — Localized rupture and late-join reconstruction
+
+- Implementation commit: `9e6cf7ebba40fa03d303c7f49c05febd92dd24b4` (localized-damage implementation `defbcb4`).
+- Environment: the sole existing Roblox Studio editor, native `StudioTestService`, one server, one initial client and one late client; **zero human testers**.
+- Systems: server-owned surface zones, attack-specific rupture marks, bounded client-local impact fragments, durable late-join reconstruction, non-emissive damaged variants, and all existing asymmetric combat/lifecycle gates.
+
+### Exact-commit results
+
+- A normal client Smash damaged `arc_cooling_tower_west` to health `4`, advanced its impact sequence to `1`, and persisted exactly one `Smash` surface zone.
+- The original client rendered exactly one dark rupture with four torn-rim pieces (`5` visible localized parts total). The damaged cooling-tower variant contained `0` visible Neon parts.
+- The late human client reconstructed the same single rupture from replicated attributes and observed `0` historical impact fragments.
+- The warehouse collapse, role-specific controls, `11.16:1` kaiju/human height ratio, human fire, kaiju and human death/respawn, contact-damage velocity cap, and disconnect promotion gates all passed.
+- The first run reached and passed both localized-damage observations, then exposed a physics-dependent legacy test placement before the kaiju-to-human Smash. Anchoring both test characters and placing the human at the configured server hitbox centre removed that nondeterminism; the clean rerun returned `passed = true`.
+
+### Decision
+
+Retain the localized rupture system and its two-mark-per-structure budget. This engineering gate proves authoritative placement, bounded rendering, non-emissive state art and late-join durability; it does not yet prove the rupture silhouette or debris spectacle is convincing on a physical phone. Publish for the requested owner-device visual test and keep that human/device judgement explicitly pending.
+
+### Production publication
+
+- Published source commit: `9e6cf7ebba40fa03d303c7f49c05febd92dd24b4`.
+- Generated artifact: `build/KaijuCitybreakers.rbxlx`.
+- SHA-256: `958a1f64777fb79b82c5956864c562b8f389b3c3681866680d574c220ace2620`.
+- The synchronized sole Studio editor published the exact project source to existing place `137103245194702` in universe `10609698937` at 19:45 BST. Studio logged `Published new changes in "Kaiju Citybreakers" to Roblox.` and identified the release as `v13`.
+- A fresh physical-phone visual test remains pending; this release is intended for that owner-device check and the subjective rupture quality is not represented as passed.
+
+## 2026-08-01 — Smash animation, rupture scale, and functional power-plant pass
+
+- Implementation commit: `ae7a061d532a2d71ffef0b143595b0850836efdd`.
+- Environment: the sole existing Roblox Studio editor with native `StudioTestService`, one server, one initial client and one late client; **zero human testers**.
+- Systems: procedural Smash pose, current and legacy avatar-joint compatibility, larger layered surface rupture, Arc Power Plant functional dressing, asymmetric combat/lifecycle coverage, and late-join destruction reconstruction.
+
+### Exact-commit results
+
+- A normal client Smash reached the authoritative server path, damaged `arc_cooling_tower_west`, and rendered one eight-part non-emissive rupture. Its measured client bounding span was `36.11` studs, above the provisional `22`-stud phone-readability gate.
+- The client played the Smash windup/strike/recovery sequence and returned `ClientSmashAnimationPhase` to `Idle`. The initial Motor6D-only attempt exposed current `AnimationConstraint` avatar joints; the retained implementation supports both joint types and filters out Brontide shell parts that share shoulder names.
+- Arc Power Plant contained `33` dressing parts and the required cooling-water header, steam-service header, transformer/switchgear yard, high-voltage busbar, and transmission gantry. No decorative `EnergyChannel` floor strips remained.
+- Human fire, kaiju and human death/respawn, controlled contact damage, role-specific controls, an actual `11.16:1` character height ratio, warehouse collapse, late-join reconstruction, and disconnect promotion all passed in the same structured run.
+- The final structured result returned `passed = true`, `localizedExistingHoles = 1`, `localizedLateHoles = 1`, `localizedDamagedNeon = 0`, and `smashAnimationPhase = "Idle"`.
+
+### Decision
+
+Retain the joint-compatible Smash pose, eight-part rupture, and functional plant silhouette for the next physical-phone judgement. The engineering gate proves bounded construction, recovery, replication, and regression compatibility; it does not prove the animation timing feels powerful or that an unprompted player identifies the district as a power station. Those remain human/device gates.
+
+### Production publication
+
+- Published source commit: `64e77e4241c5ccf81e4576f821ea08403dae6c9b` (gameplay implementation `ae7a061d532a2d71ffef0b143595b0850836efdd`).
+- Generated artifact: `build/KaijuCitybreakers.rbxlx`.
+- SHA-256: `70c945d00038e46e379cf25830131dc6ed442e74391088b48038930076306333`.
+- The sole Studio editor discarded its synchronized in-memory place, reopened the committed build from disk, and overwrote the existing `Kaiju Citybreakers` place at 20:39 BST. Studio displayed `Successfully published!` and logged `Published "Kaiju Citybreakers" to Roblox.`
+- A fresh physical-phone check of Smash feel, rupture readability, and unprompted power-station recognition remains pending.
+
+## 2026-08-01 — Visible Smash and native-terrain city pass
+
+- Implementation commit: `06fd0629ba0b369fafc09c249f40a2fcff982bb8`.
+- Environment: the sole existing Roblox Studio editor in iPhone 16 simulation, plus native `StudioTestService` with one server, one initial client and one late client; **zero human testers**.
+- Systems: dedicated Brontide visual-shell pivots, measured Smash displacement, native smooth terrain, true terrain water, park/mountain relief, separated urban pads, stepped skyline buildings, four additional destructible infill buildings, and the complete asymmetric-combat/lifecycle regression.
+
+### Results
+
+- The first run correctly failed because the lake fill competed with the grass base. Carving the lake voxel volume before filling Water made the Azure Lake ray report `Enum.Material.Water`.
+- The next run correctly rejected the previous post-animation body-joint pose: internal phases completed, but visible shell displacement was only `0.85` studs. Dedicated shell motors increased the exact final measurement to `14.01` studs and restored every pivot to `Idle`, above the provisional six-stud gate.
+- Terrain-only rays measured Mount Brontide's Rock surface at `161.98` studs and the Titan Park Grass mound at `12.86` studs. The generated terrain occupied `1,142,194` cells through a bounded operation list and added no Part instances.
+- The expanded blockout registered `37` destructible structures and `1,064` world Parts, below its provisional `1,250`-Part ceiling. Arc Power Plant retained its `33`-Part dressing budget.
+- The same final structured run passed warehouse collapse, localized eight-part rupture, late-join reconstruction, human fire, kaiju and human death/respawn, capped contact damage, role-specific controls, an `11.15:1` character-height ratio, and disconnect promotion.
+- One intervening exact-source run reported `late client did not join` before reaching its two-client assertions. Clearing the native Studio session and retrying the unchanged source produced the complete pass above; the failed harness launch is recorded as no gameplay evidence.
+
+### Decision
+
+Retain the dedicated shell pivots, terrain profile, skyline hierarchy and four infill buildings for publication. The engineering gate now measures what is displayed rather than merely counting animation phases. Simulator inspection shows stronger height contrast, native ground and perimeter relief, but neither synthetic tests nor the editor simulator prove that the city looks convincing, Smash feels powerful, district routes remain clear, or the published phone stays above the provisional frame-rate floor. Those remain owner-device and uncoached-child tests.
+
+### Production publication
+
+- Published source commit: `06fd0629ba0b369fafc09c249f40a2fcff982bb8`.
+- Generated artifact: `build/KaijuCitybreakers.rbxlx`.
+- SHA-256: `c70a7969e3514c1756ba542b4f5d8a1da5119df6bc5d8e9844ba7e40b883d64e`.
+- The exact artifact was opened in the sole existing Studio editor and used to overwrite the existing `Kaiju Citybreakers` place. Studio displayed `Successfully published!` and logged `Published new changes in "Kaiju Citybreakers" to Roblox.` at 21:26 BST.
+- A fresh owner-phone check of the terrain, skyline, Smash motion, lake, traversal and frame rate remains the release-validation gate; automated Studio evidence does not replace that physical-device judgement.
