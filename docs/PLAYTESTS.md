@@ -592,3 +592,21 @@ Retain the temporary Arc factory as the first integration fixture. It proves reg
 - The commit-labelled artifact passed a fresh one-server/one-client smoke in the sole Studio process. Its factory reached `SpawnSequence = 3` with two tanks and one helicopter, and Studio Output contained no project-script errors.
 - The owner confirmed publication to Roblox at 12:54 BST. One Studio process remained open; no second editor was launched.
 - A fresh owner-device session remains required for factory visibility, spawn pacing, vehicle movement, projectile readability, combat balance, and representative-device performance; no production playtest result is inferred from publication.
+
+## 2026-08-02 — Asymmetric factory capture and shared-aim smoke
+
+- Implementation commit: `26a0a7898718519c07ec52c837d76282c773fe2e`.
+- Environment: one clean Roblox Studio process, one local server and one client; **zero human testers**.
+- Scope: neutral startup, bounded wave, synthetic human-only capture, active-vehicle allegiance transfer, shared reticle presence, human desktop camera mode, and client-streaming objective feedback registration.
+
+### Results
+
+- The exact Rojo artifact reached `Active` with no project-script error. The authored factory reported `Neutral / Operational`, `SpawnSequence = 3`, and three live vehicles plus one transient projectile in `RuntimeReinforcements`.
+- The kaiju client visibly rendered the shared reticle. After a server-side test changed the sole test player's role to `Human` and held its root five studs from `CaptureZone`, the eight-second authoritative capture completed as `Human / Captured`; all three active vehicles reported `OwnerTeam = Human`.
+- The human client reported `Enum.CameraType.Scriptable` and a live `AimReticle`, establishing role rebinding and the shared desktop camera/reticle path. This synthetic role swap retained the kaiju body and therefore does not prove natural human-avatar aiming, animation, or comfort.
+- The first objective-feedback query correctly exposed a streaming-order defect: the factory tag could replicate before `CaptureZone`, leaving no billboard or ring. The committed controller now waits for the streamed zone, closes the lookup/connection race, and re-registers after zone stream-out. The rebuilt corrected artifact passes repository, StyLua, Selene, parse, and Rojo checks, but the Mac locked before a second Studio visual run; the corrected billboard/ring is therefore **not yet runtime-verified**.
+- One initial synthetic capture attempt returned the player to its spawn because the client still owned and simulated the test character root. Anchoring the root for the server-only objective probe isolated capture logic and produced the successful result; this is harness behavior, not evidence about ordinary walking capture.
+
+### Decision
+
+Retain the neutral factory, human-only capture, three-of-three allegiance transfer, human custom camera, and shared reticle for the next exact-artifact run. Do not publish this revision until the corrected streaming-safe factory ring/billboard is observed in the client, a natural human avatar walks into and completes capture, kaiju presence is shown not to advance it, and human/kaiju shots are confirmed to land at the visible reticle on representative controls. Physical-device feel and performance remain owner tests.
