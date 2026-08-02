@@ -59,6 +59,35 @@ Moving, attacking, and breaking the wall is enjoyable for five minutes without p
 
 Destruction is readable, repeatable, synchronized, and maintains the target frame rate.
 
+### Phase 2D — Sustained Beam and destruction spectacle
+
+This focused slice comes before enemy production. It must make the existing city satisfying to destroy before new combatants compete for attention.
+
+#### Deliverables
+
+- Replace the single-impact Beam with a short hold-to-channel action: wind-up, approximately `1.5` seconds of active sweep, and recovery. Duration is a playtest parameter, not a final balance value.
+- Keep a server-owned Beam session with bounded begin, aim-update, and end requests. Resolve damage at a fixed low frequency instead of every rendered frame; validate the living character, direction cone, duration, cadence, range, and cooldown on every session.
+- Let the Beam draw a destructive path by damaging successive unique structures as aim moves or earlier structures collapse. Reuse the existing destructible registry, collision group, state machine, and cleared-rubble behaviour; cap targets per sample and per channel.
+- Keep the visible Beam attached to Brontide's mouth and eased head aim for the full channel. Pool or reuse its trail, impact, and debris presentation rather than creating new instances every frame.
+- Add scalable impact tiers: damage chips and sparks; collapse dust, shock ring, pooled chunks, silhouette transition, sound layers, and a brief local camera response; and one restrained chain finisher when several structures collapse.
+- Add Reduced Effects controls that suppress strong shake and flashes, plus an automatic low-effects profile with shorter lifetimes and fewer particles on the representative mobile baseline.
+
+#### Research spike
+
+Compare bounded repeated `Spherecast` traversal with a native swept-volume overlap approach in one five-to-eight-building street. Select the smallest native query that preserves occlusion, supports successive targets, and stays within the server frame budget. Do not introduce a combat or effects framework unless the spike proves the existing service boundaries inadequate.
+
+#### Validation
+
+- Sweep across low, tall, near, distant, and partially occluded buildings with mouse, touch, and gamepad aim.
+- Confirm one channel cannot exceed its duration, sample rate, unique-target cap, or damage budget even with malformed or repeated remotes.
+- Stress a twenty-building chain while recording client/server frame time, memory trend, network traffic, active fragments, and concurrent emitters on a physical phone.
+- Verify that damaged and collapsed states remain visually distinct after effects finish, late joiners reconstruct authoritative states, and two clients cannot double-apply one player's Beam samples.
+- Check Reduced Effects, photosensitivity-safe flashing, camera comfort, and aim readability with no coaching.
+
+#### Exit gate
+
+The Beam visibly traces a controllable path through multiple buildings, each confirmed impact feels substantially stronger than the current prototype, all transient effects return to rest, and the representative phone remains at or above the provisional `30 FPS` destruction threshold without unbounded instance, memory, or remote growth.
+
 ## Phase 3 — Complete round loop (weeks 6–7)
 
 ### Deliverables
@@ -184,8 +213,9 @@ Ordered only after the vertical-slice gate:
 
 ## Immediate implementation sequence
 
-1. Finish physical-device validation of the aimed mouth Beam and mega-district blockout.
-2. Run an uncoached navigation/destruction session in all five zones and revise scale or routes before adding more scenery.
-3. Complete the twenty-building destruction/performance test and the current full-round reset gate.
-4. Prototype exactly one scout drone in a small encounter slice; do not populate the whole map yet.
-5. Add energy collection and mutation choice only after Beam, Charge, Smash, and the scout are readable together on phone.
+1. Record the current physical-device baseline for Beam aim, zone recognition, frame rate, and the least satisfying destruction moments.
+2. Implement Phase 2D first in one five-to-eight-building Central City street: bounded Beam sessions, fixed-rate server hits, and the first tiered collapse presentation.
+3. Tune on a physical phone, then run the twenty-building destruction/performance and full-round reset gates before rolling the presentation across all structures.
+4. Run an uncoached navigation/destruction session in all five zones and revise scale or routes before adding more scenery.
+5. Prototype exactly one scout drone only after the sustained Beam and destruction spectacle pass their mobile and readability gates; do not populate the whole map yet.
+6. Add energy collection and mutation choice only after Beam, Charge, Smash, and the scout are readable together on phone.
