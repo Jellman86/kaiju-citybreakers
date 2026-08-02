@@ -583,3 +583,12 @@ The build is safe to publish for owner-device testing. Retain the four rig contr
 ### Decision
 
 Retain the temporary Arc factory as the first integration fixture. It proves registration, caps, spawning, replicated combat state, and basic projectile activity—not route quality, capture/destruction shutdown, linked-turret transfer, vehicle model quality, mobile performance, or fun. The map owner may move the complete objective and its markers while expanding the generated terrain; the next evidence gate is an owner playtest followed by the two-client capture/destruction regression.
+
+### Production publication
+
+- Published source commit: `941ccb6c65aa8efa737f1fdf34448c92f1d68cc1` (factory implementation `596ed87`, factory foundation `41498f7`).
+- Exact artifact: `build/KaijuCitybreakers-941ccb6c65aa.rbxlx`.
+- SHA-256: `84a99fa5ee3fe3e1f8e8b1a188f69f83c09a8ba55678e96cc9f0fb0f295be079`.
+- The commit-labelled artifact passed a fresh one-server/one-client smoke in the sole Studio process. Its factory reached `SpawnSequence = 3` with two tanks and one helicopter, and Studio Output contained no project-script errors.
+- The owner confirmed publication to Roblox at 12:54 BST. One Studio process remained open; no second editor was launched.
+- A fresh owner-device session remains required for factory visibility, spawn pacing, vehicle movement, projectile readability, combat balance, and representative-device performance; no production playtest result is inferred from publication.
