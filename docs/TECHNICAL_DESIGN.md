@@ -70,8 +70,8 @@ Calculates round results on the server. Persistence is not implemented until the
 ## Planned client controllers
 
 - InputController: device-independent actions.
-- AimController: camera-forward yaw facing for keyboard/mouse, with native auto-facing retained for gamepad and touch.
-- CameraController: locked-mouse desktop orbit, scale, obstruction, zoom, shake, and accessibility settings.
+- AimController: one bounded reticle ray for both roles, immediate human aim, smoothed kaiju head/Beam aim, camera-forward body facing for keyboard/mouse, and centred gamepad/touch intent.
+- CameraController: locked-mouse desktop orbit for both roles, including a human-scale over-the-shoulder offset, scale, obstruction, zoom, shake, and accessibility settings.
 - KaijuController: predicted animation and ability feedback.
 - RoundController: local round snapshot and timer.
 - HudController: objective, energy, health, and abilities.
@@ -87,8 +87,8 @@ Use CollectionService tags and attributes so world building does not depend on f
 - The provisional Brontide uses real model scale `10`; the human retains the ordinary Roblox avatar scale. Automated acceptance measures the resulting bounds and requires at least a `10:1` standing-height ratio.
 - `KaijuCharacters`, `HumanCharacters`, and `HumanScaleGeometry` are registered collision groups. Character-to-character contact is non-colliding, while tagged human-scale geometry can block humans without trapping or flinging the kaiju.
 - Combat remotes reject human characters before cooldown or spatial work. Collision groups improve physical stability but never grant damage authority.
-- The kaiju uses the custom scale-aware camera and action bindings. The human uses the native Roblox camera and receives no kaiju actions during this foundation slice.
-- The human instead receives one cross-device `FIRE` action and centre reticle. Both roles use native Humanoid health/death, have passive regeneration disabled, and respawn through the server's manual role-preserving lifecycle.
+- Both roles use the custom scale-aware keyboard/mouse camera and retain native gamepad/touch camera behavior. Humans receive no kaiju actions.
+- The human instead receives one cross-device `FIRE` action. Both roles share the same visible reticle: keyboard/mouse moves it within safe viewport bounds while touch/gamepad keep it centred. Both roles use native Humanoid health/death, have passive regeneration disabled, and respawn through the server's manual role-preserving lifecycle.
 - `KaijuSpawn`, `HumanSpawn`, and the tagged doorway reference are a feasibility lab, not final production level design.
 
 ### `Destructible`

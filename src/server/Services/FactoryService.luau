@@ -7,6 +7,7 @@ local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local DestructibleContract = require(ReplicatedStorage.Shared.DestructibleContract)
+local EnemyContract = require(ReplicatedStorage.Shared.EnemyContract)
 local FactoryContract = require(ReplicatedStorage.Shared.FactoryContract)
 local PlayerRole = require(ReplicatedStorage.Shared.PlayerRole)
 local TurretContract = require(ReplicatedStorage.Shared.TurretContract)
@@ -60,15 +61,18 @@ type ProjectileRecord = {
 	velocity: Vector3,
 	damage: number,
 	kind: string,
+	ownerTeam: string,
 	expiresAt: number,
 }
 
-type PlayerTarget = {
-	player: Player,
+type CombatTarget = {
+	player: Player?,
 	character: Model,
-	humanoid: Humanoid,
+	humanoid: Humanoid?,
 	rootPart: BasePart,
 	distance: number,
+	entityId: string,
+	team: string,
 }
 
 local FactoryService = {}
@@ -155,14 +159,26 @@ local function findLinkedStructure(structureId: string): Model?
 	return nil
 end
 
-local function getLivingPlayerTargets(origin: Vector3, range: number): { PlayerTarget }
-	local targets = {} :: { PlayerTarget }
+local function isHostileToPlayer(ownerTeam: string, role: string): boolean
+	return ownerTeam == FactoryContract.Team.Neutral
+		or ownerTeam == FactoryContract.Team.Enemy
+		or ownerTeam ~= role
+end
+
+local function getLivingPlayerTargets(
+	origin: Vector3,
+	range: number,
+	ownerTeam: string
+): { CombatTarget }
+	local targets = {} :: { CombatTarget }
 	for _, player in Players:GetPlayers() do
 		local character = player.Character
 		local humanoid = if character then character:FindFirstChildOfClass("Humanoid") else nil
 		local rootPart = if character then character:FindFirstChild("HumanoidRootPart") else nil
+		local role = PlayerRole.Get(player)
 		if
-			PlayerRole.Get(player)
+			role
+			and isHostileToPlayer(ownerTeam, role)
 			and character
 			and humanoid
 			and humanoid.Health > 0
@@ -177,6 +193,8 @@ local function getLivingPlayerTargets(origin: Vector3, range: number): { PlayerT
 					humanoid = humanoid,
 					rootPart = rootPart,
 					distance = distance,
+					entityId = `player:{player.UserId}`,
+					team = role,
 				})
 			end
 		end
@@ -185,6 +203,18 @@ local function getLivingPlayerTargets(origin: Vector3, range: number): { PlayerT
 		return a.distance < b.distance
 	end)
 	return targets
+end
+
+local function findStringAttributeFromAncestor(part: BasePart, attributeName: string): string?
+	local candidate: Instance? = part
+	while candidate and candidate ~= workspace do
+		local value = candidate:GetAttribute(attributeName)
+		if type(value) == "string" and value ~= "" then
+			return value
+		end
+		candidate = candidate.Parent
+	end
+	return nil
 end
 
 local function findPlayerFromPart(part: BasePart): (Player?, Humanoid?)
@@ -460,55 +490,71 @@ function FactoryService:_captureNearbyTurrets(record: FactoryRecord, ownerTeam: 
 	end
 end
 
+function FactoryService:_transferVehicles(record: FactoryRecord, ownerTeam: string)
+	for _, vehicle in self._vehicles do
+		if vehicle.factoryId == record.id and vehicle.health > 0 then
+			vehicle.ownerTeam = ownerTeam
+			setAttributeIfChanged(vehicle.model, VehicleContract.Attribute.OwnerTeam, ownerTeam)
+			setAttributeIfChanged(vehicle.model, VehicleContract.Attribute.TargetUserId, 0)
+		end
+	end
+	for _, projectile in self._projectiles do
+		if
+			projectile.sourceModel:GetAttribute(VehicleContract.Attribute.FactoryId) == record.id
+		then
+			projectile.ownerTeam = ownerTeam
+		end
+	end
+end
+
 function FactoryService:_updateCapture(record: FactoryRecord, dt: number)
-	if record.state == FactoryContract.State.Destroyed then
+	if
+		record.state == FactoryContract.State.Destroyed
+		or record.ownerTeam == FactoryContract.Team.Human
+	then
 		return
 	end
 	local origin = if record.captureZone
 		then record.captureZone.Position
 		else record.model:GetPivot().Position
-	local teams = {} :: { [string]: boolean }
-	for _, target in getLivingPlayerTargets(origin, record.captureRadius) do
+	local humanPresent = false
+	for _, player in Players:GetPlayers() do
+		local character = player.Character
+		local humanoid = if character then character:FindFirstChildOfClass("Humanoid") else nil
+		local rootPart = if character then character:FindFirstChild("HumanoidRootPart") else nil
 		if
-			math.abs(target.rootPart.Position.Y - origin.Y)
-			<= Config.Factories.MaximumCaptureVerticalDistance
+			PlayerRole.IsHuman(player)
+			and humanoid
+			and humanoid.Health > 0
+			and rootPart
+			and rootPart:IsA("BasePart")
+			and (Vector3.new(rootPart.Position.X, 0, rootPart.Position.Z) - Vector3.new(
+				origin.X,
+				0,
+				origin.Z
+			)).Magnitude <= record.captureRadius
+			and math.abs(rootPart.Position.Y - origin.Y)
+				<= Config.Factories.MaximumCaptureVerticalDistance
 		then
-			local role = PlayerRole.Get(target.player)
-			if role and role ~= record.ownerTeam then
-				teams[role] = true
-			end
+			humanPresent = true
+			break
 		end
 	end
-	local capturingTeam: string? = nil
-	local teamCount = 0
-	for team in teams do
-		capturingTeam = team
-		teamCount += 1
-	end
-	if teamCount > 1 then
-		self:_setFactoryState(record, FactoryContract.State.Contested)
-		return
-	end
-	if not capturingTeam then
+	if not humanPresent then
 		record.captureProgress = math.max(0, record.captureProgress - dt / record.captureSeconds)
 		if record.captureProgress == 0 then
 			record.captureTeam = FactoryContract.Team.Neutral
-			self:_setFactoryState(
-				record,
-				if record.ownerTeam == record.initialOwnerTeam
-					then FactoryContract.State.Operational
-					else FactoryContract.State.Captured
-			)
+			self:_setFactoryState(record, FactoryContract.State.Operational)
 		end
 	else
-		if record.captureTeam ~= capturingTeam then
-			record.captureTeam = capturingTeam
+		if record.captureTeam ~= FactoryContract.Team.Human then
+			record.captureTeam = FactoryContract.Team.Human
 			record.captureProgress = 0
 		end
 		record.captureProgress = math.min(1, record.captureProgress + dt / record.captureSeconds)
 		self:_setFactoryState(record, FactoryContract.State.Capturing)
 		if record.captureProgress >= 1 then
-			record.ownerTeam = capturingTeam
+			record.ownerTeam = FactoryContract.Team.Human
 			record.captureProgress = 0
 			record.captureTeam = FactoryContract.Team.Neutral
 			setAttributeIfChanged(
@@ -518,6 +564,7 @@ function FactoryService:_updateCapture(record: FactoryRecord, dt: number)
 			)
 			self:_setFactoryState(record, FactoryContract.State.Captured)
 			self:_captureNearbyTurrets(record, record.ownerTeam)
+			self:_transferVehicles(record, record.ownerTeam)
 		end
 	end
 	setAttributeIfChanged(record.model, FactoryContract.Attribute.CaptureTeam, record.captureTeam)
@@ -605,8 +652,8 @@ end
 
 function FactoryService:_trySpawn(record: FactoryRecord, now: number)
 	if
-		record.ownerTeam ~= FactoryContract.Team.Enemy
-		or record.state == FactoryContract.State.Destroyed
+		record.state == FactoryContract.State.Destroyed
+		or record.ownerTeam == FactoryContract.Team.Kaiju
 		or now < record.nextSpawnAt
 	then
 		return
@@ -623,6 +670,30 @@ function FactoryService:_trySpawn(record: FactoryRecord, now: number)
 			else VehicleContract.Archetype.Tank
 	end
 	self:_spawnVehicle(record, archetype)
+end
+
+function FactoryService:_getVehicleTargets(record: VehicleRecord, range: number): { CombatTarget }
+	local targets = getLivingPlayerTargets(record.rootPart.Position, range, record.ownerTeam)
+	if record.ownerTeam == FactoryContract.Team.Human then
+		for _, entry in self._enemyService:GetRogueTargets() do
+			local distance = (entry.rootPart.Position - record.rootPart.Position).Magnitude
+			if distance <= range then
+				table.insert(targets, {
+					player = nil,
+					character = entry.character,
+					humanoid = nil,
+					rootPart = entry.rootPart,
+					distance = distance,
+					entityId = entry.id,
+					team = entry.team,
+				})
+			end
+		end
+	end
+	table.sort(targets, function(a, b)
+		return a.distance < b.distance
+	end)
+	return targets
 end
 
 function FactoryService:_moveVehicle(record: VehicleRecord, dt: number)
@@ -655,7 +726,7 @@ function FactoryService:_moveVehicle(record: VehicleRecord, dt: number)
 	record.model:PivotTo(CFrame.lookAt(nextPosition, nextPosition + lookDirection))
 end
 
-function FactoryService:_launchProjectile(record: VehicleRecord, target: PlayerTarget, now: number)
+function FactoryService:_launchProjectile(record: VehicleRecord, target: CombatTarget, now: number)
 	if dictionaryCount(self._projectiles) >= Config.Factories.MaximumActiveProjectiles then
 		return
 	end
@@ -701,6 +772,7 @@ function FactoryService:_launchProjectile(record: VehicleRecord, target: PlayerT
 		velocity = offset.Unit * speed,
 		damage = if isTank then Config.Factories.TankDamage else Config.Factories.HelicopterDamage,
 		kind = kind,
+		ownerTeam = record.ownerTeam,
 		expiresAt = now + (if isTank
 			then Config.Factories.TankProjectileLifetimeSeconds
 			else Config.Factories.HelicopterProjectileLifetimeSeconds),
@@ -714,8 +786,8 @@ function FactoryService:_stepVehicle(record: VehicleRecord, dt: number, now: num
 	local attackRange = if record.archetype == VehicleContract.Archetype.Tank
 		then Config.Factories.TankAttackRange
 		else Config.Factories.HelicopterAttackRange
-	local targets = getLivingPlayerTargets(
-		record.rootPart.Position,
+	local targets = self:_getVehicleTargets(
+		record,
 		math.min(attackRange, Config.Factories.VehicleDetectionRange)
 	)
 	local target = targets[1]
@@ -728,7 +800,7 @@ function FactoryService:_stepVehicle(record: VehicleRecord, dt: number, now: num
 		setAttributeIfChanged(
 			record.model,
 			VehicleContract.Attribute.TargetUserId,
-			target.player.UserId
+			if target.player then target.player.UserId else 0
 		)
 		setAttributeIfChanged(
 			record.model,
@@ -768,8 +840,20 @@ function FactoryService:_finishProjectile(id: string, projectile: ProjectileReco
 		return
 	end
 	local player, humanoid = findPlayerFromPart(hit)
-	if player and humanoid and PlayerRole.Get(player) and humanoid.Health > 0 then
+	local role = if player then PlayerRole.Get(player) else nil
+	if
+		player
+		and humanoid
+		and role
+		and isHostileToPlayer(projectile.ownerTeam, role)
+		and humanoid.Health > 0
+	then
 		humanoid:TakeDamage(projectile.damage)
+		return
+	end
+	local enemyId = findStringAttributeFromAncestor(hit, EnemyContract.Attribute.Id)
+	if enemyId and projectile.ownerTeam == FactoryContract.Team.Human then
+		self._enemyService:Damage(enemyId, projectile.damage)
 	end
 end
 

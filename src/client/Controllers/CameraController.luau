@@ -13,7 +13,7 @@ local PlayerRole = require(ReplicatedStorage.Shared.PlayerRole)
 local CameraController = {}
 CameraController.__index = CameraController
 
-local RENDER_STEP_NAME = "KaijuThirdPersonCamera"
+local RENDER_STEP_NAME = "SharedThirdPersonCamera"
 local player = Players.LocalPlayer
 
 local function isKaiju(): boolean
@@ -25,7 +25,8 @@ local function getCameraMetrics()
 end
 
 local function usesMouseCamera(): boolean
-	return UserInputService.PreferredInput == Enum.PreferredInput.KeyboardAndMouse
+	return PlayerRole.Get(player) ~= nil
+		and UserInputService.PreferredInput == Enum.PreferredInput.KeyboardAndMouse
 end
 
 local function getCharacterRoot(): (Model?, BasePart?)
@@ -81,7 +82,7 @@ function CameraController:_setMouseCaptured(isCaptured: boolean)
 end
 
 function CameraController:_enableMouseCamera()
-	if self._mouseCameraEnabled or not isKaiju() then
+	if self._mouseCameraEnabled or not PlayerRole.Get(player) then
 		return
 	end
 
@@ -92,14 +93,14 @@ function CameraController:_enableMouseCamera()
 	end
 
 	local cameraLook = camera.CFrame.LookVector
+	local metrics = getCameraMetrics()
 	self._yaw = math.atan2(-cameraLook.X, -cameraLook.Z)
 	self._pitch = math.clamp(
 		math.asin(math.clamp(cameraLook.Y, -1, 1)),
-		math.rad(Config.StarterKaiju.CameraPitchMinDegrees),
-		math.rad(Config.StarterKaiju.CameraPitchMaxDegrees)
+		math.rad(metrics.CameraPitchMinDegrees),
+		math.rad(metrics.CameraPitchMaxDegrees)
 	)
 
-	local metrics = getCameraMetrics()
 	local focusPosition = rootPart.Position + Vector3.new(0, metrics.CameraFocusHeight, 0)
 	self._distance = math.clamp(
 		(camera.CFrame.Position - focusPosition).Magnitude,
@@ -132,7 +133,7 @@ function CameraController:_disableMouseCamera()
 end
 
 function CameraController:_updateInputMode()
-	if isKaiju() and usesMouseCamera() then
+	if usesMouseCamera() then
 		self:_enableMouseCamera()
 	else
 		self:_disableMouseCamera()
@@ -140,7 +141,7 @@ function CameraController:_updateInputMode()
 end
 
 function CameraController:_updateCamera()
-	if not isKaiju() or not usesMouseCamera() then
+	if not usesMouseCamera() then
 		return
 	end
 	if not self._mouseCameraEnabled then
@@ -156,18 +157,21 @@ function CameraController:_updateCamera()
 	local menuIsOpen = GuiService.MenuIsOpen
 	self:_setMouseCaptured(not menuIsOpen)
 	if not menuIsOpen then
+		local metrics = getCameraMetrics()
 		local mouseDelta = UserInputService:GetMouseDelta()
-		self._yaw -= mouseDelta.X * Config.StarterKaiju.MouseCameraSensitivity
+		self._yaw -= mouseDelta.X * metrics.MouseCameraSensitivity
 		self._pitch = math.clamp(
-			self._pitch - mouseDelta.Y * Config.StarterKaiju.MouseCameraSensitivity,
-			math.rad(Config.StarterKaiju.CameraPitchMinDegrees),
-			math.rad(Config.StarterKaiju.CameraPitchMaxDegrees)
+			self._pitch - mouseDelta.Y * metrics.MouseCameraSensitivity,
+			math.rad(metrics.CameraPitchMinDegrees),
+			math.rad(metrics.CameraPitchMaxDegrees)
 		)
 	end
 
 	local metrics = getCameraMetrics()
-	local focusPosition = rootPart.Position + Vector3.new(0, metrics.CameraFocusHeight, 0)
 	local cameraRotation = CFrame.fromOrientation(self._pitch, self._yaw, 0)
+	local focusPosition = rootPart.Position
+		+ Vector3.new(0, metrics.CameraFocusHeight, 0)
+		+ cameraRotation.RightVector * metrics.CameraShoulderOffset
 	local desiredPosition = focusPosition - cameraRotation.LookVector * self._distance
 
 	local raycastParams = RaycastParams.new()
@@ -181,7 +185,7 @@ function CameraController:_updateCamera()
 		else desiredPosition
 
 	camera.CameraType = Enum.CameraType.Scriptable
-	camera.CFrame = CFrame.lookAt(cameraPosition, focusPosition)
+	camera.CFrame = CFrame.lookAt(cameraPosition, cameraPosition + cameraRotation.LookVector)
 	camera.Focus = CFrame.new(focusPosition)
 end
 

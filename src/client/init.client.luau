@@ -8,6 +8,7 @@ local CameraController = require(script.Controllers.CameraController)
 local CombatController = require(script.Controllers.CombatController)
 local DestructionController = require(script.Controllers.DestructionController)
 local EnemyEffectsController = require(script.Controllers.EnemyEffectsController)
+local FactoryObjectiveController = require(script.Controllers.FactoryObjectiveController)
 local RoundController = require(script.Controllers.RoundController)
 local TurretEffectsController = require(script.Controllers.TurretEffectsController)
 
@@ -25,6 +26,7 @@ local combatController =
 	CombatController.new(abilityRequestRemote, abilityResultRemote, aimController)
 local destructionController = DestructionController.new(destructionStateRemote)
 local enemyEffectsController = EnemyEffectsController.new()
+local factoryObjectiveController = FactoryObjectiveController.new()
 local turretEffectsController = TurretEffectsController.new(turretFiredRemote)
 
 roundController:Start()
@@ -33,6 +35,7 @@ cameraController:Start()
 combatController:Start()
 destructionController:Start()
 enemyEffectsController:Start()
+factoryObjectiveController:Start()
 turretEffectsController:Start()
 
 -- Never load Studio-only test dependencies in a live client. In particular,

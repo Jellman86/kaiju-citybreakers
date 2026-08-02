@@ -51,6 +51,18 @@ local function findVehicleId(part: BasePart): string?
 	return nil
 end
 
+local function findVehicleOwnerTeam(part: BasePart): string?
+	local candidate: Instance? = part
+	while candidate and candidate ~= workspace do
+		if candidate:IsA("Model") and CollectionService:HasTag(candidate, VehicleContract.Tag) then
+			local ownerTeam = candidate:GetAttribute(VehicleContract.Attribute.OwnerTeam)
+			return if typeof(ownerTeam) == "string" then ownerTeam else nil
+		end
+		candidate = candidate.Parent
+	end
+	return nil
+end
+
 function CombatService.new(
 	abilityRequestRemote: RemoteEvent,
 	abilityResultRemote: RemoteEvent,
@@ -270,7 +282,9 @@ function CombatService:_performHumanFire(player: Player, sequence: number, reque
 		else
 			local vehicleId = findVehicleId(result.Instance)
 			if
-				vehicleId and self._enemyService:Damage(vehicleId, Config.Combat.HumanFireDamage)
+				vehicleId
+				and findVehicleOwnerTeam(result.Instance) ~= PlayerRole.Human
+				and self._enemyService:Damage(vehicleId, Config.Combat.HumanFireDamage)
 			then
 				hitCount = 1
 			end
