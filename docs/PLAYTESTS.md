@@ -633,3 +633,23 @@ Retain the neutral factory, human-only capture, three-of-three allegiance transf
 - The destination experience was granted access to the nine asset IDs requested by Studio (`5590111085`, `5590111156`, `5590111209`, `5590112509`, `5590111661`, `5590112408`, `5590111714`, `5590112161`, and `5590112319`) with the owner's explicit confirmation.
 - The exact artifact overwrote the existing `Kaiju Citybreakers` place at 14:01 BST. Studio displayed `Successfully published!`; one Studio process remained open and no second editor was launched.
 - A fresh owner-device session remains required for the factory capture split, transferred-unit allegiance, objective feedback, human crosshair aiming, kaiju beam aiming, touch/gamepad behavior, and representative-device performance.
+
+## 2026-08-02 — Neutral-factory, combat-targeting, and vehicle-AI release smoke
+
+- Published source commit: `9a10630e73b545444bb06b56b8e9558f2b5f30e1`.
+- Exact artifact: `build/KaijuCitybreakers-9a10630e73b5.rbxlx`.
+- SHA-256: `07251361edb268a2e3945267948acc8430d3f4f9cded66c2c08cd8cf5dca4275`.
+- Environment: the sole Roblox Studio editor, one local server and one client; **zero human testers**.
+
+### Results
+
+- The exact commit-labelled artifact preserved the hand-authored world, spawned one articulated rogue kaiju, registered all four turrets, started server and client, and reached `Active` without a project-script error.
+- The factory remained `Neutral / Operational` with `SpawnSequence = 0` and zero children in `RuntimeReinforcements`, confirming that neutral factories are dormant until a human capture.
+- The client loaded a four-second beam and placed the desktop reticle at approximately `(0.5550, 0.4995)` of the viewport, just right of centre with the top inset accounted for.
+- Earlier same-source system probes completed human-only factory capture and vehicle spawning, human-only turret capture, kaiju turret destruction, a complete server-owned beam session that destroyed its target, and tank target acquisition/damage with a replicated aim point. The rejected harness attempts and their operator causes remain documented in the preceding implementation record; no rejected attempt is counted as gameplay evidence.
+
+### Production publication
+
+- The exact artifact overwrote the existing `Kaiju Citybreakers` place (`137103245194702`) at 15:17 BST. Studio displayed `Successfully published!`.
+- Studio granted the destination experience access to the nine requested asset IDs (`5590111085`, `5590111156`, `5590111209`, `5590112509`, `5590111661`, `5590112408`, `5590111714`, `5590112161`, and `5590112319`) before completing the upload.
+- The experience remains private. An unauthenticated production-page check therefore returned `Content not accessible`, and the Mac locked before an authenticated Roblox-client smoke could begin. A fresh owner-device session remains required for live-server bootstrap, aim feel, capture interaction, vehicle behavior, beam impact, and representative-device performance.
