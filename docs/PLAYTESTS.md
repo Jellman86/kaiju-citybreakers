@@ -555,3 +555,12 @@ Retain the dedicated shell pivots, terrain profile, skyline hierarchy and four i
 ### Decision
 
 The build is safe to publish for owner-device testing. Retain the four rig contracts and richer single-enemy state machine, but do not multiply either system yet. A human must confirm that each complete turret visibly turns and elevates toward its target, its projectile starts at the barrel, and `Riftback` visibly patrols, investigates, telegraphs swipe versus lunge, staggers, and enrages without getting stuck or rapidly switching targets.
+
+### Production publication
+
+- Published source commit: `d9ecd457dc0007c539fe23e0b6fb4301645b1eab` (implementation commit `1c29eaae080b74d2bd87cae9c702ca2db0affee1`).
+- Exact artifact: `build/KaijuCitybreakers-d9ecd457dc00.rbxlx`.
+- SHA-256: `00167ce99e9ff26ac92324b29245a4c5842894da591c39fdf91ad2c2619cc76d`.
+- The commit-labelled artifact was opened in the sole Studio process, passed a fresh one-server/one-client boot smoke, and overwrote the existing `Kaiju Citybreakers` place. Studio displayed `Successfully published!` and logged `Published "Kaiju Citybreakers" to Roblox.` at 11:44 BST.
+- Roblox granted the destination experience access to the nine referenced asset IDs reported by Studio (`5590111085`, `5590111156`, `5590111209`, `5590112509`, `5590111661`, `5590112408`, `5590111714`, `5590112161`, and `5590112319`) before the upload completed.
+- A fresh owner-phone session remains required for visual aim alignment, enemy-state readability, live-server bootstrap, and representative-device performance; no human or production-client result is inferred from the Studio pass.
