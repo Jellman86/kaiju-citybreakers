@@ -149,6 +149,7 @@ One complete five-to-eight-minute run works from join to replay with no manual i
 - One smaller original rogue-kaiju target from an Edit-visible articulated template, with server-owned patrol/perception/memory/investigation, bounded pathfinding, swipe and lunge attacks, stagger, enrage, turret targeting, health, and defeat.
 - One MOBA-compatible factory-objective feasibility slice: an enemy factory, authored road and air routes, bounded tank/helicopter production, capture/destruction shutdown, linked-turret transfer, and distinct server-owned projectiles. See [FACTORY_OBJECTIVES.md](FACTORY_OBJECTIVES.md).
 - Dense urban islands separated by broad traversal terrain, tested as one golden-path sequence before multiplying districts; each island combines one primary objective, optional branches, a pressure spike, and recovery space on the route toward an enemy base.
+- Expand and reuse the existing generated smooth terrain as the island chain requires, with streaming and representative-phone profiling at each bounded expansion rather than treating the current `1520 × 1220` authoring boundary as a permanent map limit.
 - Scout-drone navigation and attack behaviour after the turret and rogue-kaiju integration gates.
 - Greybox defence-mech boss with telegraphed attacks and phases.
 - Difficulty director based on player count and round performance.
