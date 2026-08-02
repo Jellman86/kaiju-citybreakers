@@ -40,6 +40,16 @@ TurretContract.Aim = table.freeze({
 	LengthAttribute = "AimLength",
 })
 
+TurretContract.Rig = table.freeze({
+	ModelName = "TurretRig",
+	RootName = "RigRoot",
+	YawMotorName = "YawMotor",
+	PitchMotorName = "PitchMotor",
+	VisualMuzzleName = "VisualMuzzle",
+	MinimumPitchDegrees = -12,
+	MaximumPitchDegrees = 42,
+})
+
 TurretContract.TargetingState = table.freeze({
 	Idle = "Idle",
 	Locking = "Locking",

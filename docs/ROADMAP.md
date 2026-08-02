@@ -146,7 +146,7 @@ One complete five-to-eight-minute run works from join to replay with no manual i
 ### Deliverables
 
 - Bounded capturable-turret feasibility slice using four sanitized shells, distinct bullet/minigun/cannon/rocket attacks, and native two-client validation.
-- One smaller rogue-kaiju target from an Edit-visible replaceable template, with server-owned bounded pathfinding, telegraphed melee, turret targeting, health, and defeat.
+- One smaller original rogue-kaiju target from an Edit-visible articulated template, with server-owned patrol/perception/memory/investigation, bounded pathfinding, swipe and lunge attacks, stagger, enrage, turret targeting, health, and defeat.
 - Scout-drone navigation and attack behaviour after the turret and rogue-kaiju integration gates.
 - Greybox defence-mech boss with telegraphed attacks and phases.
 - Difficulty director based on player count and round performance.
@@ -154,9 +154,9 @@ One complete five-to-eight-minute run works from join to replay with no manual i
 
 ### Enemy implementation order
 
-1. Prove the owner-requested turret feasibility slice: sanitized assets, server-owned capture/targeting, visible traverse/elevation and first-shot wind-up, four distinct attack profiles, bounded projectile simulation, fixed-cap cosmetics, cover, and two-client tests. Do not multiply it across the map yet; see [TURRET_SYSTEM.md](TURRET_SYSTEM.md).
-2. Define the shared server-owned enemy contract and small state machine: idle, acquire, telegraph, attack, recover, stagger, and defeated.
-3. Integrate one smaller rogue kaiju from the visible `EnemyTemplates` contract so turrets have a non-player target; replace the primitive proxy after the map owner supplies an audited original model.
+1. Complete the owner-requested turret feasibility slice: sanitized assets, server-owned capture/targeting, actual-shell traverse/elevation and moving muzzle, first-shot wind-up, four distinct attack profiles, bounded projectile simulation, fixed-cap cosmetics, cover, and two-client tests. The rig and synthetic motion gate are implemented; physical-device orientation and multiplayer gates remain. Do not multiply it across the map yet; see [TURRET_SYSTEM.md](TURRET_SYSTEM.md).
+2. Maintain the shared server-owned enemy contract and bounded state machine: patrol, acquire, chase, investigate, telegraph, attack, recover, stagger, enrage, and defeated.
+3. Validate the articulated original `Riftback` rogue kaiju from the visible `EnemyTemplates` contract. Replace only after the map owner supplies a commercially royalty-free, underlying-IP-authorised model that passes security and mobile review.
 4. Add one scout drone using authored aerial patrol nodes and line-of-sight checks; it fires a slow, dodgeable projectile and never needs ground pathfinding.
 5. Consolidate the proven turret and enemy damage, team, telegraph, projectile, and pooling contracts without changing their distinct presentations.
 6. Add another ground defence unit only after the rogue-kaiju path and mobile budget are proven.

@@ -537,3 +537,21 @@ Retain the dedicated shell pivots, terrain profile, skyline hierarchy and four i
 - SHA-256: `c70a7969e3514c1756ba542b4f5d8a1da5119df6bc5d8e9844ba7e40b883d64e`.
 - The exact artifact was opened in the sole existing Studio editor and used to overwrite the existing `Kaiju Citybreakers` place. Studio displayed `Successfully published!` and logged `Published new changes in "Kaiju Citybreakers" to Roblox.` at 21:26 BST.
 - A fresh owner-phone check of the terrain, skyline, Smash motion, lake, traversal and frame rate remains the release-validation gate; automated Studio evidence does not replace that physical-device judgement.
+
+## 2026-08-02 — Articulated-turret and richer-enemy boot smoke
+
+- Implementation commit: `1c29eaae080b74d2bd87cae9c702ca2db0affee1`.
+- Environment: the sole Roblox Studio editor, one local server and one client; **zero human testers**.
+- Scope: exact-commit Rojo artifact startup, authored-world preservation, four articulated turret registrations, original articulated rogue-kaiju spawn, server/client initialization, and active-round transition.
+
+### Exact-commit results
+
+- The authored city and terrain remained present; runtime bootstrap logged `Preserved hand-authored Brontide world`.
+- `EnemyService` spawned one articulated rogue kaiju at initial startup and again at countdown reset.
+- `TurretService` registered all four capturable turrets with the anchored-root assembly validation enabled.
+- Server and client initialized, the round reached `Active`, and Studio Output contained no project-script error during the smoke window.
+- A separate synthetic motor probe on the same captured authored world measured visible-shell displacement on all four models (`2.319`, `3.693`, `0.984`, and `3.613` studs). That probe establishes moving geometry, not correct art direction, aim alignment, feel, multiplayer behaviour, or mobile performance.
+
+### Decision
+
+The build is safe to publish for owner-device testing. Retain the four rig contracts and richer single-enemy state machine, but do not multiply either system yet. A human must confirm that each complete turret visibly turns and elevates toward its target, its projectile starts at the barrel, and `Riftback` visibly patrols, investigates, telegraphs swipe versus lunge, staggers, and enrages without getting stuck or rapidly switching targets.
