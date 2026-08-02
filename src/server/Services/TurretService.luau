@@ -104,10 +104,36 @@ local function getRoster(): { RosterEntry }
 	return roster
 end
 
-local function hasUnanchoredPart(model: Model): boolean
+local function hasUnsafeUnanchoredPart(model: Model): boolean
+	local rig = model:FindFirstChild(TurretContract.Rig.ModelName)
+	local rigRoot = if rig then rig:FindFirstChild(TurretContract.Rig.RootName) else nil
+	local yawMotor = if rig then rig:FindFirstChild(TurretContract.Rig.YawMotorName, true) else nil
+	local pitchMotor = if rig
+		then rig:FindFirstChild(TurretContract.Rig.PitchMotorName, true)
+		else nil
+	if rig then
+		if
+			not rigRoot
+			or not rigRoot:IsA("BasePart")
+			or not rigRoot.Anchored
+			or not yawMotor
+			or not yawMotor:IsA("Motor6D")
+			or yawMotor.Part0 ~= rigRoot
+			or not pitchMotor
+			or not pitchMotor:IsA("Motor6D")
+			or pitchMotor.Part0 ~= yawMotor.Part1
+		then
+			return true
+		end
+	end
 	for _, descendant in model:GetDescendants() do
 		if descendant:IsA("BasePart") and not descendant.Anchored then
-			return true
+			if not rigRoot or not rigRoot:IsA("BasePart") then
+				return true
+			end
+			if descendant.AssemblyRootPart ~= rigRoot then
+				return true
+			end
 		end
 	end
 	return false
@@ -242,7 +268,7 @@ function TurretService:_register(instance: Instance)
 		or not muzzle
 		or not muzzle:IsA("BasePart")
 		or not muzzle.Anchored
-		or hasUnanchoredPart(instance)
+		or hasUnsafeUnanchoredPart(instance)
 		or not readNumber(instance, TurretContract.Attribute.CaptureRadius, 1)
 		or not readNumber(instance, TurretContract.Attribute.CaptureSeconds, 0.1)
 	then

@@ -9,6 +9,7 @@ Roblox provides the platform facts used here:
 - The server is the source of truth for game state, and clients should render harmless presentation separately from authoritative outcomes: [client-server runtime](https://create.roblox.com/docs/projects/client-server) and [server authority model](https://create.roblox.com/docs/projects/server-authority).
 - Instantaneous ray hits and physically simulated projectiles solve different gameplay requirements. Roblox's weapon guidance uses moving shot effects for visible arrows or rockets and separate explosive-projectile settings: [detect hits](https://create.roblox.com/docs/tutorials/curriculums/gameplay-scripting/detect-hits) and [weapons kit](https://create.roblox.com/docs/resources/weapons-kit).
 - `Workspace:Raycast()` and filtering are the native obstruction tools: [raycasting](https://create.roblox.com/docs/workspace/raycasting).
+- Roblox joints connect parts into one physics assembly; if one assembly part is anchored, the whole assembly is implicitly anchored. `Motor6D` provides an animatable transform between the connected parts: [assemblies](https://create.roblox.com/docs/physics/assemblies) and [`Motor6D`](https://create.roblox.com/docs/reference/engine/classes/Motor6D).
 - High-frequency `RunService` work should be bounded and measured on a representative physical device; Studio emulation is not a memory-performance substitute: [design for performance](https://create.roblox.com/docs/performance-optimization/design) and [improve performance](https://create.roblox.com/docs/performance-optimization/improve).
 - Creator Store models can contain scripts, and moderation cannot guarantee that every backdoor is removed. Imported models require inspection or sandboxing: [third-party asset vulnerabilities](https://create.roblox.com/docs/scripting/security/third-party-vulnerabilities) and [Creator Store](https://create.roblox.com/docs/production/creator-store).
 
@@ -33,7 +34,9 @@ A capturable turret is a `Model` tagged `CapturableTurret` with:
 
 The map chooses identity, archetype, placement, muzzle, and capture geometry. Source-controlled definitions choose bounded attack behaviour. A malformed, duplicate, unsupported, or over-budget turret is rejected without stopping the server.
 
-Each turret also owns a source-controlled `AimAssembly` with an `AimOrigin`, yaw turntable, one or more archetype-specific barrels, and a muzzle. The server replicates only its validated target position and targeting state at the bounded perception cadence. Each client eases the anchored cosmetic assembly toward that position; client motion never chooses a victim, changes damage, or changes the server ray/projectile. The complete assembly remains visible and editable before Play.
+Each turret owns a `TurretRig` built from the actual imported shell. Its anchored `RigRoot` connects the body to a yaw carrier through `YawMotor`, then to the gun through `PitchMotor`; shell parts are welded to the appropriate carrier and `VisualMuzzle` follows the barrel. The server rejects a rig with the wrong motor chain or any free/unowned physics part. Each client eases the two motors toward the server-replicated target and starts tracers, shells, missiles, and lock cues at the moving visual muzzle. This motion is presentation only and cannot choose a victim or change damage.
+
+The former `AimAssembly` remains hidden as a small anchored authoritative reference for stable server ray/projectile origin and legacy fallback. It is not the visible turret. This split keeps server hit resolution deterministic while making the model the player sees visibly traverse and elevate.
 
 ## State machine
 
@@ -84,7 +87,7 @@ These are provisional, not Roblox benchmarks:
 | Simultaneous logical cannon/missile projectiles | `16` |
 | Logical projectile lifetime | `4 seconds` maximum |
 | Client projectile/tracer pool | fixed cap; no unbounded creation |
-| Unanchored imported turret parts | `0` |
+| Articulated turret physics | `4` anchored-root assemblies; `0` free/unowned parts |
 | Imported executable scripts/remotes | `0` |
 
 ## Placement guidance
@@ -97,11 +100,12 @@ These are provisional, not Roblox benchmarks:
 
 ## Required tests before map-wide rollout
 
-1. Static source build proves all four imported shells contain zero scripts, remotes, sounds, movers, and unanchored parts.
-2. One-player Studio test captures a neutral turret, leaves and re-enters an incomplete capture, and verifies replicated states.
-3. Native two-client test verifies contested pause, ownership transfer, no friendly fire, server-selected targets, obstruction, death, respawn, and capture by both scales.
-4. Archetype test proves bullets are instant, minigun cadence/spin-up is distinguishable, cannon shells travel, rockets travel and apply bounded radial damage, and solid cover blocks each attack as specified.
-5. Physical-phone test records whether an uncoached player identifies ownership, notices the firing cue, names the projectile type, and dodges at least one cannon or rocket.
-6. Representative-device profile records client/server frame time, memory trend, active logical projectiles, raycasts per second, effect-pool cap, and cleanup after a four-turret stress exchange.
+1. Static source build proves all four imported shells contain zero scripts, remotes, sounds, and movers; each unanchored visual part must belong to the validated anchored-root assembly.
+2. A synthetic Studio rig check measures non-zero displacement of actual visible geometry on all four shells when their motors turn; a physical-device check still confirms orientation and muzzle alignment.
+3. One-player Studio test captures a neutral turret, leaves and re-enters an incomplete capture, and verifies replicated states.
+4. Native two-client test verifies contested pause, ownership transfer, no friendly fire, server-selected targets, obstruction, death, respawn, and capture by both scales.
+5. Archetype test proves bullets are instant, minigun cadence/spin-up is distinguishable, cannon shells travel, rockets travel and apply bounded radial damage, and solid cover blocks each attack as specified.
+6. Physical-phone test records whether an uncoached player identifies ownership, notices the firing cue, names the projectile type, and dodges at least one cannon or rocket.
+7. Representative-device profile records client/server frame time, memory trend, active logical projectiles, raycasts per second, effect-pool cap, and cleanup after a four-turret stress exchange.
 
 Do not duplicate turrets across the city until these tests pass. Failed readability should change cues and placement before damage is increased.

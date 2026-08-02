@@ -8,6 +8,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 ### Added
 
+- Native `Motor6D` rigs for all four placed turret shells, including moving visual muzzles and client-local traverse/elevation driven by server-selected targets.
+- Richer server-authoritative `Riftback` AI with patrol, FOV/line-of-sight vision, hearing, target memory and hysteresis, investigation, blocked/stuck path recovery, swipe/lunge choice, stagger, and enrage.
+- Client-local joint posing for the articulated original enemy proxy across locomotion, attacks, stagger, idle, and enrage states.
 - Edit-visible full-map authoring guides, truthful Brontide/human scale references, and a sandboxed `AuthoringInbox` that formalize the map-owner/Codex handoff while remaining absent from Play.
 - Edit-visible turret aim assemblies, a movable rogue-kaiju spawn marker, and a replaceable enemy template that keep gameplay objects inspectable while server code owns their contracts.
 - First server-owned rogue-kaiju AI slice with bounded native pathfinding, chase/telegraph/recovery states, player melee damage, turret target integration, authoritative health, and defeat.
@@ -46,6 +49,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 ### Changed
 
+- Turret tracers, lock cues, cannon shells, and missiles now originate at each shell's moving visual muzzle while authoritative hit resolution remains server-owned.
+- External-asset policy now explicitly requires `£0` commercial use with no royalty, revenue share, subscription, usage fee, or earnings-triggered payment, plus legitimate rights to the underlying IP.
 - Runtime world startup now preserves an authored `KaijuFeelLab` and non-empty Terrain instead of destroying the designer's map whenever Play begins.
 - Central skyline towers now use materially different heights so Brontide is framed by an urban silhouette instead of a field of similarly low boxes.
 - Smash now drives dedicated Brontide visual-shell pivots that Roblox's avatar animation pass cannot erase and uses a deliberately readable `0.87`-second anticipation-to-recovery sequence.
@@ -82,6 +87,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 ### Security
 
+- Quarantined, inspected, and removed a free `Mire Godzilla` fan model rather than shipping protected IP, four embedded scripts/modules, and an unprofiled 119-mesh enemy.
+- Turret registration now rejects malformed motor chains and any unanchored visual part outside the expected anchored-root assembly.
 - Client ability requests are type-, state-, cooldown-, character-, rate-, and server-hitbox validated.
 - Invalid or duplicate destructible packages are rejected by the authoritative registry without crashing the round.
 

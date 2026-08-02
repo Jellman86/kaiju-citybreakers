@@ -9,6 +9,8 @@ Roblox provides native path creation, waypoint traversal, material and region co
 Primary sources:
 
 - [Pathfinding](https://create.roblox.com/docs/characters/pathfinding)
+- [`PathfindingService`](https://create.roblox.com/docs/reference/engine/classes/PathfindingService)
+- [`Motor6D`](https://create.roblox.com/docs/reference/engine/classes/Motor6D)
 - [PathfindingModifier](https://create.roblox.com/docs/reference/engine/classes/PathfindingModifier)
 - [Improve performance](https://create.roblox.com/docs/performance-optimization/improve)
 - [Securing the client/server boundary](https://create.roblox.com/docs/scripting/security/client-server-boundary)
@@ -25,9 +27,26 @@ Primary sources:
 
 ## First rogue-kaiju integration slice
 
-The owner-requested first target is one smaller rogue kaiju so the capturable turrets have a non-player opponent. The map owner controls its visible template and spawn marker in Edit mode. The server clones the reviewed template, strips executable descendants defensively, acquires living players, follows a bounded native path, telegraphs a melee strike, applies damage, exposes health/state attributes, and accepts authoritative turret damage. It updates decisions at `5 Hz` and recomputes a native path no faster than every `1.5` seconds unless the target moves materially; these are provisional budgets.
+The first target is one smaller original `Riftback` rogue kaiju so the capturable turrets have a non-player opponent. The map owner controls its visible template and spawn marker in Edit mode. The server clones the reviewed template, strips executable descendants and authoring helpers, exposes health/state attributes, accepts authoritative turret damage, and owns every decision and hit. The actual proxy limbs, head and tail are connected by native `Motor6D` joints; a client controller poses those joints for locomotion, wind-up, stagger and enrage without affecting outcomes.
 
-The checked-in primitive creature is deliberately labelled as a replaceable proxy, not final art. A Creator Store or user-imported model may replace it only after the reuse audit, script removal, provenance/IP check, and mobile geometry review. Keeping AI separate from the visual lets map and model work happen without rewriting combat code.
+The bounded decision loop runs at `5 Hz` and uses this observable state flow:
+
+```text
+Patrol --vision/hearing--> Chase --in range--> Swipe or Lunge
+Chase --loses target--> Investigate last-known position --memory expires--> Patrol
+any living state --damage threshold--> Staggered --> previous decision loop
+health below threshold --> Enraged (faster movement and recovery)
+health reaches zero --> Defeated
+```
+
+- Vision requires a wide forward field of view plus server line of sight; nearby movement can be heard even outside that cone.
+- Target scores use distance and a current-target hysteresis margin so the actor does not rapidly switch between equally good targets.
+- It remembers the last seen/heard position briefly and investigates it instead of becoming instantly idle.
+- Native paths are recomputed only after the target moves materially, a forward waypoint is blocked, the actor is sampled as stuck, or the normal throttle expires.
+- A close target receives a readable swipe; a suitable farther target can trigger a longer lunge wind-up and bounded server movement. Both attacks revalidate range and obstruction at impact.
+- Accumulated authoritative damage can stagger the actor. Low health enters an explicit enraged phase.
+
+All ranges, angles, timings, target weights, attack choices and enrage/stagger thresholds are provisional. The checked-in creature remains deliberately labelled as a replaceable original proxy, not final art. A Creator Store or user-imported model may replace it only after the commercial licence, underlying-IP, script, provenance, and mobile geometry gates pass. The inspected `Mire Godzilla` candidate was removed because a free listing cannot grant rights to protected fan IP.
 
 ## Later scout-drone slice
 
@@ -58,6 +77,7 @@ These values are not Roblox benchmarks. Change them from profiler and playtest e
 
 - A first-time player notices the wind-up, understands the source of damage, and dodges at least one shot without verbal coaching.
 - Solo and two-player target selection is stable; enemies never damage allies or defeated targets.
+- A player can distinguish patrol, investigation, swipe, lunge, stagger and enrage without reading developer attributes; target selection does not visibly thrash.
 - Server validation rejects malformed attack or reward requests and clients cannot nominate an arbitrary victim.
 - Four drones plus simultaneous building collapse stay within measured server/client frame and memory budgets on the representative mobile baseline.
 - Streaming, destruction state changes, and route blockers do not trap or permanently idle ground defenders.

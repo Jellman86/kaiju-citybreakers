@@ -41,7 +41,9 @@ Custom code is appropriate when the requirement is small or game-specific and th
 - Every adopted dependency **MUST** be pinned and entered in `docs/DEPENDENCIES.md` before merge.
 - Every external or generated asset **MUST** be entered in `assets/ASSET_REGISTER.md` before merge.
 - Unknown, custom, non-commercial-only, or incompatible licences **MUST NOT** be adopted.
-- Paid, trial-limited, account-locked, or quota-dependent production requirements **MUST NOT** be adopted.
+- Adopted assets and dependencies **MUST** be commercially usable in a monetised Roblox experience for `£0`: no purchase fee, subscription, trial expiry, revenue share, royalty, usage fee, or payment triggered by future earnings. Required attribution or share-alike terms **MUST** be recorded and compatible with the intended distribution.
+- The uploader **MUST** own the underlying work or have permission to license it. A free listing does not make protected fan IP safe to use.
+- Paid, trial-limited, account-locked, quota-dependent, royalty-bearing, or revenue-share production requirements **MUST NOT** be adopted.
 - Large Blender, model, and audio sources **MUST** use Git LFS. The two canonical hand-authored map models under `src/world/` are source assets and **MUST** use Git LFS. Generated places, arbitrary model exports, and renders **MUST NOT** be committed unless a written release process requires them.
 - Blender source in `assets/blender/` owns original 3D work; reviewed exports go to `exports/`.
 

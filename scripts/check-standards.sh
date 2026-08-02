@@ -73,6 +73,27 @@ if grep --extended-regexp --line-number \
   exit 1
 fi
 
+for rig_name in TurretRig RigRoot YawMotor PitchMotor VisualMuzzle; do
+  rig_count="$(grep -c "<string name=\"Name\">${rig_name}</string>" src/world/KaijuFeelLab.rbxmx || true)"
+  if [[ "${rig_count}" -ne 4 ]]; then
+    echo "Authored turret contract requires exactly four ${rig_name} instances; found ${rig_count}." >&2
+    exit 1
+  fi
+done
+
+if ! grep --quiet '<string name="Name">Rig_LeftArm</string>' src/world/KaijuFeelLab.rbxmx; then
+  echo "The authored rogue-kaiju template must retain its articulated Rig_* motor contract." >&2
+  exit 1
+fi
+
+if grep --extended-regexp --ignore-case --line-number \
+  'Mire Goji|Godzilla|Gojira|RigMotionSmoke' src/world/KaijuFeelLab.rbxmx \
+  || grep --recursive --include='*.luau' --extended-regexp --ignore-case --line-number \
+    'Mire Goji|Godzilla|Gojira|RigMotionSmoke' src; then
+  echo "Protected fan-IP candidates and temporary rig-test helpers must not enter source." >&2
+  exit 1
+fi
+
 tracked_generated="$(git ls-files -- '*.rbxl' '*.rbxlx' '*.rbxm' '*.rbxmx' \
   | grep -Ev '^src/world/(Terrain|KaijuFeelLab)\.rbxmx$' || true)"
 if [[ -n "${tracked_generated}" ]]; then

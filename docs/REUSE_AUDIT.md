@@ -7,7 +7,7 @@ Before implementing a material system or producing a substantial asset, check wh
 A candidate must pass all applicable checks:
 
 - Solves the current requirement without imposing a larger framework or content scope.
-- Free to use and compatible with the repository's eventual code/asset licensing decision.
+- Free to acquire and commercially use in a monetised Roblox experience, with no royalty, revenue share, subscription, usage fee, trial expiry, or payment triggered by future earnings; also compatible with the repository's eventual code/asset licensing decision.
 - Actively maintained, or stable and small enough to vendor safely.
 - Has inspectable source and no unnecessary scripts, remotes, analytics, monetization, or network access.
 - Keeps authoritative gameplay on the server and supports mobile performance targets.
@@ -60,7 +60,7 @@ The 2026-08-01 Creator Store re-check used free, verified-creator-only searches 
 | Projectile presentation | Fixed-cap client-local native parts, trails, and impact rings | **Use provisionally** | Effects cannot change outcomes, and pooling places a measurable ceiling on instances. Physical phone profiling remains mandatory. |
 | Full Roblox weapons kit | Roblox-published prefab system | **Reference; do not adopt** | It documents moving shot effects and explosions, but its player-weapon/input/configuration surface is substantially larger than four server-controlled stationary attacks. |
 | Imported turret gameplay scripts | Scripts embedded in four community Creator Store models | **Reject and remove** | The scripts use legacy seat/remotes and unknown gameplay assumptions. Roblox explicitly warns that Toolbox models are a common backdoor source and moderation is not guaranteed. |
-| Imported turret geometry | Four free public-domain Creator Store model listings | **Provisional sanitized candidates** | The user selected their placement and silhouettes. Every script, remote, sound, effect, mover, value, and seat behaviour was stripped; all parts were anchored; original gameplay contracts were added. Provenance and counts are in `assets/ASSET_REGISTER.md`; mobile/profile gates remain open. |
+| Imported turret geometry | Four free public-domain Creator Store model listings | **Provisional sanitized candidates** | The user selected their placement and silhouettes. Every script, remote, sound, effect, mover, value, and seat behaviour was stripped. The actual shells now use validated anchored-root `Motor6D` assemblies, while original gameplay contracts own all outcomes. Provenance and counts are in `assets/ASSET_REGISTER.md`; mobile/profile gates remain open. |
 
 No runtime package, paid service, telemetry, or external code is adopted. Replacement plan: keep the small tag/attribute contract and replace any rejected community shell with an original Blender model without changing capture or attack code.
 
@@ -69,11 +69,23 @@ No runtime package, paid service, telemetry, or external code is adopted. Replac
 | Need | Candidate | Decision | Reason |
 | --- | --- | --- | --- |
 | Ground navigation | Native `PathfindingService` with bounded recomputation | **Use provisionally** | Native paths avoid a custom navmesh/A* implementation. One actor senses at `5 Hz`; path recomputation is throttled and must be profiled on phone before adding actors. |
-| AI/combat framework | General NPC frameworks and Creator Store scripts | **Reject** | One chase/telegraph/recover actor is smaller and safer as a strict server service. Imported scripts, remotes, analytics, and client-owned damage are prohibited. |
+| AI/combat framework | General NPC frameworks and Creator Store scripts | **Reject** | One bounded actor with patrol, sight/hearing, target memory, investigation, two attacks, stagger and enrage remains smaller and safer as a strict server service. Imported scripts, remotes, analytics, and client-owned damage are prohibited. |
 | Initial visual | Original source-controlled primitive proxy | **Use as replaceable test stand-in** | It is free, inspectable, original, low-cost, visible in Edit mode, and explicitly labelled non-final. It lets the complete contract run while the map owner imports a preferred reviewed model. |
 | `Majasaurus Kaiju For attack on Kaiju`, asset `287567981`, creator `Cryolophysis` | Free public-domain Creator Store candidate whose description says it is the creator's custom kaiju | **Candidate only; not adopted** | The silhouette appeared suitable and original-looking, but automated insertion was unauthorized and the contents have not been inspected. The map owner may place it in the sandboxed `AuthoringInbox`; it cannot enter gameplay or the asset register until the full audit passes. |
 
 No external enemy asset or runtime dependency is adopted. The visual replacement contract retains `RogueKaijuTemplate` and `EnemyRoot`; AI, health, targeting, and damage remain independent of imported art.
+
+## 2026-08-02 — Articulation and richer-AI audit
+
+| Need | Candidate | Decision | Reason |
+| --- | --- | --- | --- |
+| Rotate the placed turret shells themselves | Native anchored-root assemblies with `Motor6D` yaw and pitch joints | **Use** | Roblox joints form one assembly, an anchored root makes the assembly implicitly anchored, and `Motor6D.Transform` provides non-authoritative visual articulation. The server validates the chain and continues to own target selection and damage. |
+| Edit turret geometry in Blender | Re-export or rebuild the four community shells | **Defer** | The accepted Studio shell parts can be grouped and jointed without modifying mesh source. Use Blender when an original production mesh needs bone weighting, topology changes, UV work, or authored animation—not merely to add two mechanical pivots. |
+| Ground navigation and obstruction recovery | Native `PathfindingService`, `Path.Blocked`, throttled recomputation and stuck sampling | **Use** | The native path lifecycle already exposes waypoints and forward blockage. It avoids reimplementing navigation while keeping the one-enemy decision budget explicit. |
+| Perception and combat behaviour | Small server-owned hierarchical state machine | **Use provisionally** | Patrol, FOV/line-of-sight vision, hearing, target memory, investigation, hysteresis, swipe/lunge choice, stagger, and enrage add observable decisions without a general AI framework. Timing and readability remain playtest hypotheses. |
+| Imported `Mire Godzilla` rig | Free Creator Store fan model | **Reject and remove** | The model was quarantined and inspected, but its protected Godzilla identity cannot satisfy the original-IP rule regardless of price or claimed reuse permission. Its 119 meshes, four scripts/modules, and effects also exceed the current unprofiled enemy budget. |
+
+No new runtime dependency, paid service, royalty-bearing asset, or revenue-share obligation is introduced. The retained enemy is the original `Riftback` proxy, now articulated through native joints; an imported replacement must be original or duly licensed by the underlying IP owner and pass the same commercial-use, security, and mobile gates.
 
 ## 2026-08-01 — Game-development skill audit
 

@@ -239,3 +239,17 @@ Basis: the stakeholder already placed turret candidates and requested MOBA-like 
 Build one server-owned rogue-kaiju actor before the scout drone so the complete turret system has a non-player target. Clone its visual from the Edit-visible `EnemyTemplates` folder at a movable tagged spawn. Keep target acquisition, bounded native pathfinding, telegraphed melee, health, damage, and defeat in strict source code; use an original primitive proxy until the map owner imports a model that passes the reuse audit.
 
 Basis: the stakeholder owns map composition, model importing, and testing while Codex owns code and model contracts. Separating `EnemyRoot` and stable template/spawn names from visual descendants lets either side iterate without overwriting the other. Exact movement and combat numbers remain untested hypotheses, and the actor cannot be multiplied before physical-device and multiplayer evidence.
+
+## 2026-08-02 — Rig the visible turret shells and deepen the first enemy before multiplication
+
+Convert each of the four sanitized turret shells into an anchored-root assembly with native yaw and pitch `Motor6D`s. Weld the real body and weapon geometry to those carriers, place a moving visual muzzle at the barrel, and have clients ease the presentation toward the target position selected by the server. Retain the hidden anchored aim reference for deterministic authoritative hit resolution, and reject any rig whose motors or assembly root do not match the contract.
+
+Expand the single `Riftback` actor from nearest-player chase into a bounded server-owned behaviour loop: patrol, FOV/line-of-sight vision, hearing, target hysteresis and memory, last-known-position investigation, blocked/stuck path recovery, swipe/lunge selection, cumulative-damage stagger, low-health enrage, and defeat. Animate its original jointed proxy locally from replicated state while leaving target selection, movement, hits, health and defeat authoritative.
+
+Basis: the visible shell—not a proxy overlay—must aim for the placed model to communicate turret intent. Roblox assemblies and `Motor6D` solve two mechanical pivots without a Blender round trip, while native pathfinding and `Path.Blocked` avoid a custom navigation implementation. A Studio smoke test measured non-zero displacement of visible shell geometry on all four turrets (`2.319`, `3.693`, `0.984`, and `3.613` studs), but orientation, state readability, mobile performance and multiplayer fairness remain H12/H13 human-test gates.
+
+## 2026-08-02 — Require royalty-free commercial use and legitimate underlying IP separately
+
+An adopted external asset must cost `£0` and permit use and necessary modification in a monetised Roblox experience without purchase, subscription, revenue share, royalties, usage fees, or later payment triggered by earnings. Separately, the uploader must own the work or have authority to license every protected element. A free or permissive fan upload cannot grant rights to someone else's character.
+
+Basis: Creator Store terms govern use on Roblox services, but Roblox's IP rules still require ownership or permission for underlying content. The quarantined `Mire Godzilla` candidate was therefore removed despite being listed free; it also contained four scripts/modules and an unprofiled 119-mesh visual. Original work or a demonstrably authorised commercial asset remains the replacement route.

@@ -41,7 +41,14 @@ type LockEntry = {
 
 type AimEntry = {
 	model: Model,
+	turretId: string?,
 	origin: BasePart,
+	visualMuzzle: BasePart?,
+	rigRoot: BasePart?,
+	yawMotor: Motor6D?,
+	pitchMotor: Motor6D?,
+	currentYaw: number,
+	currentPitch: number,
 	turntable: BasePart?,
 	turntableLocal: CFrame?,
 	barrels: { BasePart },
@@ -176,6 +183,7 @@ function TurretEffectsController.new(effectRemote: RemoteEvent)
 	self._projectileById = {} :: { [string]: ProjectileEntry }
 	self._lockByTurretId = {} :: { [string]: LockEntry }
 	self._aimByModel = {} :: { [Model]: AimEntry }
+	self._aimByTurretId = {} :: { [string]: AimEntry }
 	self._connections = {} :: { RBXScriptConnection }
 	self._nextTracer = 1
 	self._nextProjectile = 1
@@ -209,6 +217,11 @@ local function horizontalUnit(direction: Vector3, fallback: Vector3): Vector3
 	return horizontal.Unit
 end
 
+local function stepAngle(current: number, target: number, alpha: number): number
+	local difference = math.atan2(math.sin(target - current), math.cos(target - current))
+	return current + difference * alpha
+end
+
 function TurretEffectsController:_registerAim(instance: Instance)
 	if not instance:IsA("Model") or self._aimByModel[instance] then
 		return
@@ -236,10 +249,36 @@ function TurretEffectsController:_registerAim(instance: Instance)
 	end
 	local turntable = assembly:FindFirstChild(TurretContract.Aim.TurntableName)
 	local muzzle = assembly:FindFirstChild(TurretContract.Aim.MuzzleName)
-	local restDirection = origin.CFrame.LookVector
-	self._aimByModel[instance] = {
+	local rig = instance:FindFirstChild(TurretContract.Rig.ModelName)
+	local rigRoot = if rig then rig:FindFirstChild(TurretContract.Rig.RootName) else nil
+	local yawMotor = if rig then rig:FindFirstChild(TurretContract.Rig.YawMotorName, true) else nil
+	local pitchMotor = if rig
+		then rig:FindFirstChild(TurretContract.Rig.PitchMotorName, true)
+		else nil
+	local visualMuzzle = if rig
+		then rig:FindFirstChild(TurretContract.Rig.VisualMuzzleName, true)
+		else nil
+	local validRigRoot = if rigRoot and rigRoot:IsA("BasePart") then rigRoot else nil
+	local validYawMotor = if yawMotor and yawMotor:IsA("Motor6D") then yawMotor else nil
+	local validPitchMotor = if pitchMotor and pitchMotor:IsA("Motor6D") then pitchMotor else nil
+	local validVisualMuzzle = if visualMuzzle and visualMuzzle:IsA("BasePart")
+		then visualMuzzle
+		else nil
+	local turretId = instance:GetAttribute(TurretContract.Attribute.Id)
+	turretId = if type(turretId) == "string" then turretId else nil
+	local restDirection = if validRigRoot
+		then validRigRoot.CFrame.LookVector
+		else origin.CFrame.LookVector
+	local entry = {
 		model = instance,
+		turretId = turretId,
 		origin = origin,
+		visualMuzzle = validVisualMuzzle,
+		rigRoot = validRigRoot,
+		yawMotor = validYawMotor,
+		pitchMotor = validPitchMotor,
+		currentYaw = 0,
+		currentPitch = 0,
 		turntable = if turntable and turntable:IsA("BasePart") then turntable else nil,
 		turntableLocal = if turntable and turntable:IsA("BasePart")
 			then origin.CFrame:ToObjectSpace(turntable.CFrame)
@@ -249,24 +288,46 @@ function TurretEffectsController:_registerAim(instance: Instance)
 		direction = restDirection,
 		restDirection = restDirection,
 	}
+	self._aimByModel[instance] = entry
+	if turretId then
+		self._aimByTurretId[turretId] = entry
+	end
 end
 
 function TurretEffectsController:_unregisterAim(instance: Instance)
 	if instance:IsA("Model") then
+		local entry = self._aimByModel[instance]
+		if entry and entry.turretId then
+			self._aimByTurretId[entry.turretId] = nil
+		end
 		self._aimByModel[instance] = nil
 	end
 end
 
+function TurretEffectsController:_visualOrigin(turretId: any, fallback: Vector3): Vector3
+	if type(turretId) ~= "string" then
+		return fallback
+	end
+	local entry = self._aimByTurretId[turretId]
+	if entry and entry.visualMuzzle and entry.visualMuzzle:IsDescendantOf(workspace) then
+		return entry.visualMuzzle.Position
+	end
+	return fallback
+end
+
 function TurretEffectsController:_renderAim(entry: AimEntry, dt: number)
 	if not entry.model:IsDescendantOf(workspace) then
-		self._aimByModel[entry.model] = nil
+		self:_unregisterAim(entry.model)
 		return
 	end
 	local targetPosition = entry.model:GetAttribute(TurretContract.Attribute.AimTargetPosition)
 	local aimActive = entry.model:GetAttribute(TurretContract.Attribute.AimActive) == true
 	local desired = entry.restDirection
 	if aimActive and isFiniteVector3(targetPosition) then
-		local offset = targetPosition - entry.origin.Position
+		local sourcePosition = if entry.rigRoot
+			then entry.rigRoot.Position
+			else entry.origin.Position
+		local offset = targetPosition - sourcePosition
 		if offset.Magnitude >= 0.1 then
 			desired = offset.Unit
 		end
@@ -275,6 +336,23 @@ function TurretEffectsController:_renderAim(entry: AimEntry, dt: number)
 	local blended = entry.direction:Lerp(desired, alpha)
 	if blended.Magnitude >= 0.001 then
 		entry.direction = blended.Unit
+	end
+
+	if entry.rigRoot and entry.yawMotor and entry.pitchMotor then
+		local localDirection = entry.rigRoot.CFrame:VectorToObjectSpace(entry.direction)
+		local horizontalMagnitude = Vector2.new(localDirection.X, localDirection.Z).Magnitude
+		local desiredYaw = math.atan2(-localDirection.X, -localDirection.Z)
+		local desiredPitch = math.atan2(localDirection.Y, math.max(0.001, horizontalMagnitude))
+		desiredPitch = math.clamp(
+			desiredPitch,
+			math.rad(TurretContract.Rig.MinimumPitchDegrees),
+			math.rad(TurretContract.Rig.MaximumPitchDegrees)
+		)
+		entry.currentYaw = stepAngle(entry.currentYaw, desiredYaw, alpha)
+		entry.currentPitch += (desiredPitch - entry.currentPitch) * alpha
+		entry.yawMotor.Transform = CFrame.Angles(0, entry.currentYaw, 0)
+		entry.pitchMotor.Transform = CFrame.Angles(entry.currentPitch, 0, 0)
+		return
 	end
 
 	local yawDirection = horizontalUnit(entry.direction, entry.restDirection)
@@ -380,6 +458,7 @@ function TurretEffectsController:_showHitscan(payload: any)
 		then Color3.fromRGB(255, 239, 145)
 		else TEAM_COLORS[ownerTeam]
 	local width = if effect == "Minigun" then 0.14 else 0.34
+	origin = self:_visualOrigin(payload.turretId, origin)
 	setLine(part, origin, target, width)
 	part.Transparency = if effect == "Minigun" then 0.15 else 0.06
 	local lifetime = if effect == "Minigun" then 0.045 else 0.09
@@ -425,7 +504,7 @@ function TurretEffectsController:_launchProjectile(payload: any)
 	self:_deactivateProjectile(entry)
 	entry.generation += 1
 	entry.activeId = projectileId
-	entry.origin = origin
+	entry.origin = self:_visualOrigin(payload.turretId, origin)
 	entry.velocity = velocity
 	entry.startedAt = os.clock()
 	entry.expiresAt = entry.startedAt + lifetime + 0.35
@@ -555,9 +634,11 @@ function TurretEffectsController:_render(now: number, dt: number)
 					then character:FindFirstChild("HumanoidRootPart")
 					else nil
 				if rootPart and rootPart:IsA("BasePart") then
-					setLine(entry.part, entry.origin, rootPart.Position, 0.1)
+					local origin = self:_visualOrigin(entry.activeTurretId, entry.origin)
+					setLine(entry.part, origin, rootPart.Position, 0.1)
 				elseif entry.targetUserId == 0 then
-					setLine(entry.part, entry.origin, entry.targetPosition, 0.1)
+					local origin = self:_visualOrigin(entry.activeTurretId, entry.origin)
+					setLine(entry.part, origin, entry.targetPosition, 0.1)
 				else
 					entry.part.Parent = nil
 				end
@@ -603,6 +684,15 @@ function TurretEffectsController:Destroy()
 		self._renderConnection:Disconnect()
 		self._renderConnection = nil
 	end
+	for _, entry in self._aimByModel do
+		if entry.yawMotor then
+			entry.yawMotor.Transform = CFrame.identity
+		end
+		if entry.pitchMotor then
+			entry.pitchMotor.Transform = CFrame.identity
+		end
+	end
+	table.clear(self._aimByModel)
 	for _, entry in self._tracers do
 		entry.part:Destroy()
 	end
@@ -625,6 +715,7 @@ function TurretEffectsController:Destroy()
 	table.clear(self._projectileById)
 	table.clear(self._lockByTurretId)
 	table.clear(self._aimByModel)
+	table.clear(self._aimByTurretId)
 end
 
 return TurretEffectsController
