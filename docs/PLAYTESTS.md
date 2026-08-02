@@ -609,4 +609,14 @@ Retain the temporary Arc factory as the first integration fixture. It proves reg
 
 ### Decision
 
-Retain the neutral factory, human-only capture, three-of-three allegiance transfer, human custom camera, and shared reticle for the next exact-artifact run. Do not publish this revision until the corrected streaming-safe factory ring/billboard is observed in the client, a natural human avatar walks into and completes capture, kaiju presence is shown not to advance it, and human/kaiju shots are confirmed to land at the visible reticle on representative controls. Physical-device feel and performance remain owner tests.
+Retain the neutral factory, human-only capture, three-of-three allegiance transfer, human custom camera, and shared reticle for owner-device testing. The exact merged artifact passed a fresh one-server/one-client boot smoke before publication, but that smoke did not close the remaining human gates: observe the streaming-safe factory ring/billboard, complete capture with a natural human avatar, confirm kaiju presence does not advance capture, and confirm human/kaiju shots land at the visible reticle on representative controls. Physical-device feel and performance remain owner tests.
+
+### Production publication
+
+- Published source commit: `368653074de279aaa618e9f39f6503ece7bf6a79` (implementation commit `26a0a7898718519c07ec52c837d76282c773fe2e`).
+- Exact artifact: `build/KaijuCitybreakers-368653074de2.rbxlx`.
+- SHA-256: `9afa14a55c75b43726457fe8e9d6db03cac95c741b3c3b69eaaae709f96a5dc9`.
+- The commit-labelled artifact was opened in the sole Studio process and passed a fresh one-server/one-client boot smoke. Studio logged preservation of the hand-authored world, one articulated rogue-kaiju spawn, four capturable-turret registrations, server/client startup, and transition to `Active` with no project-script error.
+- The destination experience was granted access to the nine asset IDs requested by Studio (`5590111085`, `5590111156`, `5590111209`, `5590112509`, `5590111661`, `5590112408`, `5590111714`, `5590112161`, and `5590112319`) with the owner's explicit confirmation.
+- The exact artifact overwrote the existing `Kaiju Citybreakers` place at 14:01 BST. Studio displayed `Successfully published!`; one Studio process remained open and no second editor was launched.
+- A fresh owner-device session remains required for the factory capture split, transferred-unit allegiance, objective feedback, human crosshair aiming, kaiju beam aiming, touch/gamepad behavior, and representative-device performance.
