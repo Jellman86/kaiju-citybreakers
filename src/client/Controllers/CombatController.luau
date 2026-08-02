@@ -2,6 +2,7 @@
 
 local ContextActionService = game:GetService("ContextActionService")
 local Debris = game:GetService("Debris")
+local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -39,6 +40,10 @@ function CombatController.new(
 	self._aimController = aimController
 	self._chargeCooldownVisualToken = 0
 	self._beamCooldownVisualToken = 0
+	self._beamChannelToken = 0
+	self._activeBeamSequence = nil :: number?
+	self._beamSegments = {} :: { BasePart }
+	self._lastBeamImpactAt = -math.huge
 	self._sequence = 0
 	self._lastRequestedAt = -math.huge
 	self._lastChargeRequestedAt = -math.huge
@@ -109,7 +114,8 @@ function CombatController:_createAimReticle()
 	self._reticleRenderConnection = RunService.RenderStepped:Connect(function()
 		if reticle.Parent then
 			local point = self._aimController:GetAimViewportPoint()
-			reticle.Position = UDim2.fromOffset(point.X, point.Y)
+			local topLeftInset = GuiService:GetGuiInset()
+			reticle.Position = UDim2.fromOffset(point.X + topLeftInset.X, point.Y + topLeftInset.Y)
 		end
 	end)
 end
@@ -154,12 +160,34 @@ function CombatController:_requestBeam()
 
 	self._lastBeamRequestedAt = now
 	self._sequence += 1
+	local sequence = self._sequence
 	local aimDirection = self._aimController:GetAimDirection()
 	self._abilityRequestRemote:FireServer({
 		abilityId = "beam",
-		sequence = self._sequence,
+		sequence = sequence,
 		aimDirection = aimDirection,
 	})
+	self._activeBeamSequence = sequence
+	self._beamChannelToken += 1
+	local channelToken = self._beamChannelToken
+	task.spawn(function()
+		local endsAt = os.clock() + Config.Combat.BeamDurationSeconds
+		while
+			self._beamChannelToken == channelToken
+			and self._activeBeamSequence == sequence
+			and os.clock() < endsAt
+		do
+			task.wait(Config.Combat.BeamAimUpdateIntervalSeconds)
+			if self._beamChannelToken ~= channelToken then
+				break
+			end
+			self._abilityRequestRemote:FireServer({
+				abilityId = "beamAim",
+				sequence = sequence,
+				aimDirection = self._aimController:GetAimDirection(),
+			})
+		end
+	end)
 	self:_emitBeamMuzzleFeedback(aimDirection)
 	self:_startBeamCooldownVisual()
 end
@@ -179,7 +207,11 @@ function CombatController:_requestBasicAttack()
 	local character = player.Character
 	self._predictedSmashSequence = sequence
 	if not character then
-		self._abilityRequestRemote:FireServer({ abilityId = "basic", sequence = sequence })
+		self._abilityRequestRemote:FireServer({
+			abilityId = "basic",
+			sequence = sequence,
+			aimDirection = self._aimController:GetAimDirection(),
+		})
 		return
 	end
 
@@ -189,7 +221,11 @@ function CombatController:_requestBasicAttack()
 			and player.Character == character
 			and PlayerRole.IsKaiju(player)
 		then
-			self._abilityRequestRemote:FireServer({ abilityId = "basic", sequence = sequence })
+			self._abilityRequestRemote:FireServer({
+				abilityId = "basic",
+				sequence = sequence,
+				aimDirection = self._aimController:GetAimDirection(),
+			})
 		end
 	end)
 	if played then
@@ -258,6 +294,7 @@ function CombatController:_requestCharge()
 	self._abilityRequestRemote:FireServer({
 		abilityId = "charge",
 		sequence = self._sequence,
+		aimDirection = self._aimController:GetAimDirection(),
 	})
 	self:_startChargeCooldownVisual()
 end
@@ -491,43 +528,75 @@ function CombatController:_emitBeam(origin: Vector3, target: Vector3, hit: boole
 
 	local midpoint = origin + delta * 0.5
 	local beamCFrame = CFrame.lookAt(midpoint, target)
-	for index, definition in
-		{
-			{ thickness = 6.5, color = Color3.fromRGB(19, 168, 219), transparency = 0.08 },
-			{ thickness = 2.6, color = Color3.fromRGB(224, 255, 251), transparency = 0 },
-		}
-	do
-		local segment = Instance.new("Part")
-		segment.Name = `BrontideBeam{index}`
+	local definitions = {
+		{ thickness = 12, color = Color3.fromRGB(19, 168, 219), transparency = 0.12 },
+		{ thickness = 5, color = Color3.fromRGB(224, 255, 251), transparency = 0 },
+	}
+	for index, definition in definitions do
+		local segment = self._beamSegments[index]
+		if not segment or not segment.Parent then
+			segment = Instance.new("Part")
+			segment.Name = `BrontideBeam{index}`
+			segment.Material = Enum.Material.Neon
+			segment.Anchored = true
+			segment.CanCollide = false
+			segment.CanTouch = false
+			segment.CanQuery = false
+			segment.CastShadow = false
+			segment.Parent = workspace
+			self._beamSegments[index] = segment
+		end
 		segment.Size = Vector3.new(definition.thickness, definition.thickness, length)
 		segment.CFrame = beamCFrame
 		segment.Color = definition.color
-		segment.Material = Enum.Material.Neon
 		segment.Transparency = definition.transparency
-		segment.Anchored = true
-		segment.CanCollide = false
-		segment.CanTouch = false
-		segment.CanQuery = false
-		segment.CastShadow = false
-		segment.Parent = workspace
-		TweenService:Create(
-			segment,
-			TweenInfo.new(
-				Config.Combat.BeamVisualSeconds,
-				Enum.EasingStyle.Quad,
-				Enum.EasingDirection.Out
-			),
-			{ Size = Vector3.new(0.15, 0.15, length), Transparency = 1 }
-		):Play()
-		Debris:AddItem(segment, Config.Combat.BeamVisualSeconds + 0.08)
 	end
 
-	self:_emitImpactFeedback(origin, Color3.fromRGB(224, 255, 251), 3.5)
-	self:_emitImpactFeedback(
-		target,
-		if hit then Color3.fromRGB(255, 174, 74) else Color3.fromRGB(53, 225, 211),
-		if hit then 7 else 3.5
-	)
+	local now = os.clock()
+	if hit and now - self._lastBeamImpactAt >= Config.Combat.BeamSampleIntervalSeconds * 0.9 then
+		self._lastBeamImpactAt = now
+		self:_pulseCamera(4, 0.025, 0.12)
+		self:_emitImpactFeedback(target, Color3.fromRGB(255, 174, 74), 9)
+		local impact = Instance.new("Part")
+		impact.Name = "BeamImpactParticles"
+		impact.Anchored = true
+		impact.CanCollide = false
+		impact.CanTouch = false
+		impact.CanQuery = false
+		impact.Transparency = 1
+		impact.CFrame = CFrame.new(target)
+		impact.Parent = workspace
+		local sparks = Instance.new("ParticleEmitter")
+		sparks.Color =
+			ColorSequence.new(Color3.fromRGB(255, 235, 130), Color3.fromRGB(19, 168, 219))
+		sparks.LightEmission = 1
+		sparks.Lifetime = NumberRange.new(0.18, 0.42)
+		sparks.Speed = NumberRange.new(18, 42)
+		sparks.SpreadAngle = Vector2.new(180, 180)
+		sparks.Rate = 0
+		sparks.Size = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 1.8),
+			NumberSequenceKeypoint.new(1, 0),
+		})
+		sparks.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+		sparks.Parent = impact
+		sparks:Emit(22)
+		Debris:AddItem(impact, 0.55)
+	end
+end
+
+function CombatController:_finishBeamVisual()
+	for _, segment in self._beamSegments do
+		if segment.Parent then
+			TweenService:Create(
+				segment,
+				TweenInfo.new(Config.Combat.BeamVisualSeconds, Enum.EasingStyle.Quad),
+				{ Transparency = 1 }
+			):Play()
+			Debris:AddItem(segment, Config.Combat.BeamVisualSeconds + 0.05)
+		end
+	end
+	table.clear(self._beamSegments)
 end
 
 function CombatController:_emitHumanShot(origin: Vector3, target: Vector3, hit: boolean)
@@ -789,6 +858,9 @@ function CombatController:_unbindActions()
 	self:_destroyAimReticle()
 	self:_resetChargeCooldownVisual()
 	self:_resetBeamCooldownVisual()
+	self._beamChannelToken += 1
+	self._activeBeamSequence = nil
+	self:_finishBeamVisual()
 	ContextActionService:UnbindAction(ACTION_BASIC_ATTACK)
 	ContextActionService:UnbindAction(ACTION_CHARGE)
 	ContextActionService:UnbindAction(ACTION_BEAM)
@@ -869,7 +941,7 @@ function CombatController:_bindActions()
 			self:_requestBeam()
 		end
 		return Enum.ContextActionResult.Sink
-	end, true, Enum.KeyCode.R, Enum.KeyCode.ButtonX)
+	end, true, Enum.UserInputType.MouseButton2, Enum.KeyCode.R, Enum.KeyCode.ButtonX)
 	ContextActionService:SetTitle(ACTION_BEAM, "BEAM")
 	ContextActionService:SetDescription(ACTION_BEAM, "Fire Brontide's energy beam")
 	task.defer(function()
@@ -928,6 +1000,9 @@ function CombatController:Start()
 				if result.abilityId == "charge" then
 					self:_resetChargeCooldownVisual()
 				elseif result.abilityId == "beam" then
+					self._beamChannelToken += 1
+					self._activeBeamSequence = nil
+					self:_finishBeamVisual()
 					self:_resetBeamCooldownVisual()
 				end
 				return
@@ -951,9 +1026,16 @@ function CombatController:Start()
 			elseif result.abilityId == "chargeImpact" and result.effectTarget then
 				self:_pulseCamera(5, 0.04, 0.2)
 				self:_emitImpactFeedback(result.effectTarget, Color3.fromRGB(255, 147, 61), 5)
-			elseif result.abilityId == "beam" and result.effectOrigin and result.effectTarget then
-				self:_pulseCamera(if result.hitCount > 0 then 6 else 3, 0.04, 0.22)
+			elseif
+				result.abilityId == "beamTick"
+				and result.effectOrigin
+				and result.effectTarget
+			then
 				self:_emitBeam(result.effectOrigin, result.effectTarget, result.hitCount > 0)
+			elseif result.abilityId == "beamEnd" then
+				self._beamChannelToken += 1
+				self._activeBeamSequence = nil
+				self:_finishBeamVisual()
 			elseif
 				result.abilityId == "humanFire"
 				and result.effectOrigin

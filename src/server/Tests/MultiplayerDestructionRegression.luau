@@ -46,6 +46,9 @@ type ClientReport = {
 	hasSmashButton: boolean,
 	hasHumanFireButton: boolean,
 	hasAimReticle: boolean,
+	reticleXFraction: number,
+	reticleYFraction: number,
+	usesDesktopReticle: boolean,
 	characterHealth: number,
 }
 
@@ -110,6 +113,9 @@ local function parseReport(player: Player, payload: any): ClientReport?
 		or type(payload.hasSmashButton) ~= "boolean"
 		or type(payload.hasHumanFireButton) ~= "boolean"
 		or type(payload.hasAimReticle) ~= "boolean"
+		or type(payload.reticleXFraction) ~= "number"
+		or type(payload.reticleYFraction) ~= "number"
+		or type(payload.usesDesktopReticle) ~= "boolean"
 		or type(payload.characterHealth) ~= "number"
 	then
 		return nil
@@ -140,8 +146,19 @@ local function parseReport(player: Player, payload: any): ClientReport?
 		hasSmashButton = payload.hasSmashButton,
 		hasHumanFireButton = payload.hasHumanFireButton,
 		hasAimReticle = payload.hasAimReticle,
+		reticleXFraction = payload.reticleXFraction,
+		reticleYFraction = payload.reticleYFraction,
+		usesDesktopReticle = payload.usesDesktopReticle,
 		characterHealth = payload.characterHealth,
 	}
+end
+
+local function reportHasExpectedReticlePosition(report: ClientReport): boolean
+	local expectedX = if report.usesDesktopReticle
+		then 0.5 + Config.Combat.DesktopReticleHorizontalOffsetFraction
+		else 0.5
+	return math.abs(report.reticleXFraction - expectedX) <= 0.012
+		and math.abs(report.reticleYFraction - 0.5) <= 0.012
 end
 
 local function reportMatchesCollapsedState(report: ClientReport): boolean
@@ -817,8 +834,9 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 			or existingReport.cameraMax ~= Config.StarterKaiju.CameraMaxZoom
 			or existingReport.hasHumanFireButton
 			or not existingReport.hasAimReticle
+			or not reportHasExpectedReticlePosition(existingReport)
 		then
-			fail("kaiju client did not apply its role camera metrics")
+			fail("kaiju client did not apply its role camera or reticle metrics")
 			return
 		end
 		if
@@ -829,9 +847,10 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 			or lateReport.hasSmashButton
 			or not lateReport.hasHumanFireButton
 			or not lateReport.hasAimReticle
+			or not reportHasExpectedReticlePosition(lateReport)
 			or lateReport.characterHealth ~= Config.Human.MaxHealth
 		then
-			fail("human client retained kaiju camera or touch-action state")
+			fail("human client retained kaiju camera, reticle, or touch-action state")
 			return
 		end
 
@@ -894,6 +913,11 @@ function MultiplayerDestructionRegression.TryStart(roundService: RoundService, r
 			humanHadSmashButton = lateReport.hasSmashButton,
 			humanHadFireButton = lateReport.hasHumanFireButton,
 			bothHadAimReticle = existingReport.hasAimReticle and lateReport.hasAimReticle,
+			kaijuReticle = Vector2.new(
+				existingReport.reticleXFraction,
+				existingReport.reticleYFraction
+			),
+			humanReticle = Vector2.new(lateReport.reticleXFraction, lateReport.reticleYFraction),
 			kaijuHealthAfterHumanFire = kaijuHealthAfterHumanFire,
 			kaijuRespawnHealth = kaijuRespawnHealth,
 			contactVelocity = contactVelocity,

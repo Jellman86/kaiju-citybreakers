@@ -10,6 +10,7 @@ TurretContract.State = table.freeze({
 	Capturing = "Capturing",
 	Contested = "Contested",
 	Owned = "Owned",
+	Destroyed = "Destroyed",
 })
 
 TurretContract.Attribute = table.freeze({
@@ -28,6 +29,8 @@ TurretContract.Attribute = table.freeze({
 	AimTargetPosition = "AimTargetPosition",
 	ShotSequence = "ShotSequence",
 	FactoryId = "FactoryId",
+	Health = "TurretHealth",
+	MaxHealth = "TurretMaxHealth",
 })
 
 TurretContract.Aim = table.freeze({

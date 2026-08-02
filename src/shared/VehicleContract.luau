@@ -29,6 +29,7 @@ VehicleContract.Attribute = table.freeze({
 	Health = "VehicleHealth",
 	MaxHealth = "VehicleMaxHealth",
 	TargetUserId = "TargetUserId",
+	TargetEntityId = "TargetEntityId",
 	AimTargetPosition = "AimTargetPosition",
 	AttackKind = "VehicleAttackKind",
 	AttackSequence = "VehicleAttackSequence",

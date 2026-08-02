@@ -63,6 +63,10 @@ Tracks district objectives and emits progress. Objectives reference tagged world
 
 Runs a modest number of server-owned decisions. Uses simple state machines and throttled sensing rather than expensive per-frame pathfinding.
 
+### FactoryService and TurretService
+
+Neutral factories are dormant server-owned objectives. Human capture starts capped allied vehicle production and linked-turret ownership; kaiju attacks destroy turrets or the linked factory structure instead of capturing. Vehicle targeting uses throttled line of sight, target hysteresis/memory, travel-time lead and route-stuck recovery. Turret health, ownership, firing, projectile travel and reset remain authoritative.
+
 ### RewardService
 
 Calculates round results on the server. Persistence is not implemented until the loop passes the vertical-slice gate.
@@ -70,7 +74,7 @@ Calculates round results on the server. Persistence is not implemented until the
 ## Planned client controllers
 
 - InputController: device-independent actions.
-- AimController: one bounded reticle ray for both roles, immediate human aim, smoothed kaiju head/Beam aim, camera-forward body facing for keyboard/mouse, and centred gamepad/touch intent.
+- AimController: one bounded reticle ray for both roles and all directional attacks, fixed just right of centre for the locked-mouse desktop camera, centred for gamepad/touch, immediate for humans, smoothed for Brontide's head/attacks, and camera-forward body facing for keyboard/mouse.
 - CameraController: locked-mouse desktop orbit for both roles, including a human-scale over-the-shoulder offset, scale, obstruction, zoom, shake, and accessibility settings.
 - KaijuController: predicted animation and ability feedback.
 - RoundController: local round snapshot and timer.
@@ -88,7 +92,7 @@ Use CollectionService tags and attributes so world building does not depend on f
 - `KaijuCharacters`, `HumanCharacters`, and `HumanScaleGeometry` are registered collision groups. Character-to-character contact is non-colliding, while tagged human-scale geometry can block humans without trapping or flinging the kaiju.
 - Combat remotes reject human characters before cooldown or spatial work. Collision groups improve physical stability but never grant damage authority.
 - Both roles use the custom scale-aware keyboard/mouse camera and retain native gamepad/touch camera behavior. Humans receive no kaiju actions.
-- The human instead receives one cross-device `FIRE` action. Both roles share the same visible reticle: keyboard/mouse moves it within safe viewport bounds while touch/gamepad keep it centred. Both roles use native Humanoid health/death, have passive regeneration disabled, and respawn through the server's manual role-preserving lifecycle.
+- The human instead receives one cross-device `FIRE` action. Both roles share the same visible reticle: keyboard/mouse fixes it just right of centre while touch/gamepad keep it centred. Rendering accounts for Roblox's GUI top inset while `ViewportPointToRay()` retains camera-viewport coordinates, so the visible point and attack ray agree. Both roles use native Humanoid health/death, have passive regeneration disabled, and respawn through the server's manual role-preserving lifecycle.
 - `KaijuSpawn`, `HumanSpawn`, and the tagged doorway reference are a feasibility lab, not final production level design.
 
 ### `Destructible`

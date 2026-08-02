@@ -8,6 +8,7 @@ local RunService = game:GetService("RunService")
 local Config = require(ReplicatedStorage.Shared.Config)
 local DestructibleContract = require(ReplicatedStorage.Shared.DestructibleContract)
 local PlayerRole = require(ReplicatedStorage.Shared.PlayerRole)
+local TurretContract = require(ReplicatedStorage.Shared.TurretContract)
 local Types = require(ReplicatedStorage.Shared.Types)
 local VehicleContract = require(ReplicatedStorage.Shared.VehicleContract)
 
@@ -20,6 +21,13 @@ type RateState = {
 	lastBasicAttack: number,
 	lastCharge: number,
 	lastBeam: number,
+}
+
+type BeamSession = {
+	token: number,
+	sequence: number,
+	direction: Vector3,
+	endsAt: number,
 }
 
 local CombatService = {}
@@ -63,12 +71,25 @@ local function findVehicleOwnerTeam(part: BasePart): string?
 	return nil
 end
 
+local function findTurretId(part: BasePart): string?
+	local candidate: Instance? = part
+	while candidate and candidate ~= workspace do
+		if candidate:IsA("Model") and CollectionService:HasTag(candidate, TurretContract.Tag) then
+			local id = candidate:GetAttribute(TurretContract.Attribute.Id)
+			return if typeof(id) == "string" and id ~= "" then id else nil
+		end
+		candidate = candidate.Parent
+	end
+	return nil
+end
+
 function CombatService.new(
 	abilityRequestRemote: RemoteEvent,
 	abilityResultRemote: RemoteEvent,
 	destructionService: any,
 	roundService: any,
-	enemyService: any
+	enemyService: any,
+	turretService: any
 )
 	local self = setmetatable({}, CombatService)
 
@@ -77,10 +98,13 @@ function CombatService.new(
 	self._destructionService = destructionService
 	self._roundService = roundService
 	self._enemyService = enemyService
+	self._turretService = turretService
 	self._rateStates = {} :: { [Player]: RateState }
 	self._lastContactDamage = {} :: { [Player]: number }
 	self._contactAccumulator = 0
 	self._connections = {} :: { RBXScriptConnection }
+	self._beamSessions = {} :: { [Player]: BeamSession }
+	self._nextBeamToken = 0
 
 	return self
 end
@@ -192,6 +216,29 @@ function CombatService:_damageHumansInBox(
 	return hitCount
 end
 
+function CombatService:_damageTurretsInBox(
+	attackerCharacter: Model,
+	hitboxCFrame: CFrame,
+	hitboxSize: Vector3,
+	damage: number
+): number
+	local overlapParams = OverlapParams.new()
+	overlapParams.FilterType = Enum.RaycastFilterType.Exclude
+	overlapParams.FilterDescendantsInstances = { attackerCharacter }
+	local seen = {} :: { [string]: boolean }
+	local hitCount = 0
+	for _, part in workspace:GetPartBoundsInBox(hitboxCFrame, hitboxSize, overlapParams) do
+		local turretId = findTurretId(part)
+		if turretId and not seen[turretId] then
+			seen[turretId] = true
+			if self._turretService:Damage(turretId, damage) then
+				hitCount += 1
+			end
+		end
+	end
+	return hitCount
+end
+
 local function getValidatedHumanAimDirection(rootPart: BasePart, requestedDirection: any): Vector3
 	local fallback = rootPart.CFrame.LookVector
 	if typeof(requestedDirection) ~= "Vector3" then
@@ -213,6 +260,39 @@ local function getValidatedHumanAimDirection(rootPart: BasePart, requestedDirect
 		return fallback
 	end
 	return direction
+end
+
+local function getValidatedKaijuHorizontalAimDirection(
+	rootPart: BasePart,
+	requestedDirection: any
+): Vector3
+	local rootForward = rootPart.CFrame.LookVector
+	local fallback = Vector3.new(rootForward.X, 0, rootForward.Z)
+	if fallback.Magnitude <= 0.001 then
+		fallback = -Vector3.zAxis
+	else
+		fallback = fallback.Unit
+	end
+	if typeof(requestedDirection) ~= "Vector3" then
+		return fallback
+	end
+	if
+		requestedDirection.X ~= requestedDirection.X
+		or requestedDirection.Y ~= requestedDirection.Y
+		or requestedDirection.Z ~= requestedDirection.Z
+		or requestedDirection.Magnitude < 0.5
+	then
+		return fallback
+	end
+
+	local horizontalDirection = Vector3.new(requestedDirection.X, 0, requestedDirection.Z)
+	if
+		horizontalDirection.Magnitude <= 0.001
+		or horizontalDirection.Unit:Dot(fallback) < math.cos(math.rad(75))
+	then
+		return fallback
+	end
+	return horizontalDirection.Unit
 end
 
 function CombatService:_performHumanFire(player: Player, sequence: number, requestedDirection: any)
@@ -301,7 +381,11 @@ function CombatService:_performHumanFire(player: Player, sequence: number, reque
 	})
 end
 
-function CombatService:_performBasicAttack(player: Player, sequence: number)
+function CombatService:_performBasicAttack(
+	player: Player,
+	sequence: number,
+	requestedDirection: any
+)
 	local state = self._rateStates[player]
 	assert(state, "Rate state must exist before performing an attack")
 
@@ -347,7 +431,9 @@ function CombatService:_performBasicAttack(player: Player, sequence: number)
 	overlapParams.ExcludeInstances = { character }
 	overlapParams.MaxParts = Config.Combat.MaximumStructuresPerAttack
 
-	local hitboxCFrame = rootPart.CFrame * CFrame.new(0, 0, -Config.Combat.BasicAttackForwardOffset)
+	local forward = getValidatedKaijuHorizontalAimDirection(rootPart, requestedDirection)
+	local attackCFrame = CFrame.lookAt(rootPart.Position, rootPart.Position + forward)
+	local hitboxCFrame = attackCFrame * CFrame.new(0, 0, -Config.Combat.BasicAttackForwardOffset)
 	local parts = workspace:GetPartBoundsInBox(
 		hitboxCFrame,
 		Config.Combat.BasicAttackHitboxSize,
@@ -392,6 +478,12 @@ function CombatService:_performBasicAttack(player: Player, sequence: number)
 		Config.Combat.BasicAttackHitboxSize,
 		Config.Combat.BasicAttackHumanDamage
 	)
+	hitCount += self:_damageTurretsInBox(
+		character,
+		hitboxCFrame,
+		Config.Combat.BasicAttackHitboxSize,
+		Config.Combat.BasicAttackTurretDamage
+	)
 
 	self:_sendResult(player, {
 		accepted = true,
@@ -403,7 +495,7 @@ function CombatService:_performBasicAttack(player: Player, sequence: number)
 	})
 end
 
-function CombatService:_performCharge(player: Player, sequence: number)
+function CombatService:_performCharge(player: Player, sequence: number, requestedDirection: any)
 	local state = self._rateStates[player]
 	assert(state, "Rate state must exist before performing a charge")
 
@@ -443,7 +535,8 @@ function CombatService:_performCharge(player: Player, sequence: number)
 	end
 
 	state.lastCharge = now
-	local forward = rootPart.CFrame.LookVector
+	local forward = getValidatedKaijuHorizontalAimDirection(rootPart, requestedDirection)
+	rootPart.CFrame = CFrame.lookAt(rootPart.Position, rootPart.Position + forward)
 	local attachment = Instance.new("Attachment")
 	attachment.Name = "ChargeAttachment"
 	attachment.Parent = rootPart
@@ -519,6 +612,12 @@ function CombatService:_performCharge(player: Player, sequence: number)
 					end
 				end
 			end
+			impactCount += self:_damageTurretsInBox(
+				character,
+				impactCFrame,
+				Config.Combat.ChargeImpactHitboxSize,
+				Config.Combat.ChargeTurretDamage
+			)
 			if impactCount >= Config.Combat.MaximumChargeStructures then
 				break
 			end
@@ -566,54 +665,22 @@ local function getValidatedBeamDirection(rootPart: BasePart, requestedDirection:
 	return horizontalDirection.Unit * horizontalScale + Vector3.new(0, clampedY, 0)
 end
 
-function CombatService:_performBeam(player: Player, sequence: number, requestedDirection: any)
-	local state = self._rateStates[player]
-	assert(state, "Rate state must exist before performing a beam")
-
-	local now = os.clock()
-	if now - state.lastBeam < Config.Combat.BeamCooldownSeconds then
-		self:_sendResult(player, {
-			accepted = false,
-			abilityId = "beam",
-			sequence = sequence,
-			hitCount = 0,
-			reason = "cooldown",
-		})
-		return
-	end
-
+function CombatService:_sampleBeam(player: Player, session: BeamSession): boolean
 	if self._roundService:GetPhase() ~= "Active" then
-		self:_sendResult(player, {
-			accepted = false,
-			abilityId = "beam",
-			sequence = sequence,
-			hitCount = 0,
-			reason = "round_inactive",
-		})
-		return
+		return false
 	end
-
 	local character, rootPart = self:_getLivingCharacter(player)
 	if not character or not rootPart then
-		self:_sendResult(player, {
-			accepted = false,
-			abilityId = "beam",
-			sequence = sequence,
-			hitCount = 0,
-			reason = "invalid_character",
-		})
-		return
+		return false
 	end
 
-	state.lastBeam = now
-	local aimDirection = getValidatedBeamDirection(rootPart, requestedDirection)
+	local aimDirection = getValidatedBeamDirection(rootPart, session.direction)
 	local head = character:FindFirstChild("Head")
-	local mouthPosition = if head and head:IsA("BasePart")
+	local origin = if head and head:IsA("BasePart")
 		then head.Position
 			+ Vector3.new(0, Config.Combat.BeamMouthVerticalOffset, 0)
 			+ aimDirection * Config.Combat.BeamMouthForwardOffset
 		else rootPart.Position + Vector3.new(0, Config.Combat.BeamOriginHeight, 0)
-	local origin = mouthPosition
 	local direction = aimDirection * Config.Combat.BeamRange
 	local raycastParams = RaycastParams.new()
 	raycastParams.CollisionGroup = DestructibleContract.AttackQueryCollisionGroup
@@ -636,11 +703,33 @@ function CombatService:_performBeam(player: Player, sequence: number, requestedD
 				normal = raycastResult.Normal,
 			})
 		then
-			hitCount = 1
+			hitCount += 1
 		end
 		local vehicleId = findVehicleId(raycastResult.Instance)
 		if vehicleId and self._enemyService:Damage(vehicleId, Config.Combat.BeamHumanDamage) then
 			hitCount += 1
+		end
+	end
+
+	local turretModels = CollectionService:GetTagged(TurretContract.Tag)
+	if #turretModels > 0 then
+		local turretParams = RaycastParams.new()
+		turretParams.FilterType = Enum.RaycastFilterType.Include
+		turretParams.FilterDescendantsInstances = turretModels
+		turretParams.IgnoreWater = true
+		local turretResult =
+			workspace:Spherecast(origin, Config.Combat.BeamCastRadius, direction, turretParams)
+		if turretResult then
+			local turretId = findTurretId(turretResult.Instance)
+			if
+				turretId
+				and self._turretService:Damage(turretId, Config.Combat.BeamTurretDamage)
+			then
+				hitCount += 1
+				if (turretResult.Position - origin).Magnitude < (target - origin).Magnitude then
+					target = turretResult.Position
+				end
+			end
 		end
 	end
 
@@ -673,12 +762,85 @@ function CombatService:_performBeam(player: Player, sequence: number, requestedD
 
 	self:_sendResult(player, {
 		accepted = true,
-		abilityId = "beam",
-		sequence = sequence,
+		abilityId = "beamTick",
+		sequence = session.sequence,
 		hitCount = hitCount,
 		effectOrigin = origin,
 		effectTarget = target,
 	})
+	return true
+end
+
+function CombatService:_performBeam(player: Player, sequence: number, requestedDirection: any)
+	local state = self._rateStates[player]
+	assert(state, "Rate state must exist before performing a beam")
+
+	local now = os.clock()
+	local rejectionReason = nil :: string?
+	if now - state.lastBeam < Config.Combat.BeamCooldownSeconds then
+		rejectionReason = "cooldown"
+	elseif self._roundService:GetPhase() ~= "Active" then
+		rejectionReason = "round_inactive"
+	end
+	local character, rootPart = self:_getLivingCharacter(player)
+	if not character or not rootPart then
+		rejectionReason = "invalid_character"
+	end
+	if rejectionReason or not rootPart then
+		self:_sendResult(player, {
+			accepted = false,
+			abilityId = "beam",
+			sequence = sequence,
+			hitCount = 0,
+			reason = rejectionReason,
+		})
+		return
+	end
+
+	state.lastBeam = now
+	self._nextBeamToken += 1
+	local session: BeamSession = {
+		token = self._nextBeamToken,
+		sequence = sequence,
+		direction = getValidatedBeamDirection(rootPart, requestedDirection),
+		endsAt = now + Config.Combat.BeamDurationSeconds,
+	}
+	self._beamSessions[player] = session
+	self:_sendResult(player, {
+		accepted = true,
+		abilityId = "beamStart",
+		sequence = sequence,
+		hitCount = 0,
+	})
+
+	task.spawn(function()
+		while self._beamSessions[player] == session and os.clock() < session.endsAt do
+			if not self:_sampleBeam(player, session) then
+				break
+			end
+			task.wait(Config.Combat.BeamSampleIntervalSeconds)
+		end
+		if self._beamSessions[player] == session then
+			self._beamSessions[player] = nil
+			self:_sendResult(player, {
+				accepted = true,
+				abilityId = "beamEnd",
+				sequence = sequence,
+				hitCount = 0,
+			})
+		end
+	end)
+end
+
+function CombatService:_updateBeamAim(player: Player, sequence: number, requestedDirection: any)
+	local session = self._beamSessions[player]
+	if not session or session.sequence ~= sequence or os.clock() >= session.endsAt then
+		return
+	end
+	local _, rootPart = self:_getLivingCharacter(player)
+	if rootPart then
+		session.direction = getValidatedBeamDirection(rootPart, requestedDirection)
+	end
 end
 
 function CombatService:_onAbilityRequest(player: Player, payload: any)
@@ -698,6 +860,7 @@ function CombatService:_onAbilityRequest(player: Player, payload: any)
 			and abilityId ~= "basic"
 			and abilityId ~= "charge"
 			and abilityId ~= "beam"
+			and abilityId ~= "beamAim"
 		)
 		or typeof(sequence) ~= "number"
 		or sequence % 1 ~= 0
@@ -709,9 +872,11 @@ function CombatService:_onAbilityRequest(player: Player, payload: any)
 	if abilityId == "humanFire" then
 		self:_performHumanFire(player, sequence, payload.aimDirection)
 	elseif abilityId == "basic" then
-		self:_performBasicAttack(player, sequence)
+		self:_performBasicAttack(player, sequence, payload.aimDirection)
 	elseif abilityId == "charge" then
-		self:_performCharge(player, sequence)
+		self:_performCharge(player, sequence, payload.aimDirection)
+	elseif abilityId == "beamAim" then
+		self:_updateBeamAim(player, sequence, payload.aimDirection)
 	else
 		self:_performBeam(player, sequence, payload.aimDirection)
 	end
@@ -804,6 +969,7 @@ function CombatService:Start()
 		Players.PlayerRemoving:Connect(function(player)
 			self._rateStates[player] = nil
 			self._lastContactDamage[player] = nil
+			self._beamSessions[player] = nil
 		end)
 	)
 end
@@ -815,6 +981,7 @@ function CombatService:Stop()
 	table.clear(self._connections)
 	table.clear(self._rateStates)
 	table.clear(self._lastContactDamage)
+	table.clear(self._beamSessions)
 	self._contactAccumulator = 0
 end
 

@@ -53,15 +53,16 @@ local kaijuService = KaijuService.new(function(player)
 	playtestService:MarkControlGranted(player)
 end)
 local enemyService = EnemyService.new(roundService)
+local factoryService = FactoryService.new(roundService, enemyService)
+local turretService = TurretService.new(turretFiredRemote, roundService, enemyService)
 local combatService = CombatService.new(
 	abilityRequestRemote,
 	abilityResultRemote,
 	destructionService,
 	roundService,
-	enemyService
+	enemyService,
+	turretService
 )
-local factoryService = FactoryService.new(roundService, enemyService)
-local turretService = TurretService.new(turretFiredRemote, roundService, enemyService)
 
 playtestService:Start()
 prototypeWorldService:Start()

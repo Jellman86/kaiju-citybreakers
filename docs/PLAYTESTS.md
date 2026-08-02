@@ -2,6 +2,19 @@
 
 Automated Studio runs validate integration and instrumentation; they do not count as human playtest evidence. Human sessions record age band only when freely volunteered and necessary, never names, account IDs, or chat.
 
+## 2026-08-02 — Dormant factory, asymmetric turrets, sustained Beam, and vehicle-AI smoke
+
+- Static gate: repository standards, StyLua, Selene, parse validation, Rojo build, and `git diff --check` passed with zero errors or warnings.
+- A single freshly restarted Studio process loaded the rebuilt `build/KaijuCitybreakers.rbxlx`; server and client reached `Active`, registered four turrets, spawned the bounded rogue kaiju, and emitted no gameplay-script runtime error.
+- An earlier in-memory run was rejected as evidence: Studio reused an already-open place containing three saved runtime vehicle proxies. Startup now deletes a stale `RuntimeReinforcements` folder and resets `SpawnSequence` before registration, preventing an Edit-time artifact from impersonating neutral production.
+- After several active minutes the neutral factory still reported `Operational`, spawn sequence `0`, and zero runtime vehicles. A stable server-side human hold then changed it to `Human/Captured` and produced exactly one first vehicle.
+- A human hold captured a neutral turret as `Human/Owned`; the same-duration kaiju hold left another turret `Neutral`, with progress `0`.
+- One normal client-to-server Beam request kept exactly two reusable local beam segments active, ran for the configured four-second session, and changed the selected turret from `300/Neutral` to `0/Destroyed`.
+- The captured factory reached its bounded `2` tank/`1` helicopter cap. When a hostile kaiju was placed at a visible 95-stud test position, a tank entered `Engaging`, replicated a stable `player:` target ID and aim point, fired twice, and applied `180` total damage through normal projectiles.
+- The desktop reticle measured `0.555` of viewport width and `0.500` of viewport height after the GUI-inset correction.
+
+This is an engineering smoke, not a human gameplay result. Physical-device and two-player tests must still judge capture readability, Beam steering/comfort, turret destruction feedback, vehicle fairness, and fun after publication.
+
 ## 2026-08-01 — Kaiju Feel Lab integration
 
 - Build commit: `3583660`

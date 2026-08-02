@@ -111,18 +111,11 @@ end
 
 function AimController:_updateAimViewportPoint(camera: Camera): Vector2
 	local viewportSize = camera.ViewportSize
-	local center = viewportSize * 0.5
-	if UserInputService.PreferredInput ~= Enum.PreferredInput.KeyboardAndMouse then
-		self._aimViewportPoint = center
-		return center
-	end
-
-	local point = self._aimViewportPoint or center
-	if UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter then
-		point += UserInputService:GetMouseDelta() * Config.Combat.MouseReticleDeltaScale
-	else
-		point = UserInputService:GetMouseLocation()
-	end
+	local horizontalOffset = if UserInputService.PreferredInput
+			== Enum.PreferredInput.KeyboardAndMouse
+		then Config.Combat.DesktopReticleHorizontalOffsetFraction
+		else 0
+	local point = Vector2.new(viewportSize.X * (0.5 + horizontalOffset), viewportSize.Y * 0.5)
 
 	local margin = Vector2.new(
 		math.max(24, viewportSize.X * Config.Combat.ReticleSafeMarginFraction),
@@ -240,7 +233,7 @@ function AimController:GetAimViewportPoint(): Vector2
 	if not camera then
 		return Vector2.zero
 	end
-	return self._aimViewportPoint or camera.ViewportSize * 0.5
+	return self:_updateAimViewportPoint(camera)
 end
 
 function AimController:Start()

@@ -51,6 +51,11 @@ type VehicleRecord = {
 	routeIndex: number,
 	lastShotAt: number,
 	attackSequence: number,
+	targetEntityId: string,
+	targetLastSeenAt: number,
+	lastKnownTargetPosition: Vector3?,
+	lastProgressPosition: Vector3,
+	lastProgressAt: number,
 }
 
 type ProjectileRecord = {
@@ -384,10 +389,12 @@ function FactoryService:_resetFactory(record: FactoryRecord)
 	record.ownerTeam = record.initialOwnerTeam
 	record.captureProgress = 0
 	record.captureTeam = FactoryContract.Team.Neutral
+	record.spawnSequence = 0
 	record.nextSpawnAt = os.clock() + 2
 	setAttributeIfChanged(record.model, FactoryContract.Attribute.OwnerTeam, record.ownerTeam)
 	setAttributeIfChanged(record.model, FactoryContract.Attribute.CaptureTeam, record.captureTeam)
 	setAttributeIfChanged(record.model, FactoryContract.Attribute.CaptureProgress, 0)
+	setAttributeIfChanged(record.model, FactoryContract.Attribute.SpawnSequence, 0)
 	self:_setFactoryState(record, FactoryContract.State.Operational)
 end
 
@@ -481,6 +488,7 @@ function FactoryService:_captureNearbyTurrets(record: FactoryRecord, ownerTeam: 
 		if
 			instance:IsA("Model")
 			and instance:GetAttribute(TurretContract.Attribute.FactoryId) == record.id
+			and (instance:GetAttribute(TurretContract.Attribute.Health) or 0) > 0
 		then
 			instance:SetAttribute(TurretContract.Attribute.OwnerTeam, ownerTeam)
 			instance:SetAttribute(TurretContract.Attribute.CaptureState, TurretContract.State.Owned)
@@ -496,6 +504,8 @@ function FactoryService:_transferVehicles(record: FactoryRecord, ownerTeam: stri
 			vehicle.ownerTeam = ownerTeam
 			setAttributeIfChanged(vehicle.model, VehicleContract.Attribute.OwnerTeam, ownerTeam)
 			setAttributeIfChanged(vehicle.model, VehicleContract.Attribute.TargetUserId, 0)
+			setAttributeIfChanged(vehicle.model, VehicleContract.Attribute.TargetEntityId, "")
+			vehicle.targetEntityId = ""
 		end
 	end
 	for _, projectile in self._projectiles do
@@ -563,6 +573,7 @@ function FactoryService:_updateCapture(record: FactoryRecord, dt: number)
 				record.ownerTeam
 			)
 			self:_setFactoryState(record, FactoryContract.State.Captured)
+			record.nextSpawnAt = os.clock() + 0.75
 			self:_captureNearbyTurrets(record, record.ownerTeam)
 			self:_transferVehicles(record, record.ownerTeam)
 		end
@@ -623,6 +634,7 @@ function FactoryService:_spawnVehicle(record: FactoryRecord, archetype: VehicleA
 	model:SetAttribute(VehicleContract.Attribute.Health, maximumHealth)
 	model:SetAttribute(VehicleContract.Attribute.MaxHealth, maximumHealth)
 	model:SetAttribute(VehicleContract.Attribute.TargetUserId, 0)
+	model:SetAttribute(VehicleContract.Attribute.TargetEntityId, "")
 	model:SetAttribute(VehicleContract.Attribute.AttackSequence, 0)
 	CollectionService:AddTag(model, VehicleContract.Tag)
 	self._vehicles[id] = {
@@ -641,6 +653,11 @@ function FactoryService:_spawnVehicle(record: FactoryRecord, archetype: VehicleA
 		routeIndex = 1,
 		lastShotAt = -math.huge,
 		attackSequence = 0,
+		targetEntityId = "",
+		targetLastSeenAt = -math.huge,
+		lastKnownTargetPosition = nil,
+		lastProgressPosition = spawn.Position,
+		lastProgressAt = os.clock(),
 	}
 	setAttributeIfChanged(
 		record.model,
@@ -652,8 +669,8 @@ end
 
 function FactoryService:_trySpawn(record: FactoryRecord, now: number)
 	if
-		record.state == FactoryContract.State.Destroyed
-		or record.ownerTeam == FactoryContract.Team.Kaiju
+		record.state ~= FactoryContract.State.Captured
+		or record.ownerTeam ~= FactoryContract.Team.Human
 		or now < record.nextSpawnAt
 	then
 		return
@@ -696,12 +713,59 @@ function FactoryService:_getVehicleTargets(record: VehicleRecord, range: number)
 	return targets
 end
 
-function FactoryService:_moveVehicle(record: VehicleRecord, dt: number)
+function FactoryService:_hasVehicleLineOfSight(record: VehicleRecord, target: CombatTarget): boolean
+	local origin = record.rootPart.Position
+		+ (
+			if record.archetype == VehicleContract.Archetype.Tank
+				then Vector3.new(0, 5.7, 0)
+				else Vector3.new(0, -1, 0)
+		)
+	local offset = target.rootPart.Position - origin
+	if offset.Magnitude < 0.1 then
+		return true
+	end
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = { record.model }
+	params.IgnoreWater = false
+	local result = workspace:Raycast(origin, offset, params)
+	return result == nil or result.Instance:IsDescendantOf(target.character)
+end
+
+function FactoryService:_selectVehicleTarget(
+	record: VehicleRecord,
+	range: number,
+	now: number
+): CombatTarget?
+	local best = nil :: CombatTarget?
+	local bestScore = math.huge
+	for _, target in self:_getVehicleTargets(record, range) do
+		if self:_hasVehicleLineOfSight(record, target) then
+			local score = target.distance
+			if target.entityId == record.targetEntityId then
+				score *= Config.Factories.VehicleCurrentTargetScoreMultiplier
+			end
+			if score < bestScore then
+				best = target
+				bestScore = score
+			end
+		end
+	end
+	if best then
+		record.targetEntityId = best.entityId
+		record.targetLastSeenAt = now
+		record.lastKnownTargetPosition = best.rootPart.Position
+	end
+	return best
+end
+
+function FactoryService:_moveVehicle(record: VehicleRecord, dt: number, now: number)
 	if #record.route == 0 then
 		return
 	end
 	local node = record.route[record.routeIndex]
 	if not node or not node.Parent then
+		record.routeIndex = record.routeIndex % #record.route + 1
 		return
 	end
 	local current = record.model:GetPivot()
@@ -712,6 +776,20 @@ function FactoryService:_moveVehicle(record: VehicleRecord, dt: number)
 	local offset = target - current.Position
 	if offset.Magnitude <= Config.Factories.RouteArrivalDistance then
 		record.routeIndex = record.routeIndex % #record.route + 1
+		record.lastProgressPosition = current.Position
+		record.lastProgressAt = now
+		return
+	end
+	if
+		(current.Position - record.lastProgressPosition).Magnitude
+		>= Config.Factories.VehicleStuckDistance
+	then
+		record.lastProgressPosition = current.Position
+		record.lastProgressAt = now
+	elseif now - record.lastProgressAt >= Config.Factories.VehicleStuckSeconds then
+		record.routeIndex = record.routeIndex % #record.route + 1
+		record.lastProgressPosition = current.Position
+		record.lastProgressAt = now
 		return
 	end
 	local speed = if record.archetype == VehicleContract.Archetype.Tank
@@ -734,14 +812,19 @@ function FactoryService:_launchProjectile(record: VehicleRecord, target: CombatT
 	local origin = record.rootPart.Position
 		+ (if isTank then Vector3.new(0, 5.7, 0) else Vector3.new(0, -1, 0))
 	local targetPosition = target.rootPart.Position
-		+ target.rootPart.AssemblyLinearVelocity * (if isTank then 0.25 else 0.08)
+	local speed = if isTank
+		then Config.Factories.TankProjectileSpeed
+		else Config.Factories.HelicopterProjectileSpeed
+	local travelSeconds = math.clamp(
+		(targetPosition - origin).Magnitude / speed,
+		0,
+		Config.Factories.VehicleMaximumLeadSeconds
+	)
+	targetPosition += target.rootPart.AssemblyLinearVelocity * travelSeconds
 	local offset = targetPosition - origin
 	if offset.Magnitude < 1 then
 		return
 	end
-	local speed = if isTank
-		then Config.Factories.TankProjectileSpeed
-		else Config.Factories.HelicopterProjectileSpeed
 	local kind = if isTank
 		then VehicleContract.Attack.CannonShell
 		else VehicleContract.Attack.HelicopterBullet
@@ -786,11 +869,11 @@ function FactoryService:_stepVehicle(record: VehicleRecord, dt: number, now: num
 	local attackRange = if record.archetype == VehicleContract.Archetype.Tank
 		then Config.Factories.TankAttackRange
 		else Config.Factories.HelicopterAttackRange
-	local targets = self:_getVehicleTargets(
+	local target = self:_selectVehicleTarget(
 		record,
-		math.min(attackRange, Config.Factories.VehicleDetectionRange)
+		math.min(attackRange, Config.Factories.VehicleDetectionRange),
+		now
 	)
-	local target = targets[1]
 	if target then
 		setAttributeIfChanged(
 			record.model,
@@ -801,6 +884,11 @@ function FactoryService:_stepVehicle(record: VehicleRecord, dt: number, now: num
 			record.model,
 			VehicleContract.Attribute.TargetUserId,
 			if target.player then target.player.UserId else 0
+		)
+		setAttributeIfChanged(
+			record.model,
+			VehicleContract.Attribute.TargetEntityId,
+			target.entityId
 		)
 		setAttributeIfChanged(
 			record.model,
@@ -828,8 +916,13 @@ function FactoryService:_stepVehicle(record: VehicleRecord, dt: number, now: num
 			VehicleContract.Attribute.State,
 			VehicleContract.State.Advancing
 		)
-		setAttributeIfChanged(record.model, VehicleContract.Attribute.TargetUserId, 0)
-		self:_moveVehicle(record, dt)
+		if now - record.targetLastSeenAt > Config.Factories.VehicleTargetMemorySeconds then
+			record.targetEntityId = ""
+			record.lastKnownTargetPosition = nil
+			setAttributeIfChanged(record.model, VehicleContract.Attribute.TargetUserId, 0)
+			setAttributeIfChanged(record.model, VehicleContract.Attribute.TargetEntityId, "")
+		end
+		self:_moveVehicle(record, dt, now)
 	end
 end
 
@@ -973,6 +1066,10 @@ end
 
 function FactoryService:Start()
 	self._enemyService:RegisterTargetProvider("FactoryVehicles", self)
+	local staleRuntime = workspace:FindFirstChild(FactoryContract.RuntimeFolderName, true)
+	if staleRuntime and staleRuntime:IsA("Folder") then
+		staleRuntime:Destroy()
+	end
 	for _, instance in CollectionService:GetTagged(FactoryContract.Tag) do
 		self:_register(instance)
 	end

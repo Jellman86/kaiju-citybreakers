@@ -41,6 +41,9 @@ type TurretRecord = {
 	targetUserId: number,
 	targetEntityId: string,
 	targetAcquiredAt: number,
+	health: number,
+	maxHealth: number,
+	partStates: { [BasePart]: { transparency: number, canQuery: boolean } },
 }
 
 type ProjectileRecord = {
@@ -233,6 +236,13 @@ function TurretService:_reset(record: TurretRecord)
 	self:_clearTarget(record)
 	record.lastShotAt = -math.huge
 	record.shotSequence = 0
+	record.health = record.maxHealth
+	for part, state in record.partStates do
+		if part.Parent then
+			part.Transparency = state.transparency
+			part.CanQuery = state.canQuery
+		end
+	end
 	self:_setCaptureState(
 		record,
 		TurretContract.NeutralTeam,
@@ -241,6 +251,8 @@ function TurretService:_reset(record: TurretRecord)
 		0
 	)
 	setAttributeIfChanged(record.model, TurretContract.Attribute.ShotSequence, 0)
+	setAttributeIfChanged(record.model, TurretContract.Attribute.Health, record.health)
+	setAttributeIfChanged(record.model, TurretContract.Attribute.MaxHealth, record.maxHealth)
 end
 
 function TurretService:_register(instance: Instance)
@@ -276,6 +288,15 @@ function TurretService:_register(instance: Instance)
 		return
 	end
 
+	local partStates = {} :: { [BasePart]: { transparency: number, canQuery: boolean } }
+	for _, descendant in instance:GetDescendants() do
+		if descendant:IsA("BasePart") then
+			partStates[descendant] = {
+				transparency = descendant.Transparency,
+				canQuery = descendant.CanQuery,
+			}
+		end
+	end
 	local record: TurretRecord = {
 		model = instance,
 		muzzle = muzzle,
@@ -288,6 +309,9 @@ function TurretService:_register(instance: Instance)
 		targetUserId = 0,
 		targetEntityId = "",
 		targetAcquiredAt = 0,
+		health = Config.Turrets.MaximumHealth,
+		maxHealth = Config.Turrets.MaximumHealth,
+		partStates = partStates,
 	}
 	self._records[instance] = record
 	self._ids[turretId] = instance
@@ -317,6 +341,9 @@ function TurretService:_unregister(instance: Instance)
 end
 
 function TurretService:_updateCapture(record: TurretRecord, roster: { RosterEntry }, dt: number)
+	if record.health <= 0 then
+		return
+	end
 	local model = record.model
 	local radius = readNumber(model, TurretContract.Attribute.CaptureRadius, 1)
 	local captureSeconds = readNumber(model, TurretContract.Attribute.CaptureSeconds, 0.1)
@@ -328,7 +355,6 @@ function TurretService:_updateCapture(record: TurretRecord, roster: { RosterEntr
 		then record.captureZone.Position
 		else model:GetPivot().Position
 	local humanPresent = false
-	local kaijuPresent = false
 	for _, entry in roster do
 		local offset = entry.rootPart.Position - centre
 		local horizontalDistance = Vector2.new(offset.X, offset.Z).Magnitude
@@ -338,8 +364,6 @@ function TurretService:_updateCapture(record: TurretRecord, roster: { RosterEntr
 		then
 			if entry.role == PlayerRole.Human then
 				humanPresent = true
-			else
-				kaijuPresent = true
 			end
 		end
 	end
@@ -348,21 +372,7 @@ function TurretService:_updateCapture(record: TurretRecord, roster: { RosterEntr
 	if not TurretContract.IsTeam(ownerTeam) then
 		ownerTeam = TurretContract.NeutralTeam
 	end
-	if humanPresent and kaijuPresent then
-		self:_setCaptureState(
-			record,
-			ownerTeam,
-			TurretContract.State.Contested,
-			TurretContract.NeutralTeam,
-			record.captureProgress
-		)
-		return
-	end
-
-	local activeTeam = if humanPresent
-		then PlayerRole.Human
-		elseif kaijuPresent then PlayerRole.Kaiju
-		else nil
+	local activeTeam = if humanPresent then PlayerRole.Human else nil
 	if not activeTeam then
 		self:_setCaptureState(
 			record,
@@ -538,6 +548,10 @@ function TurretService:_launchProjectile(
 end
 
 function TurretService:_tryFire(record: TurretRecord, targets: { TargetEntry }, now: number)
+	if record.health <= 0 then
+		self:_clearTarget(record)
+		return
+	end
 	local model = record.model
 	local ownerTeam = model:GetAttribute(TurretContract.Attribute.OwnerTeam)
 	local state = model:GetAttribute(TurretContract.Attribute.CaptureState)
@@ -771,6 +785,41 @@ function TurretService:GetActiveProjectileCount(): number
 		count += 1
 	end
 	return count
+end
+
+function TurretService:Damage(turretId: string, amount: number): boolean
+	local model = self._ids[turretId]
+	local record = model and self._records[model]
+	if not record or record.health <= 0 or amount <= 0 or amount ~= amount then
+		return false
+	end
+	record.health = math.max(0, record.health - amount)
+	setAttributeIfChanged(record.model, TurretContract.Attribute.Health, record.health)
+	if record.health > 0 then
+		return true
+	end
+
+	self:_clearTarget(record)
+	self:_setCaptureState(
+		record,
+		TurretContract.NeutralTeam,
+		TurretContract.State.Destroyed,
+		TurretContract.NeutralTeam,
+		0
+	)
+	for part in record.partStates do
+		if part.Parent then
+			part.CanQuery = false
+			part.Transparency = math.max(part.Transparency, 0.68)
+		end
+	end
+	for projectileId, projectile in self._projectiles do
+		if projectile.sourceModel == record.model then
+			self._projectiles[projectileId] = nil
+			self._effectRemote:FireAllClients({ phase = "Expire", projectileId = projectileId })
+		end
+	end
+	return true
 end
 
 function TurretService:Stop()

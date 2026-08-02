@@ -5,6 +5,7 @@ local ContextActionService = game:GetService("ContextActionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local StudioTestService: any = nil
 if RunService:IsStudio() then
@@ -105,6 +106,25 @@ local function countActiveDebris(): number
 		end
 	end
 	return active
+end
+
+local function getReticleViewportFraction(): Vector2
+	local camera = workspace.CurrentCamera
+	local reticle = Players.LocalPlayer.PlayerGui:FindFirstChild("AimReticle", true)
+	if
+		not camera
+		or not reticle
+		or not reticle:IsA("GuiObject")
+		or camera.ViewportSize.X <= 0
+		or camera.ViewportSize.Y <= 0
+	then
+		return Vector2.zero
+	end
+	local reticleCenter = reticle.AbsolutePosition + reticle.AbsoluteSize * 0.5
+	return Vector2.new(
+		reticleCenter.X / camera.ViewportSize.X,
+		reticleCenter.Y / camera.ViewportSize.Y
+	)
 end
 
 function MultiplayerDestructionRegression.TryStart(
@@ -236,6 +256,7 @@ function MultiplayerDestructionRegression.TryStart(
 			end
 			local localizedHoleCount, localizedPartCount, localizedMaximumSpan =
 				measureLocalizedDamage(resolvedTarget)
+			local reticleViewportFraction = getReticleViewportFraction()
 
 			testRemote:FireServer({
 				kind = "report",
@@ -280,6 +301,10 @@ function MultiplayerDestructionRegression.TryStart(
 				hasHumanFireButton = ContextActionService:GetButton("HumanBlasterFire") ~= nil,
 				hasAimReticle = Players.LocalPlayer.PlayerGui:FindFirstChild("AimReticle", true)
 					~= nil,
+				reticleXFraction = reticleViewportFraction.X,
+				reticleYFraction = reticleViewportFraction.Y,
+				usesDesktopReticle = UserInputService.PreferredInput
+					== Enum.PreferredInput.KeyboardAndMouse,
 				characterHealth = if Players.LocalPlayer.Character
 						and Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
 					then (

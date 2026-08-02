@@ -2,7 +2,7 @@
 
 ## Purpose and evidence boundary
 
-Turrets are shared territory objectives: a living human or kaiju holds a clearly marked zone to capture a neutral or opposing turret, and an owned turret automatically attacks the other role. The first slice exists to test whether this produces readable movement and counterplay in the mixed-scale game; it is not evidence that a conventional MOBA rule set fits this project.
+Turrets are asymmetric territory objectives: a living human holds a clearly marked zone to capture a neutral turret, while a kaiju attacks and destroys the emplacement instead of capturing it. An owned turret automatically attacks opposing targets. The first slice exists to test whether this produces readable movement and counterplay in the mixed-scale game; it is not evidence that a conventional MOBA rule set fits this project.
 
 Roblox provides the platform facts used here:
 
@@ -41,16 +41,15 @@ The former `AimAssembly` remains hidden as a small anchored authoritative refere
 ## State machine
 
 ```text
-Neutral --one role present--> Capturing --uninterrupted hold--> Owned
-Owned --opposing role present--> Capturing --uninterrupted hold--> Owned by opponent
-any capturable state --both roles present--> Contested
+Neutral --living human present--> Capturing --uninterrupted hold--> Human owned
+Neutral/Human owned --kaiju damage--> Destroyed
+Destroyed --round reset--> Neutral
 ```
 
-- Only living player characters count.
+- Only living human player characters count toward capture; kaiju presence neither captures nor contests.
 - Capture uses horizontal distance plus a bounded vertical distance so players cannot capture through a mountain, roof, or floor.
-- `Contested` pauses progress and disables firing.
 - Leaving an incomplete capture currently resets that attempt. This is a hypothesis chosen for a legible first test, not a genre standard.
-- Ownership persists until an opposing capture completes or the round resets.
+- Human ownership persists until kaiju destruction or round reset.
 - The capture zone communicates neutral, capturing, contested, and owning-team state through both colour and replicated attributes. A later accessible UI pass must not rely on colour alone.
 
 ## Targeting and fairness contract
@@ -103,7 +102,7 @@ These are provisional, not Roblox benchmarks:
 1. Static source build proves all four imported shells contain zero scripts, remotes, sounds, and movers; each unanchored visual part must belong to the validated anchored-root assembly.
 2. A synthetic Studio rig check measures non-zero displacement of actual visible geometry on all four shells when their motors turn; a physical-device check still confirms orientation and muzzle alignment.
 3. One-player Studio test captures a neutral turret, leaves and re-enters an incomplete capture, and verifies replicated states.
-4. Native two-client test verifies contested pause, ownership transfer, no friendly fire, server-selected targets, obstruction, death, respawn, and capture by both scales.
+4. Native two-client test verifies human-only capture, kaiju non-capture, kaiju destruction, no friendly fire, server-selected targets, obstruction, death, respawn, and round reset.
 5. Archetype test proves bullets are instant, minigun cadence/spin-up is distinguishable, cannon shells travel, rockets travel and apply bounded radial damage, and solid cover blocks each attack as specified.
 6. Physical-phone test records whether an uncoached player identifies ownership, notices the firing cue, names the projectile type, and dodges at least one cannon or rocket.
 7. Representative-device profile records client/server frame time, memory trend, active logical projectiles, raycasts per second, effect-pool cap, and cleanup after a four-turret stress exchange.

@@ -44,11 +44,11 @@ Route markers are level-design data. Keep ground nodes on roads with enough clea
 
 `Operational -> Capturing -> Captured` or `Operational -> Destroyed`.
 
-- A neutral operational factory emits a bounded mixed wave whose vehicles attack any nearby player.
+- A neutral operational factory is dormant and emits no vehicles.
 - Only living human players advance capture; kaiju cannot capture or contest the zone.
-- Human capture transfers active vehicles, future reinforcements, and factory-linked turrets to the Human side.
+- Human capture starts bounded allied production and transfers factory-linked turrets to the Human side.
 - Collapsing the linked destructible stops production permanently for that round.
-- Human-owned vehicles stop targeting humans and engage opposing kaiju/rogue targets; in-flight factory projectiles transfer too, so a pre-capture shot cannot damage the new human owner.
+- Human-owned vehicles ignore humans and engage opposing kaiju/rogue targets using server line-of-sight, sticky target selection, velocity-based projectile lead, short target memory, and route-stuck recovery.
 - Existing defenders remain after destruction in the first slice; playtesting decides whether they should clear or retreat.
 
 All capture, ownership, spawn timing, movement, target selection, projectile travel, damage, health, and defeat are authoritative on the server. Replicated attributes drive presentation and diagnostics. There is no client remote that can request a spawn, capture, hit, or ownership change.
@@ -61,7 +61,7 @@ Build and test exactly one factory with:
 - one authored ground route and one authored air route;
 - physically distinct cannon shells and helicopter bullets;
 - player attacks and captured turrets able to damage vehicles;
-- human capture transferring the bounded wave, or kaiju destruction stopping future production;
+- human capture starting the bounded allied wave, or kaiju destruction preventing production;
 - one or two factory-linked turrets changing allegiance on capture;
 - primitive original proxy vehicles until replacements pass the commercial-use, IP, security, assembly, collision, and mobile-cost audit.
 

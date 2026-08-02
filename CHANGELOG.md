@@ -8,7 +8,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 ### Added
 
-- Human-only factory capture with visible neutral/capturing/allied/destroyed feedback, active reinforcement and linked-turret allegiance transfer, and kaiju-only demolition as the asymmetric alternative.
+- Four-second server-owned Beam channel with rate-limited aim updates, fixed-rate destructive samples, reusable thick beam presentation, impact sparks, and right-click input.
+- Destructible turrets with replicated health, human-only capture, kaiju Smash/Charge/Beam damage, disabled presentation, and round reset.
+- Vehicle line-of-sight firing, sticky targets, travel-time projectile lead, short target memory, stable target IDs, and route-stuck recovery.
+- Human-only factory capture with visible neutral/capturing/allied/destroyed feedback, captured-only reinforcement production, linked-turret allegiance transfer, and kaiju-only demolition as the asymmetric alternative.
 - Shared bounded aim reticle for human blaster and Brontide Beam, including pointer-driven keyboard/mouse targeting and centred touch/gamepad targeting.
 - First server-authoritative reinforcement-factory foundation with generic team/lane/objective contracts, contested capture, destructible shutdown, linked-turret transfer, bounded tank/helicopter waves, authored routes, distinct travelling projectiles, vehicle health/defeat, and integration with existing player attacks and turret targeting.
 - Research-led urban-island conquest and factory-objective specification, H14 playtest gate, Edit-visible map-owner handoff, and audited free-commercial-use asset candidate decisions.
@@ -54,7 +57,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 ### Changed
 
-- The first reinforcement factory and its units now begin neutral and hostile to nearby players; human ownership prevents friendly fire and continues bounded allied production.
+- Desktop aiming now uses a stable shoulder reticle just right of screen centre, and Brontide Smash and Charge consume the same server-validated reticle direction as the human blaster and Beam.
+- The first reinforcement factory now begins neutral and dormant; verified human capture starts bounded allied production.
+- The desktop reticle now renders with Roblox's top inset accounted for while its world ray remains in camera viewport coordinates, keeping the visible crosshair and attack point aligned.
 - Keyboard/mouse humans now use the same custom third-person camera family as Brontide, with a human-scale shoulder offset and reticle-derived server-validated fire direction.
 - Turret tracers, lock cues, cannon shells, and missiles now originate at each shell's moving visual muzzle while authoritative hit resolution remains server-owned.
 - External-asset policy now explicitly requires `£0` commercial use with no royalty, revenue share, subscription, usage fee, or earnings-triggered payment, plus legitimate rights to the underlying IP.
@@ -81,6 +86,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/2.0.0/). Rel
 
 ### Fixed
 
+- Prevented locked-mouse camera movement from also accumulating reticle movement toward the screen edge, which made the visible crosshair and attack direction appear offset.
 - Replaced the internally advancing but visually overwritten Smash tween after a physical-device test showed no visible wind-up or body motion.
 - Reflow touch actions after Roblox's native Jump button receives its final phone layout, keeping Smash unobscured on iPhone landscape screens.
 - Kept the Studio-only multiplayer regression out of live server and client startup, preventing published sessions from aborting before the city, Brontide, HUD, and controls load.
